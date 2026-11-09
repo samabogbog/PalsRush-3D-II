@@ -1,0 +1,181 @@
+{
+  "schemaVersion": 1,
+  "task": "TASK-001",
+  "checksumAlgorithm": "SHA-256",
+  "generationMode": "built-in image_gen",
+  "assets": [
+    {
+      "id": "race_crest_banner",
+      "path": "/assets/game/race_crest_banner.png",
+      "width": 1280,
+      "height": 720,
+      "semanticColor": "#C86D3B",
+      "sha256": "e3d631a7256775bbf22f2e0adc8fd494c0dab5ec8bce94e52e84da988f6c1ff9"
+    },
+    {
+      "id": "victory_trophy_emblem",
+      "path": "/assets/game/victory_trophy_emblem.png",
+      "width": 800,
+      "height": 800,
+      "semanticColor": "#F59E0B",
+      "sha256": "82bfeae693fb349dc52ffaf741a848fee8f1d0ffa621b76c61bc6c76ccbae9b3"
+    },
+    {
+      "id": "circuit_map_card",
+      "path": "/assets/game/circuit_map_card.png",
+      "width": 1280,
+      "height": 720,
+      "semanticColor": "#06B6D4",
+      "sha256": "45ba6633ee73ef53fb75a0b9c6805b854994a4d70983310ce76dd8b88a1b1a1f"
+    },
+    {
+      "id": "skill_dash",
+      "path": "/assets/game/icons/skill_dash.png",
+      "width": 512,
+      "height": 512,
+      "semanticColor": "#F59E0B",
+      "sha256": "0655dd70975e1c4017870f0699e137ac73f81de4f43a6df06116b779c4bcf66f"
+    },
+    {
+      "id": "skill_shield",
+      "path": "/assets/game/icons/skill_shield.png",
+      "width": 512,
+      "height": 512,
+      "semanticColor": "#06B6D4",
+      "sha256": "640cf46463c3ef82810a911a9bc403c1ab109540a0a9c55b2ac54e9b0de5f880"
+    },
+    {
+      "id": "skill_spring",
+      "path": "/assets/game/icons/skill_spring.png",
+      "width": 512,
+      "height": 512,
+      "semanticColor": "#84CC16",
+      "sha256": "8260dceab58943e7eda8319464e978f229b4d87417287de480b3678adc30521e"
+    },
+    {
+      "id": "skill_quake",
+      "path": "/assets/game/icons/skill_quake.png",
+      "width": 512,
+      "height": 512,
+      "semanticColor": "#EC4899",
+      "sha256": "f487626a53d47fe0ba25e6d1cdc321e64162957e55ef468d7491a2e279fb537a"
+    },
+    {
+      "id": "skill_whirlwind",
+      "path": "/assets/game/icons/skill_whirlwind.png",
+      "width": 512,
+      "height": 512,
+      "semanticColor": "#8B5CF6",
+      "sha256": "52766c3e36d77bfd5df5e556bbd30eb5c25dff3eef1c036d2e2322137e24417c"
+    },
+    {
+      "id": "passive_nimble_paws",
+      "path": "/assets/game/icons/passive_nimble_paws.png",
+      "width": 512,
+      "height": 512,
+      "semanticColor": "#F59E0B",
+      "sha256": "b14b8e16d33425bf750ad84915576dd852144ee39154717f3633a4c654e643bf"
+    },
+    {
+      "id": "passive_bouncy_belly",
+      "path": "/assets/game/icons/passive_bouncy_belly.png",
+      "width": 512,
+      "height": 512,
+      "semanticColor": "#06B6D4",
+      "sha256": "6b8e18cfb6bb62d5a7548334a6accc0ffc19802a84ffa8dad4f3c3b8a4ac7ca2"
+    },
+    {
+      "id": "passive_feather_hop",
+      "path": "/assets/game/icons/passive_feather_hop.png",
+      "width": 512,
+      "height": 512,
+      "semanticColor": "#84CC16",
+      "sha256": "f9cef7dddf59fffdce1fa7c1f0cc74adcc1575306e9a06ff94819cb8e32ecfbf"
+    },
+    {
+      "id": "passive_slime_boots",
+      "path": "/assets/game/icons/passive_slime_boots.png",
+      "width": 512,
+      "height": 512,
+      "semanticColor": "#EC4899",
+      "sha256": "95ef33295408490a1b743a1ce7c5fee8440e928c7056cebe329d533cbb081bc7"
+    },
+    {
+      "id": "passive_lucky_magnet",
+      "path": "/assets/game/icons/passive_lucky_magnet.png",
+      "width": 512,
+      "height": 512,
+      "semanticColor": "#8B5CF6",
+      "sha256": "9787ed604a4da7ab8dcb30fd0a8a0fac202a3c4380776e165b6cfa3e6c013409"
+    },
+    {
+      "id": "item_glove",
+      "path": "/assets/game/icons/item_glove.png",
+      "width": 512,
+      "height": 512,
+      "semanticColor": "#EF4444",
+      "sha256": "427a9003f9f7c79b1104184de8a64fe94ce9471d2861e35a90286d6519e0273f"
+    },
+    {
+      "id": "item_honey",
+      "path": "/assets/game/icons/item_honey.png",
+      "width": 512,
+      "height": 512,
+      "semanticColor": "#F59E0B",
+      "sha256": "6866a09f0a7575557b727db81020a2c7f96fe417a706915deac17660d4ca498c"
+    },
+    {
+      "id": "item_pie",
+      "path": "/assets/game/icons/item_pie.png",
+      "width": 512,
+      "height": 512,
+      "semanticColor": "#F472B6",
+      "sha256": "1dc0d97e9b536c69734d27c085eba4552068ac8b3c862e5c491497ffd0e96cf7"
+    },
+    {
+      "id": "item_pepper",
+      "path": "/assets/game/icons/item_pepper.png",
+      "width": 512,
+      "height": 512,
+      "semanticColor": "#EA580C",
+      "sha256": "ce6d6a610ce316093b69cf36782c8b76b32d99abe591b59331c0b923205d01c2"
+    },
+    {
+      "id": "item_magnet",
+      "path": "/assets/game/icons/item_magnet.png",
+      "width": 512,
+      "height": 512,
+      "semanticColor": "#6366F1",
+      "sha256": "bb71bc1a1f0f63c5a44bac047da3d6101a7e466fcfc8e80b550509b5a927fb0e"
+    },
+    {
+      "id": "hud_action_slap",
+      "path": "/assets/game/icons/hud_action_slap.png",
+      "width": 512,
+      "height": 512,
+      "semanticColor": "#C86D3B",
+      "sha256": "3eedcf6b7fd59ccb3ddda80819f62d3ccc5f1b095ba91e5b7609ba38eca2bfb3"
+    },
+    {
+      "id": "hud_action_hop",
+      "path": "/assets/game/icons/hud_action_hop.png",
+      "width": 512,
+      "height": 512,
+      "semanticColor": "#F59E0B",
+      "sha256": "3f9ef5e7cbd1cc5533241bca1db7565259020db9ac83d0846c993f6b99aed982"
+    },
+    {
+      "id": "hud_rank_shield_frame",
+      "path": "/assets/game/icons/hud_rank_shield_frame.svg",
+      "width": 64,
+      "height": 64,
+      "semanticColors": {
+        "gold": "#F59E0B",
+        "silver": "#CBD5E1",
+        "bronze": "#C86D3B",
+        "slate": "#64748B"
+      },
+      "sha256": "520ce80d82160459090d95bb18fc7203cda168ee5cd38f3f6fc744ef8a4d4e4d"
+    }
+  ]
+}

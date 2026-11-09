@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+  <!-- Inline this SVG to inherit CSS variables. Overlay live ordinal at (32,38). -->
+  <path d="M7 11 32 4 57 11v22c0 13-13 23-25 28C20 56 7 46 7 33Z" fill="var(--shield-outer, #F59E0B)" stroke="#2B2118" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M11 32c0 11 11 20 21 25 10-5 21-14 21-25v7C50 48 40 55 32 58 21 53 12 45 11 37Z" fill="#1A130D" opacity=".28"/>
+  <path d="m13 16 19-6 19 6v16c0 9-9 17-19 22-10-5-19-13-19-22Z" fill="var(--shield-inner, #FEF08A)" stroke="#2B2118" stroke-width="1.5"/>
+  <path d="m15 17 17-5 17 5" stroke="#FFFDF9" stroke-width="2" stroke-linecap="round" opacity=".8"/>
+  <path d="m24 17 4 3 4-6 4 6 4-3-2 8H26Z" fill="var(--shield-outer, #F59E0B)" stroke="#2B2118" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="m32 46 1.2 2.4 2.7.4-2 1.9.5 2.7-2.4-1.3-2.4 1.3.5-2.7-2-1.9 2.7-.4Z" fill="var(--shield-outer, #F59E0B)"/>
+</svg>

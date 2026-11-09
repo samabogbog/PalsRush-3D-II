@@ -1,0 +1,29 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    font-family: 'Fredoka', 'Nunito', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    background-color: #faf3e8;
+    color: #2b2118;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3, button {
+    font-family: 'Fredoka', 'Nunito', sans-serif;
+    font-weight: 700;
+  }
+
+  code, pre, .font-mono {
+    font-family: 'JetBrains Mono', monospace;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.game-text-shadow {
+  text-shadow: 0 2px 0 #2b2118, 0 -1px 0 #2b2118, 1.5px 0 0 #2b2118, -1.5px 0 0 #2b2118;
+}

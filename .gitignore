@@ -1,0 +1,18 @@
+node_modules/
+build/
+dist/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
+
+# AI Studio & Browser Verification Temporary Artifacts
+.aistudio/
+.playwright-cli/
+playwright-report/
+test-results/
+.vite/
+public/assets/aistudio/
+bun.lock
+

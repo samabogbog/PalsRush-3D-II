@@ -1,0 +1,6 @@
+{
+  "name": "BlockyPals 3D — Chibi Procedural Studio",
+  "description": "Interactive procedural 3D chibi block character showcase built with Three.js featuring rounded-box modeling and lively animations.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
