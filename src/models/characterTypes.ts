@@ -16,7 +16,7 @@ export type CharacterId =
   | 'owl'
   | 'frog';
 
-export type AnimationPose = 'idle' | 'jump' | 'run';
+export type AnimationPose = 'idle' | 'jump' | 'run' | 'cool';
 
 export type ActiveSkillId =
   | 'dash'
@@ -626,6 +626,71 @@ export function computeCharacterKinematics(
   // Extra poke reaction overlay (halved baseline)
   const pokeHop = Math.sin(poke * Math.PI) * 0.21;
   const pokeWiggle = Math.sin(poke * Math.PI * 4) * 0.16 * poke;
+
+  if (pose === 'cool') {
+    const grooveBeat = t * 6.8;
+    const bounceWave = Math.abs(Math.sin(grooveBeat));
+    const grooveHop = Math.pow(bounceWave, 1.5) * 0.085 * amp + pokeHop;
+
+    const squash = Math.cos(grooveBeat * 2) * 0.032 * amp;
+    const scaleY = 1.0 + squash + poke * 0.07;
+    const scaleXZ = 1.0 - squash * 0.5;
+
+    // Confident weight shift + proud chest-out swagger
+    const swaggerSway = Math.sin(grooveBeat) * 0.095 * amp;
+    const swaggerTwist = Math.cos(grooveBeat) * 0.22 * amp + pokeWiggle;
+    const headNod = -0.05 + Math.sin(grooveBeat * 2) * 0.085 * amp;
+    const headTilt = -swaggerSway * 1.15 + Math.cos(grooveBeat) * 0.08 * amp;
+    const headLook = -swaggerTwist * 0.55 + Math.sin(t * 2.2) * 0.16;
+
+    const earPerk = Math.max(0, Math.sin(grooveBeat * 2)) * 0.18 * amp;
+    const leftEarRotZ = 0.11 + earPerk;
+    const rightEarRotZ = -0.11 - earPerk * 0.85;
+
+    // Left arm cocked on hip; Right arm doing a cool hero flex / wave to the beat
+    const flexWave = Math.sin(grooveBeat);
+    const leftArmRotZ = -0.46 - bounceWave * 0.08 * amp - poke * 0.25;
+    const leftArmRotX = 0.28 + Math.cos(grooveBeat) * 0.08 * amp;
+    const rightArmRotZ =
+      0.56 + Math.max(0, flexWave) * 0.38 * amp + poke * 0.35;
+    const rightArmRotX = -0.52 - Math.cos(grooveBeat * 2) * 0.22 * amp;
+
+    // Alternating cool foot tap
+    const leftTap = Math.max(0, Math.sin(grooveBeat)) * 0.28 * amp;
+    const rightTap = Math.max(0, -Math.sin(grooveBeat)) * 0.28 * amp;
+
+    const tailWag = Math.sin(grooveBeat * 2) * 0.52 * amp;
+
+    return {
+      rootY: grooveHop,
+      rootZ: 0,
+      rootRotX: -0.065 * amp + Math.sin(grooveBeat * 2) * 0.03 * amp,
+      rootRotY: swaggerTwist,
+      rootRotZ: swaggerSway,
+      scaleX: scaleXZ,
+      scaleY,
+      scaleZ: scaleXZ,
+      headRotX: headNod,
+      headRotY: headLook,
+      headRotZ: headTilt,
+      headYOffset: Math.sin(grooveBeat * 2 - 0.35) * 0.022 * amp,
+      leftEarRotZ,
+      rightEarRotZ,
+      leftArmRotX,
+      leftArmRotZ,
+      rightArmRotX,
+      rightArmRotZ,
+      leftLegRotX: 0.06 - leftTap,
+      rightLegRotX: -0.08 - rightTap,
+      tailRotX: 0.1 + Math.cos(grooveBeat * 2) * 0.07 * amp,
+      tailRotY: tailWag,
+      tailRotZ: tailWag * 0.78,
+      accessoryBounce: Math.max(0, Math.sin(grooveBeat * 2 - 0.4)) * 0.12 * amp,
+      blinkScaleY,
+      shadowScale: Math.max(0.64, 1.0 - grooveHop * 0.65),
+      shadowOpacity: Math.max(0.22, 0.42 - grooveHop * 0.35),
+    };
+  }
 
   if (pose === 'idle') {
     const fastBeat = t * 9.5;

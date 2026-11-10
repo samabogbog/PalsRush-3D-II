@@ -12,12 +12,27 @@ import {
   PassiveSkillId,
 } from '../models/characterTypes';
 
+export type TrackSurfaceType =
+  | 'dirt'
+  | 'cobble'
+  | 'brick'
+  | 'wood_plank'
+  | 'shallow_water'
+  | 'deep_water';
+
+export type TrackBorderType = 'wood_fence' | 'bush_hedge' | 'none';
+
 export interface TrackWaypoint {
   x: number;
   y: number;
   z: number;
   width: number;
   zoneName: string;
+  surfaceType?: TrackSurfaceType;
+  borderType?: TrackBorderType;
+  isShallowWater?: boolean;
+  isPlankBridge?: boolean;
+  isDeepWaterHazard?: boolean;
   isBridgeOverWater?: boolean;
   isHighBridge?: boolean;
   isDownhillSlope?: boolean;
@@ -44,44 +59,115 @@ export interface TrackSegment {
   endDist: number;
   width: number;
   zoneName: string;
+  surfaceType: TrackSurfaceType;
+  borderType: TrackBorderType;
+  isShallowWater: boolean;
+  isPlankBridge: boolean;
+  isDeepWaterHazard: boolean;
   isBridgeOverWater: boolean;
   isHighBridge: boolean;
   isDownhillSlope: boolean;
 }
 
 /**
- * 28 Control Points defining a sweeping, smooth ~1,820-unit Grand Circuit
- * (approx. 2:30 - 3:00 minutes per lap) with smooth Catmull-Rom curves,
- * high-altitude viaduct bridges (y up to +14u), exciting downhill slopes,
- * and a shimmering water lagoon boardwalk.
+ * 28 Control Points defining a sweeping, lush Woodland Forest Grand Circuit (~1,820u)
+ * featuring dirt trails, cobblestone climbs, ancient stone brick slopes,
+ * unavoidable shallow-water stream fords, wooden plank bridges, and a lethal
+ * deep-water river crossing with mossy stepping stones to hop across.
  */
 export const TRACK_CONTROL_POINTS: TrackWaypoint[] = [
-  // 0..3: Start / Finish Meadow Straight & Gentle S-Curve (y = 0 -> 1.5)
-  { x: 0, y: 0.0, z: 16, width: 11.0, zoneName: 'Start / Finish Meadow' },
-  { x: 0, y: 0.0, z: -45, width: 10.6, zoneName: 'Start / Finish Meadow' },
-  { x: 28, y: 0.8, z: -108, width: 10.2, zoneName: 'blossom S-Curves' },
-  { x: -24, y: 2.2, z: -168, width: 10.0, zoneName: 'Whispering Pine Climb' },
+  // 0..1: Whispering Woods Dirt Trail (Packed Earth + Wooden Fence)
+  {
+    x: 0,
+    y: 0.0,
+    z: 16,
+    width: 11.0,
+    zoneName: 'Whispering Woods Dirt Trail',
+    surfaceType: 'dirt',
+    borderType: 'wood_fence',
+  },
+  {
+    x: 0,
+    y: 0.0,
+    z: -45,
+    width: 10.6,
+    zoneName: 'Whispering Woods Dirt Trail',
+    surfaceType: 'dirt',
+    borderType: 'wood_fence',
+  },
 
-  // 4..7: Winding Hillside Climb up to the High Bridge (y = 4.5 -> 12.5)
-  { x: 38, y: 5.2, z: -228, width: 9.8, zoneName: 'Whispering Pine Climb' },
-  { x: 96, y: 8.6, z: -272, width: 9.5, zoneName: 'Alpine Spiral Ascent' },
-  { x: 162, y: 11.8, z: -248, width: 9.2, zoneName: 'Alpine Spiral Ascent' },
+  // 2..3: Unavoidable Shallow Creek Ford (Must wade through ankle-deep stream!)
+  {
+    x: 28,
+    y: 0.0,
+    z: -108,
+    width: 11.2,
+    zoneName: 'Shallow Forest Creek (Wade Through!)',
+    surfaceType: 'shallow_water',
+    borderType: 'bush_hedge',
+    isShallowWater: true,
+  },
+  {
+    x: -24,
+    y: 0.5,
+    z: -168,
+    width: 10.8,
+    zoneName: 'Shallow Forest Creek (Wade Through!)',
+    surfaceType: 'shallow_water',
+    borderType: 'bush_hedge',
+    isShallowWater: true,
+  },
+
+  // 4..6: Ancient Cobblestone & Brick Forest Climb (Bush Hedges & Wooden Fences)
+  {
+    x: 38,
+    y: 5.0,
+    z: -228,
+    width: 9.8,
+    zoneName: 'Mossy Cobblestone Climb',
+    surfaceType: 'cobble',
+    borderType: 'bush_hedge',
+  },
+  {
+    x: 96,
+    y: 8.6,
+    z: -272,
+    width: 9.5,
+    zoneName: 'Ancient Stone Brick Ascent',
+    surfaceType: 'brick',
+    borderType: 'wood_fence',
+  },
+  {
+    x: 162,
+    y: 11.8,
+    z: -248,
+    width: 9.2,
+    zoneName: 'Ancient Stone Brick Ascent',
+    surfaceType: 'brick',
+    borderType: 'wood_fence',
+  },
+
+  // 7..9: Treetop Wooden Plank Bridge (Row of Timber Planks!)
   {
     x: 215,
     y: 13.6,
     z: -188,
     width: 7.4,
-    zoneName: 'Skyline High Viaduct Bridge',
+    zoneName: 'Treetop Wooden Plank Bridge',
+    surfaceType: 'wood_plank',
+    borderType: 'wood_fence',
+    isPlankBridge: true,
     isHighBridge: true,
   },
-
-  // 8..10: Skyline High Bridge (Elevated Sky Viaduct at y = 13.6 -> 12.8)
   {
     x: 248,
     y: 14.0,
     z: -115,
     width: 7.2,
-    zoneName: 'Skyline High Viaduct Bridge',
+    zoneName: 'Treetop Wooden Plank Bridge',
+    surfaceType: 'wood_plank',
+    borderType: 'wood_fence',
+    isPlankBridge: true,
     isHighBridge: true,
   },
   {
@@ -89,25 +175,32 @@ export const TRACK_CONTROL_POINTS: TrackWaypoint[] = [
     y: 13.2,
     z: -42,
     width: 7.6,
-    zoneName: 'Skyline High Viaduct Bridge',
+    zoneName: 'Treetop Wooden Plank Bridge',
+    surfaceType: 'wood_plank',
+    borderType: 'wood_fence',
+    isPlankBridge: true,
     isHighBridge: true,
   },
+
+  // 10..12: Ruined Stone Brick Downhill Slope (y = 10.2 -> 2.8)
   {
     x: 168,
     y: 10.2,
     z: 14,
     width: 10.2,
-    zoneName: 'Roller-Coaster Downhill Slope',
+    zoneName: 'Mossy Brick Downhill Run',
+    surfaceType: 'brick',
+    borderType: 'wood_fence',
     isDownhillSlope: true,
   },
-
-  // 11..13: Sweeping Roller-Coaster Downhill Slope (y = 10.2 -> 0.5)
   {
     x: 198,
     y: 6.4,
     z: 84,
     width: 10.5,
-    zoneName: 'Roller-Coaster Downhill Slope',
+    zoneName: 'Mossy Brick Downhill Run',
+    surfaceType: 'brick',
+    borderType: 'bush_hedge',
     isDownhillSlope: true,
   },
   {
@@ -115,79 +208,170 @@ export const TRACK_CONTROL_POINTS: TrackWaypoint[] = [
     y: 2.8,
     z: 148,
     width: 10.5,
-    zoneName: 'Roller-Coaster Downhill Slope',
+    zoneName: 'Cobblestone Forest Chute',
+    surfaceType: 'cobble',
+    borderType: 'bush_hedge',
     isDownhillSlope: true,
   },
-  { x: 228, y: 0.4, z: 218, width: 10.0, zoneName: 'Mushroom Slime Valley' },
 
-  // 14..17: Mushroom Slime Valley & Serpentine Curves (y = 0.4 -> 4.8 -> 0.2)
-  { x: 158, y: 1.2, z: 256, width: 9.8, zoneName: 'Mushroom Slime Valley' },
-  { x: 92, y: 3.6, z: 214, width: 9.6, zoneName: 'Sticky Slime Serpentine' },
-  { x: 34, y: 1.8, z: 262, width: 9.6, zoneName: 'Sticky Slime Serpentine' },
+  // 13..15: Deep Woods Dirt & Fern Hollow (Long Bush Hedges, No Fence)
+  {
+    x: 228,
+    y: 0.4,
+    z: 218,
+    width: 10.0,
+    zoneName: 'Deep Woods Fern & Dirt Trail',
+    surfaceType: 'dirt',
+    borderType: 'bush_hedge',
+  },
+  {
+    x: 158,
+    y: 1.2,
+    z: 256,
+    width: 9.8,
+    zoneName: 'Deep Woods Fern & Dirt Trail',
+    surfaceType: 'dirt',
+    borderType: 'bush_hedge',
+  },
+  {
+    x: 92,
+    y: 2.4,
+    z: 214,
+    width: 9.6,
+    zoneName: 'Old Cobble Woodland Bend',
+    surfaceType: 'cobble',
+    borderType: 'wood_fence',
+  },
+
+  // 16..17: Low Timber Plank River Bridge (Wooden Planks Laid in a Row)
+  {
+    x: 34,
+    y: 0.6,
+    z: 262,
+    width: 7.4,
+    zoneName: 'Timber Plank Creek Bridge',
+    surfaceType: 'wood_plank',
+    borderType: 'wood_fence',
+    isPlankBridge: true,
+    isBridgeOverWater: true,
+  },
   {
     x: -36,
     y: 0.3,
     z: 238,
-    width: 6.2,
-    zoneName: 'Crystal Lagoon Boardwalk',
+    width: 7.0,
+    zoneName: 'Timber Plank Creek Bridge',
+    surfaceType: 'wood_plank',
+    borderType: 'wood_fence',
+    isPlankBridge: true,
     isBridgeOverWater: true,
   },
 
-  // 18..20: Crystal Lagoon Water Pond & Twin Bridges
+  // 18..19: Deep River Stepping-Stone Crossing (Lethal Deep Water + Stepping Stones to Jump!)
   {
     x: -96,
-    y: 0.3,
+    y: 0.2,
     z: 188,
-    width: 5.8,
-    zoneName: 'Crystal Lagoon Boardwalk',
+    width: 9.2,
+    zoneName: 'Deep River Stepping Stones (Jump!)',
+    surfaceType: 'deep_water',
+    borderType: 'none',
+    isDeepWaterHazard: true,
     isBridgeOverWater: true,
   },
   {
     x: -148,
-    y: 4.2,
+    y: 0.3,
     z: 224,
-    width: 8.6,
-    zoneName: 'Lagoon Arch Overlook',
-    isHighBridge: true,
+    width: 9.2,
+    zoneName: 'Deep River Stepping Stones (Jump!)',
+    surfaceType: 'deep_water',
+    borderType: 'none',
+    isDeepWaterHazard: true,
+    isBridgeOverWater: true,
   },
-  { x: -206, y: 7.8, z: 176, width: 9.6, zoneName: 'Windmill Ridge Climb' },
 
-  // 21..24: Windmill High Ridge & Second Downhill Canyon Slope
+  // 20..21: Forest Ridge Climb & Canopy Plank Viaduct
+  {
+    x: -206,
+    y: 6.4,
+    z: 176,
+    width: 9.6,
+    zoneName: 'Hollow Log & Cobble Climb',
+    surfaceType: 'cobble',
+    borderType: 'bush_hedge',
+  },
   {
     x: -228,
-    y: 11.2,
+    y: 10.6,
     z: 104,
     width: 7.6,
-    zoneName: 'Cloudtop Suspension Bridge',
+    zoneName: 'Canopy Plank Suspension Bridge',
+    surfaceType: 'wood_plank',
+    borderType: 'wood_fence',
+    isPlankBridge: true,
     isHighBridge: true,
   },
+
+  // 22..24: Stone Brick & Cobble Canyon Downhill Chute
   {
     x: -182,
-    y: 8.0,
+    y: 7.6,
     z: 36,
     width: 10.2,
-    zoneName: 'Canyon Downhill Chute',
+    zoneName: 'Stone Brick Canyon Chute',
+    surfaceType: 'brick',
+    borderType: 'wood_fence',
     isDownhillSlope: true,
   },
   {
     x: -214,
-    y: 3.6,
+    y: 3.4,
     z: -38,
     width: 10.2,
-    zoneName: 'Canyon Downhill Chute',
+    zoneName: 'Stone Brick Canyon Chute',
+    surfaceType: 'brick',
+    borderType: 'bush_hedge',
     isDownhillSlope: true,
   },
-  { x: -164, y: 0.6, z: -102, width: 9.8, zoneName: 'Rolling Boulder Alley' },
+  {
+    x: -164,
+    y: 0.4,
+    z: -102,
+    width: 9.8,
+    zoneName: 'Bramble Boulder Dirt Alley',
+    surfaceType: 'dirt',
+    borderType: 'bush_hedge',
+  },
 
-  // 25..27: Rolling Boulder Alley & Final Sweeping Return
-  { x: -104, y: 2.4, z: -64, width: 9.8, zoneName: 'Rolling Boulder Alley' },
-  { x: -92, y: 4.2, z: 18, width: 9.8, zoneName: 'Final Hilltop Crest' },
+  // 25..26: Second Unavoidable Shallow Forest Pond + Final Stone Brick Sprint
+  {
+    x: -104,
+    y: 0.0,
+    z: -64,
+    width: 11.0,
+    zoneName: 'Shallow Mossy Pond (Wade Through!)',
+    surfaceType: 'shallow_water',
+    borderType: 'bush_hedge',
+    isShallowWater: true,
+  },
+  {
+    x: -92,
+    y: 2.2,
+    z: 18,
+    width: 9.8,
+    zoneName: 'Forest Cobble Crest',
+    surfaceType: 'cobble',
+    borderType: 'wood_fence',
+  },
   {
     x: -44,
-    y: 1.4,
+    y: 1.0,
     z: 52,
     width: 10.6,
-    zoneName: 'Final Downhill Sprint',
+    zoneName: 'Woodland Brick Final Sprint',
+    surfaceType: 'brick',
+    borderType: 'wood_fence',
     isDownhillSlope: true,
   },
 ];
@@ -232,6 +416,11 @@ export const TRACK_WAYPOINTS: TrackWaypoint[] = (() => {
         z,
         width,
         zoneName: ref.zoneName,
+        surfaceType: ref.surfaceType ?? 'dirt',
+        borderType: ref.borderType ?? 'wood_fence',
+        isShallowWater: Boolean(ref.isShallowWater),
+        isPlankBridge: Boolean(ref.isPlankBridge),
+        isDeepWaterHazard: Boolean(ref.isDeepWaterHazard),
         isBridgeOverWater: Boolean(ref.isBridgeOverWater),
         isHighBridge: Boolean(ref.isHighBridge),
         isDownhillSlope: Boolean(ref.isDownhillSlope),
@@ -277,6 +466,11 @@ export const TRACK_SEGMENTS: TrackSegment[] = (() => {
       endDist: accum + length,
       width: (wp0.width + wp1.width) * 0.5,
       zoneName: wp0.zoneName,
+      surfaceType: wp0.surfaceType ?? 'dirt',
+      borderType: wp0.borderType ?? 'wood_fence',
+      isShallowWater: Boolean(wp0.isShallowWater),
+      isPlankBridge: Boolean(wp0.isPlankBridge),
+      isDeepWaterHazard: Boolean(wp0.isDeepWaterHazard),
       isBridgeOverWater: Boolean(wp0.isBridgeOverWater),
       isHighBridge: Boolean(wp0.isHighBridge),
       isDownhillSlope: Boolean(wp0.isDownhillSlope || slope < -0.025),
@@ -301,6 +495,11 @@ export interface TrackSample {
   width: number;
   segmentIndex: number;
   zoneName: string;
+  surfaceType: TrackSurfaceType;
+  borderType: TrackBorderType;
+  isShallowWater: boolean;
+  isPlankBridge: boolean;
+  isDeepWaterHazard: boolean;
   isBridgeOverWater: boolean;
   isHighBridge: boolean;
   isDownhillSlope: boolean;
@@ -337,6 +536,11 @@ export function sampleTrackAtDistance(dist: number): TrackSample {
     width: seg.width,
     segmentIndex: seg.index,
     zoneName: seg.zoneName,
+    surfaceType: seg.surfaceType,
+    borderType: seg.borderType,
+    isShallowWater: seg.isShallowWater,
+    isPlankBridge: seg.isPlankBridge,
+    isDeepWaterHazard: seg.isDeepWaterHazard,
     isBridgeOverWater: seg.isBridgeOverWater,
     isHighBridge: seg.isHighBridge,
     isDownhillSlope: seg.isDownhillSlope,
@@ -357,6 +561,11 @@ export interface TrackProjection {
   width: number;
   segmentIndex: number;
   zoneName: string;
+  surfaceType: TrackSurfaceType;
+  borderType: TrackBorderType;
+  isShallowWater: boolean;
+  isPlankBridge: boolean;
+  isDeepWaterHazard: boolean;
   isBridgeOverWater: boolean;
   isHighBridge: boolean;
   isDownhillSlope: boolean;
@@ -422,11 +631,76 @@ export function projectPointToTrack(
     width: bestSeg.width,
     segmentIndex: bestSeg.index,
     zoneName: bestSeg.zoneName,
+    surfaceType: bestSeg.surfaceType,
+    borderType: bestSeg.borderType,
+    isShallowWater: bestSeg.isShallowWater,
+    isPlankBridge: bestSeg.isPlankBridge,
+    isDeepWaterHazard: bestSeg.isDeepWaterHazard,
     isBridgeOverWater: bestSeg.isBridgeOverWater,
     isHighBridge: bestSeg.isHighBridge,
     isDownhillSlope: bestSeg.isDownhillSlope,
   };
 }
+
+/**
+ * Stepping stones emerging from the Deep Water River Hazard section.
+ * Players and AI must hop from stone to stone; falling into the deep water
+ * between or beside the stones causes an instant splash & checkpoint respawn!
+ */
+export interface SteppingStoneSpec {
+  id: string;
+  trackDist: number;
+  lateralOffset: number;
+  x: number;
+  y: number;
+  z: number;
+  radius: number;
+  yaw: number;
+}
+
+export const RIVER_STEPPING_STONES: SteppingStoneSpec[] = (() => {
+  const stones: SteppingStoneSpec[] = [];
+  const deepSegs = TRACK_SEGMENTS.filter((s) => s.isDeepWaterHazard);
+  if (deepSegs.length === 0) return stones;
+
+  const startD = deepSegs[0].startDist;
+  const endD = deepSegs[deepSegs.length - 1].endDist;
+  let stepIdx = 0;
+
+  for (let d = startD; d <= endD; d += 5.4) {
+    const s = sampleTrackAtDistance(d);
+    const isAnchor = d <= startD + 3.0 || d >= endD - 3.0;
+    const lat = isAnchor ? 0 : Math.sin(stepIdx * 1.15) * 1.35;
+    const rad = isAnchor ? 3.4 : 2.55;
+    stones.push({
+      id: `stone_main_${stepIdx}`,
+      trackDist: d,
+      lateralOffset: lat,
+      x: s.x + s.rightX * lat,
+      y: s.y,
+      z: s.z + s.rightZ * lat,
+      radius: rad,
+      yaw: Math.atan2(-s.dirX, -s.dirZ) + stepIdx * 0.4,
+    });
+
+    // Add a secondary staggered stone on every other step for dual-lane hopping
+    if (!isAnchor && stepIdx % 2 === 1) {
+      const altLat = -lat * 1.25;
+      stones.push({
+        id: `stone_alt_${stepIdx}`,
+        trackDist: d,
+        lateralOffset: altLat,
+        x: s.x + s.rightX * altLat,
+        y: s.y,
+        z: s.z + s.rightZ * altLat,
+        radius: 2.15,
+        yaw: Math.atan2(-s.dirX, -s.dirZ) - stepIdx * 0.5,
+      });
+    }
+    stepIdx++;
+  }
+  return stones;
+})();
 
 // ============================================================================
 // TRACK OBSTACLES & ITEMS DEFINITIONS ACROSS THE ~1,820u CIRCUIT
@@ -1342,6 +1616,12 @@ export function stepRaceSimulation(
       topSpeed *= 0.93;
     }
 
+    // Unavoidable Shallow Water Ford wading physics ("แอ่งน้ำตื้นที่ต้องลงน้ำโดยไม่มีทางหลีกเลี่ยง")
+    if (currentProj.isShallowWater && r.y - r.groundY < 0.25 && r.dashTimer <= 0) {
+      const wadeMult = r.passiveSkillId === 'slime_boots' ? 0.94 : 0.86;
+      topSpeed *= wadeMult;
+    }
+
     // Check Sticky Slime Pads (only if near ground level)
     let inSlime = false;
     if (r.y - r.groundY < 0.45 && r.dashTimer <= 0) {
@@ -1414,7 +1694,11 @@ export function stepRaceSimulation(
           moveDirX = rawX / mag;
           moveDirZ = rawZ / mag;
           if (r.whirlwindTimer <= 0) {
-            r.yaw = Math.atan2(-moveDirX, -moveDirZ);
+            const targetYaw = Math.atan2(-moveDirX, -moveDirZ);
+            let diff = targetYaw - r.yaw;
+            while (diff > Math.PI) diff -= Math.PI * 2;
+            while (diff < -Math.PI) diff += Math.PI * 2;
+            r.yaw += diff * Math.min(1, clampedDt * 18.0);
           }
         }
       }
@@ -1426,14 +1710,93 @@ export function stepRaceSimulation(
         r.botPreferredLane = (Math.random() - 0.5) * 3.4;
       }
 
-      const lookAheadDist = r.furthestCheckpointDist + 9.0;
+      const lookAheadDist = r.furthestCheckpointDist + 7.5;
       const sampleAhead = sampleTrackAtDistance(lookAheadDist);
-      const safeLane =
-        sampleAhead.isBridgeOverWater || sampleAhead.isHighBridge
-          ? r.botPreferredLane * 0.25
-          : r.botPreferredLane;
-      const targetX = sampleAhead.x + sampleAhead.rightX * safeLane;
-      const targetZ = sampleAhead.z + sampleAhead.rightZ * safeLane;
+
+      let targetX: number;
+      let targetZ: number;
+
+      // When approaching or crossing the Deep River Stepping-Stone Hazard, bots target the NEXT stone ahead and hop cleanly!
+      if (currentProj.isDeepWaterHazard || sampleAhead.isDeepWaterHazard) {
+        let minAheadDist = Infinity;
+        for (const st of RIVER_STEPPING_STONES) {
+          const d = st.trackDist - currentProj.trackDist;
+          if (d > 1.8 && d < minAheadDist) {
+            minAheadDist = d;
+          }
+        }
+
+        let nextStone: SteppingStoneSpec | null = null;
+        if (minAheadDist < Infinity) {
+          let bestLatDiff = Infinity;
+          for (const st of RIVER_STEPPING_STONES) {
+            const d = st.trackDist - currentProj.trackDist;
+            if (Math.abs(d - minAheadDist) < 1.2) {
+              const latDiff = Math.abs(
+                st.lateralOffset - r.botPreferredLane * 0.45
+              );
+              if (latDiff < bestLatDiff) {
+                bestLatDiff = latDiff;
+                nextStone = st;
+              }
+            }
+          }
+        }
+
+        if (nextStone) {
+          targetX = nextStone.x;
+          targetZ = nextStone.z;
+        } else {
+          // Past the final stepping stone -> aim straight for the solid riverbank ahead!
+          const lastStoneDist =
+            RIVER_STEPPING_STONES.length > 0
+              ? RIVER_STEPPING_STONES[RIVER_STEPPING_STONES.length - 1].trackDist
+              : currentProj.trackDist;
+          const exitBank = sampleTrackAtDistance(
+            Math.max(currentProj.trackDist + 6.5, lastStoneDist + 6.5)
+          );
+          targetX = exitBank.x;
+          targetZ = exitBank.z;
+        }
+
+        const toTargetX = targetX - r.x;
+        const toTargetZ = targetZ - r.z;
+        const distToTarget = Math.hypot(toTargetX, toTargetZ);
+        const dirToTargetX = distToTarget > 0.01 ? toTargetX / distToTarget : currentProj.dirX;
+        const dirToTargetZ = distToTarget > 0.01 ? toTargetZ / distToTarget : currentProj.dirZ;
+
+        // Check if the point just ahead of the bot's feet is over deep water (off the current stone edge)
+        const probeX = r.x + dirToTargetX * 1.15;
+        const probeZ = r.z + dirToTargetZ * 1.15;
+        const probeProj = projectPointToTrack(probeX, probeZ, currentProj.trackDist);
+        let probeOnStone = false;
+        if (probeProj.isDeepWaterHazard) {
+          for (const st of RIVER_STEPPING_STONES) {
+            if (Math.hypot(probeX - st.x, probeZ - st.z) <= st.radius + 0.15) {
+              probeOnStone = true;
+              break;
+            }
+          }
+        }
+
+        // Auto-hop right before leaving the stone edge or when within jump range of the next stone
+        if (
+          r.y <= r.groundY + 0.08 &&
+          ((probeProj.isDeepWaterHazard && !probeOnStone) ||
+            (distToTarget > 2.0 && distToTarget < 6.2))
+        ) {
+          r.vy = 12.4;
+          r.y = r.groundY + 0.12;
+          r.dashTimer = Math.max(r.dashTimer, 0.32);
+        }
+      } else {
+        const safeLane =
+          sampleAhead.isBridgeOverWater || sampleAhead.isHighBridge
+            ? r.botPreferredLane * 0.25
+            : r.botPreferredLane;
+        targetX = sampleAhead.x + sampleAhead.rightX * safeLane;
+        targetZ = sampleAhead.z + sampleAhead.rightZ * safeLane;
+      }
 
       const dx = targetX - r.x;
       const dz = targetZ - r.z;
@@ -1442,7 +1805,11 @@ export function stepRaceSimulation(
         moveDirX = dx / mag;
         moveDirZ = dz / mag;
         if (r.whirlwindTimer <= 0) {
-          r.yaw = Math.atan2(-moveDirX, -moveDirZ);
+          const targetYaw = Math.atan2(-moveDirX, -moveDirZ);
+          let diff = targetYaw - r.yaw;
+          while (diff > Math.PI) diff -= Math.PI * 2;
+          while (diff < -Math.PI) diff += Math.PI * 2;
+          r.yaw += diff * Math.min(1, clampedDt * 14.0);
         }
       }
 
@@ -1457,17 +1824,29 @@ export function stepRaceSimulation(
         topSpeed *= 0.985;
       }
 
-      if (r.y <= r.groundY + 0.05 && inSlime && Math.random() < 0.08) {
+      if (r.y <= r.groundY + 0.05 && (inSlime || currentProj.isShallowWater) && Math.random() < 0.08) {
         r.vy = 11.0;
         r.y = r.groundY + 0.08;
       }
-      if (r.qCooldown <= 0 && Math.random() < 0.016) {
+      if (
+        r.qCooldown <= 0 &&
+        !currentProj.isDeepWaterHazard &&
+        Math.random() < 0.016
+      ) {
         activateRacerSkillQ(state, r);
       }
-      if (r.heldItem && Math.random() < 0.025) {
+      if (
+        r.heldItem &&
+        !currentProj.isDeepWaterHazard &&
+        Math.random() < 0.025
+      ) {
         activateRacerItemE(state, r);
       }
-      if (r.fCooldown <= 0 && Math.random() < 0.03) {
+      if (
+        r.fCooldown <= 0 &&
+        !currentProj.isDeepWaterHazard &&
+        Math.random() < 0.03
+      ) {
         for (const other of state.racers) {
           if (other.id !== r.id && Math.hypot(other.x - r.x, other.z - r.z) < 2.2) {
             activateRacerSlapF(state, r);
@@ -1480,7 +1859,7 @@ export function stepRaceSimulation(
     // Apply velocity & knockback decay
     const targetVx = moveDirX * topSpeed;
     const targetVz = moveDirZ * topSpeed;
-    const accel = r.y > r.groundY + 0.08 ? 4.8 : 11.5;
+    const accel = r.y > r.groundY + 0.15 ? 6.5 : 12.0;
     r.vx += (targetVx - r.vx) * Math.min(1, accel * clampedDt);
     r.vz += (targetVz - r.vz) * Math.min(1, accel * clampedDt);
 
@@ -1554,6 +1933,22 @@ export function stepRaceSimulation(
       }
     }
 
+    // Soft Racer-vs-Racer body bump separation (skip while hopping across deep water stones)
+    if (!currentProj.isDeepWaterHazard) {
+      for (const other of state.racers) {
+        if (other.id === r.id || other.finished) continue;
+        const dx = r.x - other.x;
+        const dz = r.z - other.z;
+        const dist = Math.hypot(dx, dz);
+        const minSep = 1.12;
+        if (dist < minSep && dist > 0.001) {
+          const push = (minSep - dist) * 4.5 * clampedDt;
+          r.x += (dx / dist) * push;
+          r.z += (dz / dist) * push;
+        }
+      }
+    }
+
     // Integrate horizontal position
     r.x += (r.vx + r.knockVx) * clampedDt;
     r.z += (r.vz + r.knockVz) * clampedDt;
@@ -1567,9 +1962,11 @@ export function stepRaceSimulation(
     const nextGroundY = proj.closestY;
 
     // Integrate vertical jump / gravity relative to undulating 3D track elevation
-    const wasAirborne = r.y > r.groundY + 0.08;
+    // Use 0.24 threshold when vy == 0 so downhill slopes never cause rapid run<->jump flickering!
+    const isActivelyJumping =
+      r.vy > 0 || (r.vy < 0 && r.y > nextGroundY + 0.02) || r.y > nextGroundY + 0.24;
     r.groundY = nextGroundY;
-    if (wasAirborne || r.vy > 0) {
+    if (isActivelyJumping) {
       r.y += r.vy * clampedDt;
       r.vy -= 28.0 * clampedDt; // crisp gravity
       if (r.y <= r.groundY) {
@@ -1614,9 +2011,72 @@ export function stepRaceSimulation(
 
     const halfWidth = proj.width * 0.5;
 
-    // Water Pond Bridge OR High Viaduct Bridge Fall & Instant Checkpoint Respawn!
+    // Check if racer is in the Deep Water Hazard section ("จุดที่เป็นน้ำลึกที่ตกแล้วตาย แต่จะมีก้อนหินโผล่ขึ้นมาให้กระโดดได้")
+    let onSteppingStone: SteppingStoneSpec | null = null;
+    if (proj.isDeepWaterHazard) {
+      const stoneMargin = r.isPlayer ? 0.38 : 0.65;
+      for (const stone of RIVER_STEPPING_STONES) {
+        if (
+          Math.hypot(r.x - stone.x, r.z - stone.z) <=
+          stone.radius + stoneMargin
+        ) {
+          onSteppingStone = stone;
+          break;
+        }
+      }
+
+      // If not standing on a stepping stone and not jumping in the air -> FALL INTO DEEP WATER & DIE/RESPAWN!
+      if (!onSteppingStone && r.y <= r.groundY + 0.16) {
+        r.x = r.checkpointX;
+        r.y = r.checkpointY + 0.65;
+        r.z = r.checkpointZ;
+        r.yaw = r.checkpointYaw;
+        r.vx = 0;
+        r.vz = 0;
+        r.knockVx = 0;
+        r.knockVz = 0;
+        r.respawnBlinkTimer = 1.4;
+        r.stunTimer = 0.25;
+        // If a bot somehow falls in deep water, advance it to the next stepping stone so it never loops
+        if (!r.isPlayer) {
+          let rescueStone = RIVER_STEPPING_STONES[0];
+          for (const st of RIVER_STEPPING_STONES) {
+            if (st.trackDist >= r.furthestCheckpointDist - 1.0) {
+              rescueStone = st;
+              break;
+            }
+          }
+          if (rescueStone) {
+            r.x = rescueStone.x;
+            r.y = rescueStone.y + 0.4;
+            r.z = rescueStone.z;
+            r.groundY = rescueStone.y;
+            r.furthestCheckpointDist = Math.max(
+              r.furthestCheckpointDist,
+              rescueStone.trackDist
+            );
+          }
+        }
+        if (r.isPlayer) {
+          state.bannerCallout = {
+            text: 'DEEP WATER! JUMP ON THE STEPPING STONES!',
+            colorHex: '#0284C7',
+            ttl: 1.5,
+          };
+        }
+        pushEvent(
+          state,
+          `🌊 ${r.spec.shortName} sank in Deep Water! Hop on the stones!`,
+          '#0284C7'
+        );
+        continue;
+      }
+    }
+
+    // Wooden Plank Bridge OR High Viaduct Bridge Fall & Instant Checkpoint Respawn!
     if (
       (proj.isBridgeOverWater || proj.isHighBridge) &&
+      !proj.isDeepWaterHazard &&
       Math.abs(proj.lateralOffset) > halfWidth + 0.35 &&
       r.y <= r.groundY + 0.35
     ) {
@@ -1633,8 +2093,8 @@ export function stepRaceSimulation(
       if (r.isPlayer) {
         state.bannerCallout = {
           text: proj.isBridgeOverWater
-            ? 'SPLASH! RESPAWNED AT CHECKPOINT!'
-            : 'FELL OFF HIGH BRIDGE! RESPAWNED!',
+            ? 'SPLASH! FELL OFF TIMBER PLANK BRIDGE!'
+            : 'FELL OFF CANOPY PLANK BRIDGE!',
           colorHex: '#06B6D4',
           ttl: 1.3,
         };
@@ -1642,17 +2102,18 @@ export function stepRaceSimulation(
       pushEvent(
         state,
         proj.isBridgeOverWater
-          ? `💦 ${r.spec.shortName} splashed into the Lagoon!`
-          : `☁️ ${r.spec.shortName} fell off the High Viaduct Bridge!`,
+          ? `💦 ${r.spec.shortName} fell off the Timber Plank Bridge!`
+          : `🌲 ${r.spec.shortName} fell off the Canopy Plank Bridge!`,
         '#06B6D4'
       );
       continue;
     }
 
-    // Soft guard curbs on normal road segments
+    // Soft guard curbs (Wooden Fences / Bush Hedges) on normal road & shallow water segments
     if (
       !proj.isBridgeOverWater &&
       !proj.isHighBridge &&
+      !proj.isDeepWaterHazard &&
       Math.abs(proj.lateralOffset) > halfWidth
     ) {
       const clampedLat = Math.sign(proj.lateralOffset) * halfWidth;
@@ -1669,13 +2130,23 @@ export function stepRaceSimulation(
         r.furthestCheckpointDist = proj.trackDist;
         r.totalProgress = proj.trackDist;
 
-        const safeSample = sampleTrackAtDistance(
-          Math.max(2, proj.trackDist - 2.5)
-        );
-        r.checkpointX = safeSample.x;
-        r.checkpointY = safeSample.y;
-        r.checkpointZ = safeSample.z;
-        r.checkpointYaw = Math.atan2(-safeSample.dirX, -safeSample.dirZ);
+        // Only save safe respawn checkpoints on solid ground or on a stepping stone
+        if (onSteppingStone) {
+          r.checkpointX = onSteppingStone.x;
+          r.checkpointY = onSteppingStone.y;
+          r.checkpointZ = onSteppingStone.z;
+          r.checkpointYaw = Math.atan2(-proj.dirX, -proj.dirZ);
+        } else if (!proj.isDeepWaterHazard) {
+          const safeSample = sampleTrackAtDistance(
+            Math.max(2, proj.trackDist - 2.5)
+          );
+          if (!safeSample.isDeepWaterHazard) {
+            r.checkpointX = safeSample.x;
+            r.checkpointY = safeSample.y;
+            r.checkpointZ = safeSample.z;
+            r.checkpointYaw = Math.atan2(-safeSample.dirX, -safeSample.dirZ);
+          }
+        }
       } else {
         r.totalProgress = Math.max(0, proj.trackDist);
       }
@@ -1703,35 +2174,14 @@ export function stepRaceSimulation(
       }
     }
 
-    // Update animation pose (`1. idle`, `2. jump`, `3. run`)
+    // Update animation pose (`1. idle`, `2. jump`, `3. run`) with hysteresis to prevent rapid flickering
     const groundSpeed = Math.hypot(r.vx, r.vz);
-    if (r.y > r.groundY + 0.12) {
+    if (r.y > r.groundY + 0.15 || r.vy > 1.0) {
       r.pose = 'jump';
-    } else if (groundSpeed > 1.2) {
+    } else if (groundSpeed > (r.pose === 'run' ? 0.85 : 1.35)) {
       r.pose = 'run';
     } else {
       r.pose = 'idle';
-    }
-  }
-
-  // Soft Racer-vs-Racer body bump separation
-  for (let i = 0; i < state.racers.length; i++) {
-    for (let j = i + 1; j < state.racers.length; j++) {
-      const a = state.racers[i];
-      const b = state.racers[j];
-      const dx = b.x - a.x;
-      const dz = b.z - a.z;
-      const dist = Math.hypot(dx, dz);
-      const minSep = 1.15;
-      if (dist < minSep && dist > 0.001) {
-        const overlap = (minSep - dist) * 0.5;
-        const nx = dx / dist;
-        const nz = dz / dist;
-        a.x -= nx * overlap;
-        a.z -= nz * overlap;
-        b.x += nx * overlap;
-        b.z += nz * overlap;
-      }
     }
   }
 

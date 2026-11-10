@@ -94,6 +94,15 @@ test('run pose features forward lean, alternating limb swings, and left-right ta
   assert.ok(strideA.leftArmRotZ < 0 && strideA.rightArmRotZ > 0, 'arms stay outside torso in run');
 });
 
+test('cool hero stance features proud chest-out lean, left hand on hip, right hero flex, and rhythmic groove', () => {
+  const f0 = computeCharacterKinematics('cool', 0.0, 1.0, 1.0);
+  const f1 = computeCharacterKinematics('cool', 0.22, 1.0, 1.0);
+  assert.ok(f1.rootRotX < -0.02, 'cool stance leans chest proudly back');
+  assert.ok(f1.leftArmRotZ < -0.4, 'left arm is cocked on hip');
+  assert.ok(f1.rightArmRotZ > 0.5, 'right arm performs confident hero flex');
+  assert.notEqual(f0.tailRotY, f1.tailRotY, 'tail wags to the groove beat');
+});
+
 test('skill system provides 5 Active Skills and 5 Passive Skills with valid character defaults', () => {
   const activeKeys = Object.keys(ACTIVE_SKILLS);
   const passiveKeys = Object.keys(PASSIVE_SKILLS);

@@ -68,10 +68,10 @@ export const GitAgentHubModal: React.FC<GitAgentHubModalProps> = ({
         {/* Navigation Tabs for Repo Folders */}
         <div className="mt-3 flex flex-wrap items-center gap-1.5 bg-[#F3E8D6] p-1.5 rounded-2xl border border-[#DFC9AE]">
           {[
-            { id: 'topology' as const, label: 'Git Branch & PR #1 Graph' },
+            { id: 'topology' as const, label: 'Git Branch & Task Queue' },
+            { id: 'tasks' as const, label: 'tasks/TASK-002 (OPEN → Agent 2)' },
+            { id: 'plans' as const, label: 'plans/PLAN-002' },
             { id: 'reviews' as const, label: 'reviews/PR-001 (APPROVED)' },
-            { id: 'tasks' as const, label: 'tasks/TASK-001 (MERGED)' },
-            { id: 'plans' as const, label: 'plans/PLAN-001' },
             { id: 'memory' as const, label: 'memory/shared_context' },
             { id: 'agents_md' as const, label: 'agents.md' },
           ].map((tab) => (
@@ -94,50 +94,49 @@ export const GitAgentHubModal: React.FC<GitAgentHubModalProps> = ({
         <div className="mt-4 flex-1 overflow-y-auto pr-1 space-y-4">
           {activeTab === 'topology' && (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-              {/* Left: Real Git Branch Graph & Merged PR #1 */}
+              {/* Left: Real Git Branch Graph & Merged PR #1 + Open TASK-002 */}
               <div className="lg:col-span-7 bg-[#2B2118] text-[#FFFDF9] rounded-2xl p-4 border-2 border-[#2B2118]">
                 <div className="flex items-center justify-between pb-2.5 border-b border-white/15">
                   <span className="text-xs font-extrabold text-[#F59E0B] flex items-center gap-1.5">
                     <GitBranch className="w-4 h-4" />
-                    <span>GitHub PalsRush-3D · PR #1 Merged Topology</span>
+                    <span>GitHub PalsRush-3D · Multi-Agent Git Bus</span>
                   </span>
-                  <span className="text-[11px] font-mono text-[#A3E635] flex items-center gap-1">
-                    <GitMerge className="w-3.5 h-3.5" />
-                    <span>PR #1 MERGED</span>
+                  <span className="text-[11px] font-mono text-[#FDE047] flex items-center gap-1">
+                    <GitPullRequest className="w-3.5 h-3.5" />
+                    <span>TASK-002 DISPATCHED → AGENT 2</span>
                   </span>
                 </div>
 
                 <pre className="mt-3 text-xs font-mono leading-relaxed text-[#F3E8D6] overflow-x-auto">
 {`* commit (HEAD -> main) [agent-lead-architect]
+| feat(lobby): add TASK-002 spec for Agent 2 + 3D character preview & cool pose
+|   • Dispatched: tasks/TASK-002-character-avatars.md (Status: OPEN)
+|   • Target branch for Agent 2: agent/asset-gen/character-avatars
+* commit [agent-lead-architect]
 | feat(hud): review PR-001 & wire 20 PNGs + dynamic SVG rank shield into HUD
 *   Merge pull request #1 from agent/asset-gen/hud-icons-and-banners
 |\\  • Audited in: reviews/PR-001-hud-assets-review.md (0 src/ conflicts)
-| |
 | * 26273c0 (origin/pr/1, agent/asset-gen/hud-icons-and-banners)
-| | style(tasks): normalize task file ending
-| * 0bb239d docs(tasks): record TASK-001 review pull request
-| * 944c8f1 feat(assets): deliver TASK-001 party race HUD art
 |/  • 20 PNGs + 1 Dynamic SVG + hud_icon_manifest.json (SHA-256 verified)
-* d8f2432 (origin/main) fix: transition game assets to PNG-first policy
-* a5a78aa feat: add multi-agent Git protocol and HUD controls`}
+* d8f2432 (origin/main) fix: transition game assets to PNG-first policy`}
                 </pre>
 
                 <div className="mt-3 pt-3 border-t border-white/15 grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
                   <div className="bg-white/10 rounded-xl p-2">
                     <div className="text-[10px] text-[#D8C5AC]">tasks/</div>
-                    <div className="text-xs font-extrabold text-[#A3E635] mt-0.5">
-                      TASK-001 (MERGED)
+                    <div className="text-xs font-extrabold text-[#FDE047] mt-0.5">
+                      TASK-002 (OPEN)
                     </div>
                   </div>
                   <div className="bg-white/10 rounded-xl p-2">
                     <div className="text-[10px] text-[#D8C5AC]">plans/</div>
                     <div className="text-xs font-extrabold text-[#38BDF8] mt-0.5">
-                      PLAN-001 (DONE)
+                      PLAN-002 (ACTIVE)
                     </div>
                   </div>
                   <div className="bg-white/10 rounded-xl p-2">
                     <div className="text-[10px] text-[#D8C5AC]">memory/</div>
-                    <div className="text-xs font-extrabold text-[#FDE047] mt-0.5">
+                    <div className="text-xs font-extrabold text-[#A3E635] mt-0.5">
                       shared_context.md
                     </div>
                   </div>
@@ -221,8 +220,8 @@ export const GitAgentHubModal: React.FC<GitAgentHubModalProps> = ({
                 </div>
 
                 <div className="mt-3 pt-2.5 border-t border-[#E5D9C5] text-[11px] text-[#5C4938] flex items-center justify-between">
-                  <span>PR #1: samabogbog/PalsRush-3D/pull/1</span>
-                  <span className="font-bold text-[#2B2118]">Status: MERGED</span>
+                  <span>Next PR: agent/asset-gen/character-avatars</span>
+                  <span className="font-bold text-[#C86D3B]">TASK-002 OPEN</span>
                 </div>
               </div>
             </div>
@@ -263,39 +262,77 @@ export const GitAgentHubModal: React.FC<GitAgentHubModalProps> = ({
           )}
 
           {activeTab === 'tasks' && (
-            <div className="bg-[#F8F2E8] border-2 border-[#E5D9C5] rounded-2xl p-4 space-y-2.5 text-xs">
-              <div className="flex items-center justify-between border-b border-[#E5D9C5] pb-2">
-                <span className="font-extrabold text-[#2B2118] flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-[#7E9B6B]" />
-                  <span>/tasks/TASK-001-hud-assets.md — Delivered by agent-asset-gen</span>
-                </span>
-                <span className="font-mono text-[11px] bg-[#DCFCE7] text-[#15803D] px-2 py-0.5 rounded font-bold">
-                  Status: MERGED (PR #1)
-                </span>
+            <div className="space-y-3 text-xs">
+              <div className="bg-[#F8F2E8] border-2 border-[#F59E0B] rounded-2xl p-4 space-y-2">
+                <div className="flex items-center justify-between border-b border-[#E5D9C5] pb-2">
+                  <span className="font-extrabold text-[#2B2118] flex items-center gap-1.5">
+                    <Sparkles className="w-4 h-4 text-[#F59E0B]" />
+                    <span>/tasks/TASK-002-character-avatars.md — Assigned to agent-asset-gen (Agent 2)</span>
+                  </span>
+                  <span className="font-mono text-[11px] bg-[#FEF3C7] text-[#B45309] px-2 py-0.5 rounded font-bold border border-[#F59E0B]">
+                    Status: OPEN (Awaiting Agent 2 PR)
+                  </span>
+                </div>
+                <p className="text-[#5C4938]">
+                  Specifies all <strong>16 playable character avatar PNG portraits</strong> (<code>512×512</code>) in{' '}
+                  <code>public/assets/game/avatars/avatar_&lt;char_id&gt;.png</code> +{' '}
+                  <code>avatar_manifest.json</code> on branch <code>agent/asset-gen/character-avatars</code>.
+                  UI components are pre-wired with <code>&lt;CharacterAvatarEmblem /&gt;</code> so icons auto-populate upon PR merge.
+                </p>
               </div>
-              <p className="text-[#5C4938]">
-                All 7 checklist items completed by <code>agent-asset-gen</code> on
-                branch <code>agent/asset-gen/hud-icons-and-banners</code> (commit{' '}
-                <code>26273c0</code>) and merged into <code>main</code> after review.
-              </p>
+
+              <div className="bg-[#F8F2E8] border-2 border-[#E5D9C5] rounded-2xl p-4 space-y-2">
+                <div className="flex items-center justify-between border-b border-[#E5D9C5] pb-2">
+                  <span className="font-extrabold text-[#2B2118] flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4 text-[#7E9B6B]" />
+                    <span>/tasks/TASK-001-hud-assets.md — Delivered by agent-asset-gen</span>
+                  </span>
+                  <span className="font-mono text-[11px] bg-[#DCFCE7] text-[#15803D] px-2 py-0.5 rounded font-bold">
+                    Status: MERGED (PR #1)
+                  </span>
+                </div>
+                <p className="text-[#5C4938]">
+                  All 7 checklist items completed by <code>agent-asset-gen</code> on
+                  branch <code>agent/asset-gen/hud-icons-and-banners</code> (commit{' '}
+                  <code>26273c0</code>) and merged into <code>main</code> after review.
+                </p>
+              </div>
             </div>
           )}
 
           {activeTab === 'plans' && (
-            <div className="bg-[#F8F2E8] border-2 border-[#E5D9C5] rounded-2xl p-4 space-y-2.5 text-xs">
-              <div className="flex items-center justify-between border-b border-[#E5D9C5] pb-2">
-                <span className="font-extrabold text-[#2B2118] flex items-center gap-1.5">
-                  <GitPullRequest className="w-4 h-4 text-[#C86D3B]" />
-                  <span>/plans/PLAN-001-game-hud-overhaul.md — Lead Architect Blueprint</span>
-                </span>
-                <span className="font-mono text-[11px] text-[#15803D] font-bold">
-                  Phase 1–3 Complete
-                </span>
+            <div className="space-y-3 text-xs">
+              <div className="bg-[#F8F2E8] border-2 border-[#38BDF8] rounded-2xl p-4 space-y-2">
+                <div className="flex items-center justify-between border-b border-[#E5D9C5] pb-2">
+                  <span className="font-extrabold text-[#2B2118] flex items-center gap-1.5">
+                    <GitPullRequest className="w-4 h-4 text-[#0284C7]" />
+                    <span>/plans/PLAN-002-character-avatars-and-3d-lobby.md — Sprint 02 Blueprint</span>
+                  </span>
+                  <span className="font-mono text-[11px] text-[#0284C7] font-bold">
+                    Track B Live · Track A Dispatched
+                  </span>
+                </div>
+                <p className="text-[#5C4938]">
+                  <strong>Track A:</strong> Dispatched <code>TASK-002</code> to Agent 2 (<code>agent-asset-gen</code>) for 16 character avatar PNGs.<br />
+                  <strong>Track B:</strong> Added unified <code>&apos;cool&apos;</code> hero idle stance animation &amp; Live 3D Character Preview Stage alongside the character selection grid.
+                </p>
               </div>
-              <p className="text-[#5C4938]">
-                Completed full multi-agent cycle: Task Dispatch → Isolated Asset
-                Branch & PR #1 → Lead Architect Review & HUD Integration.
-              </p>
+
+              <div className="bg-[#F8F2E8] border-2 border-[#E5D9C5] rounded-2xl p-4 space-y-2">
+                <div className="flex items-center justify-between border-b border-[#E5D9C5] pb-2">
+                  <span className="font-extrabold text-[#2B2118] flex items-center gap-1.5">
+                    <GitPullRequest className="w-4 h-4 text-[#C86D3B]" />
+                    <span>/plans/PLAN-001-game-hud-overhaul.md — Sprint 01 Blueprint</span>
+                  </span>
+                  <span className="font-mono text-[11px] text-[#15803D] font-bold">
+                    Phase 1–3 Complete
+                  </span>
+                </div>
+                <p className="text-[#5C4938]">
+                  Completed full multi-agent cycle: Task Dispatch → Isolated Asset
+                  Branch &amp; PR #1 → Lead Architect Review &amp; HUD Integration.
+                </p>
+              </div>
             </div>
           )}
 
@@ -311,7 +348,7 @@ export const GitAgentHubModal: React.FC<GitAgentHubModalProps> = ({
               </div>
               <p className="text-[#5C4938]">
                 Shared semantic colors and PNG-First naming invariants verified
-                against <code>public/assets/game/hud_icon_manifest.json</code>.
+                for both <code>TASK-001</code> (HUD icons) and <code>TASK-002</code> (16 Character Avatars in <code>public/assets/game/avatars/</code>).
               </p>
             </div>
           )}

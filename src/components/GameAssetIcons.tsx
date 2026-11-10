@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import {
   ActiveSkillId,
+  CharacterId,
   ItemId,
   PassiveSkillId,
 } from '../models/characterTypes';
@@ -14,6 +15,29 @@ export const GAME_BANNER_ASSETS = {
   victoryTrophyEmblem: '/assets/game/victory_trophy_emblem.png',
   circuitMapCard: '/assets/game/circuit_map_card.png',
 } as const;
+
+/**
+ * Target 16 Character Avatar PNG paths specified in `tasks/TASK-002-character-avatars.md`
+ * for `agent-asset-gen` (Agent 2) on branch `agent/asset-gen/character-avatars`.
+ */
+export const CHARACTER_AVATAR_PATHS: Record<CharacterId, string> = {
+  bear: '/assets/game/avatars/avatar_bear.png',
+  panda: '/assets/game/avatars/avatar_panda.png',
+  red_panda: '/assets/game/avatars/avatar_red_panda.png',
+  raccoon: '/assets/game/avatars/avatar_raccoon.png',
+  cat: '/assets/game/avatars/avatar_cat.png',
+  dog: '/assets/game/avatars/avatar_dog.png',
+  sheep: '/assets/game/avatars/avatar_sheep.png',
+  pig: '/assets/game/avatars/avatar_pig.png',
+  elephant: '/assets/game/avatars/avatar_elephant.png',
+  hippo: '/assets/game/avatars/avatar_hippo.png',
+  lion: '/assets/game/avatars/avatar_lion.png',
+  tiger: '/assets/game/avatars/avatar_tiger.png',
+  penguin: '/assets/game/avatars/avatar_penguin.png',
+  duck: '/assets/game/avatars/avatar_duck.png',
+  owl: '/assets/game/avatars/avatar_owl.png',
+  frog: '/assets/game/avatars/avatar_frog.png',
+};
 
 export const ACTIVE_SKILL_ICON_PATHS: Record<ActiveSkillId, string> = {
   dash: '/assets/game/icons/skill_dash.png',
@@ -43,6 +67,70 @@ export const ACTION_ICON_PATHS = {
   slap: '/assets/game/icons/hud_action_slap.png',
   hop: '/assets/game/icons/hud_action_hop.png',
 } as const;
+
+/**
+ * Character Avatar Emblem (`TASK-002`):
+ * Automatically renders `/assets/game/avatars/avatar_<id>.png` once Agent 2's PR is merged,
+ * and falls back to a tactile blocky chibi color-block badge while `TASK-002` is OPEN.
+ */
+export const CharacterAvatarEmblem: React.FC<{
+  characterId: CharacterId;
+  primaryHex: string;
+  secondaryHex: string;
+  accentHex?: string;
+  size?: number;
+  className?: string;
+}> = ({
+  characterId,
+  primaryHex,
+  secondaryHex,
+  accentHex = '#F59E0B',
+  size = 34,
+  className = '',
+}) => {
+  const [loaded, setLoaded] = useState(false);
+  const [failed, setFailed] = useState(false);
+
+  return (
+    <div
+      style={{
+        width: size,
+        height: size,
+        backgroundColor: loaded ? 'transparent' : primaryHex,
+      }}
+      className={`relative shrink-0 rounded-xl border-2 border-[#2B2118] flex items-center justify-center overflow-hidden shadow-2xs ${className}`}
+    >
+      {!failed && (
+        <img
+          src={CHARACTER_AVATAR_PATHS[characterId]}
+          alt={characterId}
+          width={size}
+          height={size}
+          onLoad={() => setLoaded(true)}
+          onError={() => setFailed(true)}
+          className={`w-full h-full object-cover transition-opacity duration-150 ${
+            loaded ? 'opacity-100' : 'opacity-0 absolute inset-0'
+          }`}
+        />
+      )}
+      {!loaded && (
+        <>
+          {/* Blocky Chibi Ears + Muzzle + Eyes + Accessory Band Fallback */}
+          <span
+            className="w-[46%] h-[42%] rounded-full border border-black/25 flex items-center justify-center"
+            style={{ backgroundColor: secondaryHex }}
+          />
+          <span className="absolute top-[28%] left-[24%] w-1.5 h-1.5 rounded-full bg-[#2B2118]" />
+          <span className="absolute top-[28%] right-[24%] w-1.5 h-1.5 rounded-full bg-[#2B2118]" />
+          <span
+            className="absolute bottom-0 inset-x-0 h-[20%] border-t border-black/25"
+            style={{ backgroundColor: accentHex }}
+          />
+        </>
+      )}
+    </div>
+  );
+};
 
 const SKILL_COLOR_MAP: Record<ActiveSkillId, { bg: string; code: string }> = {
   dash: { bg: '#F59E0B', code: 'DSH' },

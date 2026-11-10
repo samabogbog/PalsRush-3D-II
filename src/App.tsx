@@ -52,6 +52,9 @@ export default function App() {
     type: 'q' | 'e' | 'f' | 'jump' | null;
     seq: number;
   }>({ type: null, seq: 0 });
+  const [spectatedRacerId, setSpectatedRacerId] = useState<CharacterId | null>(
+    null
+  );
   const joystickInputRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
 
   const selectedCharacter = getCharacterByIndex(selectedIndex);
@@ -84,6 +87,9 @@ export default function App() {
       finished: false,
       finishTimeSec: null,
       progressPercent: 0,
+      x: (idx % 4 - 1.5) * 2.2,
+      z: 14 + Math.floor(idx / 4) * 3.2,
+      yaw: 0,
     })),
     events: [],
     bannerCallout: null,
@@ -197,6 +203,7 @@ export default function App() {
               isLobbyOpen={isRaceLobbyOpen}
               externalActionTrigger={externalActionTrigger}
               joystickInputRef={joystickInputRef}
+              spectatedRacerId={spectatedRacerId}
               onHudUpdate={setHudSnapshot}
             />
             <RaceHudOverlay
@@ -210,10 +217,12 @@ export default function App() {
               onSelectPassiveSkill={setSelectedPassiveSkillId}
               onStartRace={() => {
                 setIsRaceLobbyOpen(false);
+                setSpectatedRacerId(null);
                 setRaceSessionKey((k) => k + 1);
               }}
               onRestartRace={() => {
                 setIsRaceLobbyOpen(false);
+                setSpectatedRacerId(null);
                 setRaceSessionKey((k) => k + 1);
               }}
               onOpenLobby={() => setIsRaceLobbyOpen(true)}
@@ -221,6 +230,8 @@ export default function App() {
               onSwitchToStudio={() => setAppMode('studio')}
               onTriggerAction={handleTriggerRaceAction}
               onJoystickChange={handleJoystickChange}
+              spectatedRacerId={spectatedRacerId}
+              onSelectSpectatedRacer={setSpectatedRacerId}
             />
           </>
         ) : (
