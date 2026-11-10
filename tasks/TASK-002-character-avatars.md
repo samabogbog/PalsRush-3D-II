@@ -2,10 +2,10 @@
 
 - **Task ID**: `TASK-002`
 - **Title**: 16 Chibi Animal Character Avatar Icons for Selection Grid, Live Standings, Spectator Bar & Podium UI
-- **Status**: `OPEN` *(Awaiting `agent-asset-gen` / Agent 2 Pull Request)*
+- **Status**: `MERGED` *(Reviewed in `reviews/PR-002-character-avatars-review.md` & wired into all HUD/Lobby mount points)*
 - **Assigned To**: `agent-asset-gen` (Agent 2 — Visual Asset Specialist)
 - **Author / Reviewer**: `agent-lead-architect` (Agent 1 — Lead Architect & Integrator)
-- **Target Branch**: `agent/asset-gen/character-avatars`
+- **Target Branch**: `agent/asset-gen/character-avatars` (`2e4f29b`)
 - **Base Branch**: `main`
 - **Related Plan**: `plans/PLAN-002-character-avatars-and-3d-lobby.md`
 
@@ -135,8 +135,20 @@ Once `agent-asset-gen` opens the Pull Request and `agent-lead-architect` merges 
 
 ## 7. Acceptance Criteria Checklist (For `agent-asset-gen` PR Submission)
 
-- [ ] All 16 `avatar_<id>.png` files exist in `public/assets/game/avatars/` at `512×512` resolution.
-- [ ] `public/assets/game/avatars/avatar_manifest.json` exists and lists all 16 character IDs.
-- [ ] Each avatar matches the character's primary/secondary/accent hex colors and signature accessory in §4.
-- [ ] Zero text/letters/numbers baked into any PNG image.
-- [ ] Zero modifications to `src/**` files in the `agent/asset-gen/character-avatars` branch.
+- [x] All 16 `avatar_<id>.png` files exist in `public/assets/game/avatars/` at `512×512` resolution.
+- [x] `public/assets/game/avatars/avatar_manifest.json` exists and lists all 16 character IDs.
+- [x] Each avatar matches the character's primary/secondary/accent hex colors and signature accessory in §4.
+- [x] Zero text/letters/numbers baked into any PNG image.
+- [x] Zero modifications to `src/**` files in the `agent/asset-gen/character-avatars` branch.
+
+
+### Delivery checklist — 2026-11-10
+
+- [x] Generated one image per character using built-in `image_gen` (16 generations); no CLI/API fallback.
+- [x] Prompt set: each character specification from section 4, with centered 3/4 rounded-block chibi bust, soft-touch vinyl/clay, warm top-left key and golden rim light, espresso outline and cream badge, transparent outside, no text/numbers/watermark.
+- [x] Preserved alpha and proportionally normalized each silhouette into centered 450px bounds on a 512px transparent canvas (87.9% occupancy).
+- [x] Manifest lists all 16 exact IDs, names, paths, dimensions, SHA-256 checksums, and generation provenance.
+- [x] Verified all files decode as 512x512 RGBA PNG, transparent corners, complete unique IDs, valid paths and matching checksums.
+- [x] Visually inspected all portraits together on warm ivory and at 24/28/48px on espresso; character identities and signature accessories remain distinguishable. No baked text observed.
+- [x] Changes limited to avatar delivery paths and this task's status/checklist; no source changes.
+- [x] Lead Architect review, merge and in-game verification at every planned UI mount point.

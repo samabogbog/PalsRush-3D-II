@@ -771,7 +771,7 @@ export const RaceHudOverlay: React.FC<RaceHudOverlayProps> = ({
 
           {/* Compact Arcade Top-3 Standings Pill Board + Live Track Minimap (Side-by-side for zero vertical crowding on mobile & desktop) */}
           <div className="flex items-start gap-1.5 sm:gap-2">
-            <div className="bg-[#2B2118]/90 text-[#FFFDF9] border-3 border-[#1A130D] border-b-5 rounded-2xl px-2.5 py-1.5 shadow-lg w-34 sm:w-42 space-y-0.5 sm:space-y-1">
+            <div className="bg-[#2B2118]/90 text-[#FFFDF9] border-3 border-[#1A130D] border-b-5 rounded-2xl px-2 py-1.5 shadow-lg w-38 sm:w-46 space-y-0.5 sm:space-y-1">
               {hud.standings.slice(0, 3).map((r) => (
                 <div
                   key={r.id}
@@ -781,11 +781,12 @@ export const RaceHudOverlay: React.FC<RaceHudOverlayProps> = ({
                       : 'text-[#F3E8D6]'
                   }`}
                 >
-                  <div className="flex items-center gap-1 truncate">
+                  <div className="flex items-center gap-1.5 truncate">
                     <span className="font-black">{r.rank}.</span>
-                    <span
-                      className="w-2.5 h-2.5 rounded-full shrink-0 border border-black/40"
-                      style={{ backgroundColor: r.primaryHex }}
+                    <CharacterAvatarEmblem
+                      characterId={r.id}
+                      primaryHex={r.primaryHex}
+                      size={20}
                     />
                     <span className="truncate">{r.shortName}</span>
                   </div>
@@ -1178,7 +1179,7 @@ export const RaceHudOverlay: React.FC<RaceHudOverlayProps> = ({
                               primaryHex={char.primaryHex}
                               secondaryHex={char.secondaryHex}
                               accentHex={char.accentHex}
-                              size={32}
+                              size={42}
                             />
                             <span className="text-[10px] sm:text-[11px] font-black truncate max-w-full">
                               {char.shortName}
@@ -1186,7 +1187,15 @@ export const RaceHudOverlay: React.FC<RaceHudOverlayProps> = ({
                           </button>
 
                           {/* Character Hover Tooltip */}
-                          <div className="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150 absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-40 w-44 bg-[#2B2118] text-[#FFFDF9] border-2 border-[#F59E0B] rounded-2xl p-2.5 shadow-xl text-center">
+                          <div className="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150 absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-40 w-48 bg-[#2B2118] text-[#FFFDF9] border-2 border-[#F59E0B] rounded-2xl p-2.5 shadow-xl text-center">
+                            <CharacterAvatarEmblem
+                              characterId={char.id}
+                              primaryHex={char.primaryHex}
+                              secondaryHex={char.secondaryHex}
+                              accentHex={char.accentHex}
+                              size={44}
+                              className="mx-auto mb-1"
+                            />
                             <div className="text-xs font-black text-[#FDE047]">
                               #{char.index + 1} {char.name}
                             </div>
@@ -1358,11 +1367,10 @@ export const RaceHudOverlay: React.FC<RaceHudOverlayProps> = ({
                       <Eye className="w-4 h-4 text-[#38BDF8] shrink-0" />
                       {spectatedEntry && (
                         <>
-                          <span
-                            className="w-3 h-3 rounded-full border border-white/60 shrink-0"
-                            style={{
-                              backgroundColor: spectatedEntry.primaryHex,
-                            }}
+                          <CharacterAvatarEmblem
+                            characterId={spectatedEntry.id}
+                            primaryHex={spectatedEntry.primaryHex}
+                            size={24}
                           />
                           <span className="text-xs sm:text-sm font-black text-[#FDE047]">
                             #{spectatedEntry.rank} {spectatedEntry.shortName}
@@ -1427,9 +1435,10 @@ export const RaceHudOverlay: React.FC<RaceHudOverlayProps> = ({
                             : 'bg-[#1A130D]/70 text-[#F3E8D6] border-[#FFFDF9]/15 hover:bg-[#3D3024]'
                         }`}
                       >
-                        <span
-                          className="w-2.5 h-2.5 rounded-full shrink-0 border border-black/40"
-                          style={{ backgroundColor: r.primaryHex }}
+                        <CharacterAvatarEmblem
+                          characterId={r.id}
+                          primaryHex={r.primaryHex}
+                          size={20}
                         />
                         <span>
                           {r.rank}. {r.shortName}
@@ -1496,9 +1505,10 @@ export const RaceHudOverlay: React.FC<RaceHudOverlayProps> = ({
                     >
                       <div className="flex items-center gap-1.5 truncate">
                         <span className="font-black">{r.rank}.</span>
-                        <span
-                          className="w-2.5 h-2.5 rounded-full shrink-0 border border-black/40"
-                          style={{ backgroundColor: r.primaryHex }}
+                        <CharacterAvatarEmblem
+                          characterId={r.id}
+                          primaryHex={r.primaryHex}
+                          size={26}
                         />
                         <span className="truncate">
                           {r.shortName} {r.isPlayer ? '(YOU)' : ''}

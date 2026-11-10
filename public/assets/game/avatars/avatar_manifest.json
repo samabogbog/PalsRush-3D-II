@@ -1,0 +1,142 @@
+{
+  "taskId": "TASK-002",
+  "agent": "agent-asset-gen",
+  "resolution": "512x512",
+  "format": "png",
+  "generation": {
+    "tool": "built-in image_gen",
+    "date": "2026-11-10",
+    "promptSet": "TASK-002 sections 3-4: individual character subject, exact palette and signature accessory; centered 3/4 blocky chibi bust, soft-touch vinyl/clay, warm top-left key and golden rim light, espresso outline, cream badge, transparent outside, no text/numbers/watermark. One generation per character.",
+    "normalization": "Preserve alpha; crop alpha bounds and proportionally downsample into centered 450px bounds on 512px transparent canvas."
+  },
+  "avatars": [
+    {
+      "id": "bear",
+      "name": "Bramble Bear",
+      "path": "/assets/game/avatars/avatar_bear.png",
+      "width": 512,
+      "height": 512,
+      "sha256": "0209ea1df884ead7dc70a358955830ca34f057982cb6083b31b4096ac053cc11"
+    },
+    {
+      "id": "panda",
+      "name": "Mochi Panda",
+      "path": "/assets/game/avatars/avatar_panda.png",
+      "width": 512,
+      "height": 512,
+      "sha256": "bb001f8a5dde5ded0f97c4f94f068d04f171e435b67eecf524a0ab2456f79ba6"
+    },
+    {
+      "id": "red_panda",
+      "name": "Rusty Red Panda",
+      "path": "/assets/game/avatars/avatar_red_panda.png",
+      "width": 512,
+      "height": 512,
+      "sha256": "fcfb72c4b37eba6bea55339b3101e3f82a2599f97a712804646ecceb0029a3d2"
+    },
+    {
+      "id": "raccoon",
+      "name": "Bandit Raccoon",
+      "path": "/assets/game/avatars/avatar_raccoon.png",
+      "width": 512,
+      "height": 512,
+      "sha256": "15395a1755c62e679aca23725aa74bf450351e4c824056e348a9b8bb993185e6"
+    },
+    {
+      "id": "cat",
+      "name": "Marmalade Cat",
+      "path": "/assets/game/avatars/avatar_cat.png",
+      "width": 512,
+      "height": 512,
+      "sha256": "1370868a9a856c46159c08682b77e0eca3bcf71eb9b264445f358973ef8e6992"
+    },
+    {
+      "id": "dog",
+      "name": "Biscuit Puppy",
+      "path": "/assets/game/avatars/avatar_dog.png",
+      "width": 512,
+      "height": 512,
+      "sha256": "acc04d1d3098ce550e998d021e0adca0ba51332f931c03d5b2d55c61d9385ea0"
+    },
+    {
+      "id": "sheep",
+      "name": "Cloudy Sheep",
+      "path": "/assets/game/avatars/avatar_sheep.png",
+      "width": 512,
+      "height": 512,
+      "sha256": "71f34f4fad9d506871498114ee96e433d6ca11bfb6a4719d1db55b1aa511db9a"
+    },
+    {
+      "id": "pig",
+      "name": "Peachy Piglet",
+      "path": "/assets/game/avatars/avatar_pig.png",
+      "width": 512,
+      "height": 512,
+      "sha256": "76d8bd90a64136bccc63092967a26e859b3e97af7dabb9f35b51158b6c2df148"
+    },
+    {
+      "id": "elephant",
+      "name": "Bumbo Elephant",
+      "path": "/assets/game/avatars/avatar_elephant.png",
+      "width": 512,
+      "height": 512,
+      "sha256": "662cd395efa22185f245f0b8f540b6f1dacef4e6c6a4116878bb41cc099ecfce"
+    },
+    {
+      "id": "hippo",
+      "name": "Bubbles Hippo",
+      "path": "/assets/game/avatars/avatar_hippo.png",
+      "width": 512,
+      "height": 512,
+      "sha256": "092fda7f2a5c1c5bbf72db7026babd34654c8d7808535e1f53e6277bc4a97d42"
+    },
+    {
+      "id": "lion",
+      "name": "Sunny Lion",
+      "path": "/assets/game/avatars/avatar_lion.png",
+      "width": 512,
+      "height": 512,
+      "sha256": "b79e6b0d19cbb77107ffa0dcac4660e48267019a67f76ab91c90948553c697d3"
+    },
+    {
+      "id": "tiger",
+      "name": "Tango Tiger",
+      "path": "/assets/game/avatars/avatar_tiger.png",
+      "width": 512,
+      "height": 512,
+      "sha256": "60e3e1a24a5397755e31c502fa05d077fe2a8f650c8bff3df720a74801a75b7f"
+    },
+    {
+      "id": "penguin",
+      "name": "Puddle Penguin",
+      "path": "/assets/game/avatars/avatar_penguin.png",
+      "width": 512,
+      "height": 512,
+      "sha256": "3bf15d363638d431c39b22382df47f16122c7ffa11bee90a032d2a1a068504ef"
+    },
+    {
+      "id": "duck",
+      "name": "Quackers Duck",
+      "path": "/assets/game/avatars/avatar_duck.png",
+      "width": 512,
+      "height": 512,
+      "sha256": "84df7a14f0ce74b595391b87d39d1b950ea22e3f64530c590091f584d99c3b86"
+    },
+    {
+      "id": "owl",
+      "name": "Hooty Owl",
+      "path": "/assets/game/avatars/avatar_owl.png",
+      "width": 512,
+      "height": 512,
+      "sha256": "0e4ba51b22eed145b23de26cbfffc6d0924068b6ee1f61ef5bf8c527027f352d"
+    },
+    {
+      "id": "frog",
+      "name": "Matcha Frog",
+      "path": "/assets/game/avatars/avatar_frog.png",
+      "width": 512,
+      "height": 512,
+      "sha256": "45f7ebf4419e79e6876f388275720a24724096007954aea0edc30910ef58d078"
+    }
+  ]
+}

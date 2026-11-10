@@ -13,9 +13,11 @@ import {
 import {
   ACTION_ICON_PATHS,
   ACTIVE_SKILL_ICON_PATHS,
+  CHARACTER_AVATAR_PATHS,
   GAME_BANNER_ASSETS,
   PRANK_ITEM_ICON_PATHS,
 } from './GameAssetIcons';
+import { CHARACTERS } from '../models/characterTypes';
 
 export interface GitAgentHubModalProps {
   isOpen: boolean;
@@ -48,10 +50,10 @@ export const GitAgentHubModal: React.FC<GitAgentHubModalProps> = ({
             </div>
             <div>
               <h2 className="text-lg font-extrabold text-[#2B2118]">
-                Multi-Agent Git Message Bus & PR #1 Review Hub
+                Multi-Agent Git Message Bus &amp; PR Review Hub
               </h2>
               <p className="text-xs text-[#6E5A47]">
-                PR #1 from agent-asset-gen Reviewed, Approved & Merged into main (20 PNGs + 1 Dynamic SVG)
+                TASK-001 (HUD Art) &amp; TASK-002 (16 Character Avatars by Agent 2) Reviewed, Approved &amp; Merged into main
               </p>
             </div>
           </div>
@@ -68,10 +70,10 @@ export const GitAgentHubModal: React.FC<GitAgentHubModalProps> = ({
         {/* Navigation Tabs for Repo Folders */}
         <div className="mt-3 flex flex-wrap items-center gap-1.5 bg-[#F3E8D6] p-1.5 rounded-2xl border border-[#DFC9AE]">
           {[
-            { id: 'topology' as const, label: 'Git Branch & Task Queue' },
-            { id: 'tasks' as const, label: 'tasks/TASK-002 (OPEN → Agent 2)' },
-            { id: 'plans' as const, label: 'plans/PLAN-002' },
-            { id: 'reviews' as const, label: 'reviews/PR-001 (APPROVED)' },
+            { id: 'topology' as const, label: 'Git Branch & PR #2 Merged' },
+            { id: 'reviews' as const, label: 'reviews/PR-002 (APPROVED)' },
+            { id: 'tasks' as const, label: 'tasks/TASK-002 (MERGED)' },
+            { id: 'plans' as const, label: 'plans/PLAN-002 (DONE)' },
             { id: 'memory' as const, label: 'memory/shared_context' },
             { id: 'agents_md' as const, label: 'agents.md' },
           ].map((tab) => (
@@ -94,190 +96,200 @@ export const GitAgentHubModal: React.FC<GitAgentHubModalProps> = ({
         <div className="mt-4 flex-1 overflow-y-auto pr-1 space-y-4">
           {activeTab === 'topology' && (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-              {/* Left: Real Git Branch Graph & Merged PR #1 + Open TASK-002 */}
+              {/* Left: Real Git Branch Graph & Merged TASK-002 */}
               <div className="lg:col-span-7 bg-[#2B2118] text-[#FFFDF9] rounded-2xl p-4 border-2 border-[#2B2118]">
                 <div className="flex items-center justify-between pb-2.5 border-b border-white/15">
                   <span className="text-xs font-extrabold text-[#F59E0B] flex items-center gap-1.5">
                     <GitBranch className="w-4 h-4" />
-                    <span>GitHub PalsRush-3D · Multi-Agent Git Bus</span>
+                    <span>GitHub PalsRush-3D-II · Multi-Agent Git Bus</span>
                   </span>
-                  <span className="text-[11px] font-mono text-[#FDE047] flex items-center gap-1">
-                    <GitPullRequest className="w-3.5 h-3.5" />
-                    <span>TASK-002 DISPATCHED → AGENT 2</span>
+                  <span className="text-[11px] font-mono text-[#A3E635] flex items-center gap-1">
+                    <GitMerge className="w-3.5 h-3.5" />
+                    <span>TASK-002 MERGED</span>
                   </span>
                 </div>
 
                 <pre className="mt-3 text-xs font-mono leading-relaxed text-[#F3E8D6] overflow-x-auto">
 {`* commit (HEAD -> main) [agent-lead-architect]
-| feat(lobby): add TASK-002 spec for Agent 2 + 3D character preview & cool pose
-|   • Dispatched: tasks/TASK-002-character-avatars.md (Status: OPEN)
-|   • Target branch for Agent 2: agent/asset-gen/character-avatars
-* commit [agent-lead-architect]
-| feat(hud): review PR-001 & wire 20 PNGs + dynamic SVG rank shield into HUD
-*   Merge pull request #1 from agent/asset-gen/hud-icons-and-banners
-|\\  • Audited in: reviews/PR-001-hud-assets-review.md (0 src/ conflicts)
-| * 26273c0 (origin/pr/1, agent/asset-gen/hud-icons-and-banners)
-|/  • 20 PNGs + 1 Dynamic SVG + hud_icon_manifest.json (SHA-256 verified)
-* d8f2432 (origin/main) fix: transition game assets to PNG-first policy`}
+| feat(ui): review PR-002 & wire 16 character avatars across Lobby, HUD & Podium
+*   Merge pull request #1 (TASK-002) from agent/asset-gen/character-avatars
+|\\  • Audited in: reviews/PR-002-character-avatars-review.md (0 src/ conflicts)
+| |
+| * 2e4f29b (origin/pr/1, origin/agent/asset-gen/character-avatars)
+|/  feat(assets): deliver TASK-002 character avatars and manifest
+|   • 16 RGBA PNGs (512x512) + avatar_manifest.json (SHA-256 verified)
+* 3580235 (origin/main) feat: implement character avatar and race spectating
+* ceb5016 feat: initialize project scaffolding and agent protocols`}
                 </pre>
 
                 <div className="mt-3 pt-3 border-t border-white/15 grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
                   <div className="bg-white/10 rounded-xl p-2">
                     <div className="text-[10px] text-[#D8C5AC]">tasks/</div>
-                    <div className="text-xs font-extrabold text-[#FDE047] mt-0.5">
-                      TASK-002 (OPEN)
+                    <div className="text-xs font-extrabold text-[#A3E635] mt-0.5">
+                      TASK-002 (MERGED)
                     </div>
                   </div>
                   <div className="bg-white/10 rounded-xl p-2">
                     <div className="text-[10px] text-[#D8C5AC]">plans/</div>
                     <div className="text-xs font-extrabold text-[#38BDF8] mt-0.5">
-                      PLAN-002 (ACTIVE)
+                      PLAN-002 (DONE)
                     </div>
                   </div>
                   <div className="bg-white/10 rounded-xl p-2">
                     <div className="text-[10px] text-[#D8C5AC]">memory/</div>
-                    <div className="text-xs font-extrabold text-[#A3E635] mt-0.5">
+                    <div className="text-xs font-extrabold text-[#FDE047] mt-0.5">
                       shared_context.md
                     </div>
                   </div>
                   <div className="bg-white/10 rounded-xl p-2">
                     <div className="text-[10px] text-[#D8C5AC]">reviews/</div>
                     <div className="text-xs font-extrabold text-[#F472B6] mt-0.5">
-                      PR-001 (APPROVED)
+                      PR-002 (APPROVED)
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Right: Live Preview of PR #1 Delivered PNG Assets */}
+              {/* Right: Live Preview of PR-002 (16 Character Avatars) + PR-001 Assets */}
               <div className="lg:col-span-5 bg-[#F8F2E8] border-2 border-[#E5D9C5] rounded-2xl p-4 flex flex-col justify-between">
                 <div>
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-extrabold text-[#2B2118] flex items-center gap-1.5">
                       <Sparkles className="w-4 h-4 text-[#C86D3B]" />
-                      <span>PR #1 Delivered Assets (20 PNGs + 1 SVG)</span>
+                      <span>Agent 2 Delivered Avatars (16× 512×512 PNG)</span>
                     </span>
-                    <span className="text-[11px] font-mono text-[#7E9B6B] font-bold">
-                      SHA-256 Verified
+                    <span className="text-[11px] font-mono text-[#15803D] font-bold">
+                      16/16 SHA-256 PASS
                     </span>
                   </div>
 
-                  <div className="mt-3 space-y-2.5">
+                  {/* 16 Character Avatars Grid */}
+                  <div className="mt-2.5 grid grid-cols-8 gap-1.5 bg-[#2B2118] p-2.5 rounded-2xl border border-[#1A130D]">
+                    {CHARACTERS.map((char) => (
+                      <div
+                        key={char.id}
+                        className="flex flex-col items-center"
+                        title={`#${char.index + 1} ${char.name} (${CHARACTER_AVATAR_PATHS[char.id]})`}
+                      >
+                        <img
+                          src={CHARACTER_AVATAR_PATHS[char.id]}
+                          alt={char.name}
+                          className="w-9 h-9 object-contain"
+                        />
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="mt-2.5 grid grid-cols-2 gap-2">
                     <div className="rounded-xl overflow-hidden border border-[#D9C8B0] bg-[#2B2118]">
                       <img
                         src={GAME_BANNER_ASSETS.raceCrestBanner}
                         alt="race_crest_banner.png"
-                        className="w-full h-24 object-cover"
+                        className="w-full h-16 object-cover"
                       />
-                      <div className="px-2.5 py-1 text-[10px] font-mono text-[#FFFDF9] flex justify-between">
-                        <span>race_crest_banner.png (1280×720)</span>
-                        <span className="text-[#A3E635]">PR #1 Merged</span>
+                      <div className="px-2 py-0.5 text-[10px] font-mono text-[#FFFDF9] truncate">
+                        TASK-001 Banners &amp; HUD
                       </div>
                     </div>
-
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="rounded-xl overflow-hidden border border-[#D9C8B0] bg-[#2B2118]">
-                        <img
-                          src={GAME_BANNER_ASSETS.circuitMapCard}
-                          alt="circuit_map_card.png"
-                          className="w-full h-20 object-cover"
-                        />
-                        <div className="px-2 py-1 text-[10px] font-mono text-[#FFFDF9] truncate">
-                          circuit_map_card.png
-                        </div>
-                      </div>
-                      <div className="rounded-xl overflow-hidden border border-[#D9C8B0] bg-[#2B2118] flex items-center gap-2 p-2">
-                        <img
-                          src={GAME_BANNER_ASSETS.victoryTrophyEmblem}
-                          alt="victory_trophy_emblem.png"
-                          className="w-14 h-14 rounded-lg object-cover shrink-0"
-                        />
-                        <div className="flex flex-wrap gap-1">
-                          <img
-                            src={ACTIVE_SKILL_ICON_PATHS.dash}
-                            alt="skill_dash.png"
-                            className="w-6 h-6 object-contain"
-                          />
-                          <img
-                            src={PRANK_ITEM_ICON_PATHS.glove}
-                            alt="item_glove.png"
-                            className="w-6 h-6 object-contain"
-                          />
-                          <img
-                            src={ACTION_ICON_PATHS.slap}
-                            alt="hud_action_slap.png"
-                            className="w-6 h-6 object-contain"
-                          />
-                          <img
-                            src={ACTION_ICON_PATHS.hop}
-                            alt="hud_action_hop.png"
-                            className="w-6 h-6 object-contain"
-                          />
-                        </div>
-                      </div>
+                    <div className="rounded-xl overflow-hidden border border-[#D9C8B0] bg-[#2B2118] flex items-center justify-center gap-1.5 p-2">
+                      <img
+                        src={ACTIVE_SKILL_ICON_PATHS.dash}
+                        alt="skill_dash.png"
+                        className="w-7 h-7 object-contain"
+                      />
+                      <img
+                        src={PRANK_ITEM_ICON_PATHS.glove}
+                        alt="item_glove.png"
+                        className="w-7 h-7 object-contain"
+                      />
+                      <img
+                        src={ACTION_ICON_PATHS.slap}
+                        alt="hud_action_slap.png"
+                        className="w-7 h-7 object-contain"
+                      />
+                      <img
+                        src={ACTION_ICON_PATHS.hop}
+                        alt="hud_action_hop.png"
+                        className="w-7 h-7 object-contain"
+                      />
                     </div>
                   </div>
                 </div>
 
                 <div className="mt-3 pt-2.5 border-t border-[#E5D9C5] text-[11px] text-[#5C4938] flex items-center justify-between">
-                  <span>Next PR: agent/asset-gen/character-avatars</span>
-                  <span className="font-bold text-[#C86D3B]">TASK-002 OPEN</span>
+                  <span>Branch: agent/asset-gen/character-avatars (2e4f29b)</span>
+                  <span className="font-bold text-[#15803D]">MERGED</span>
                 </div>
               </div>
             </div>
           )}
 
           {activeTab === 'reviews' && (
-            <div className="bg-[#F8F2E8] border-2 border-[#E5D9C5] rounded-2xl p-4 space-y-2.5 text-xs">
-              <div className="flex items-center justify-between border-b border-[#E5D9C5] pb-2">
-                <span className="font-extrabold text-[#2B2118] flex items-center gap-1.5">
-                  <ShieldCheck className="w-4 h-4 text-[#7E9B6B]" />
-                  <span>/reviews/PR-001-hud-assets-review.md — Lead Architect Audit</span>
-                </span>
-                <span className="font-mono text-[11px] text-[#7E9B6B] font-bold flex items-center gap-1">
-                  <GitMerge className="w-3.5 h-3.5" />
-                  <span>APPROVED & MERGED</span>
-                </span>
+            <div className="space-y-3 text-xs">
+              <div className="bg-[#F8F2E8] border-2 border-[#7E9B6B] rounded-2xl p-4 space-y-2.5">
+                <div className="flex items-center justify-between border-b border-[#E5D9C5] pb-2">
+                  <span className="font-extrabold text-[#2B2118] flex items-center gap-1.5">
+                    <ShieldCheck className="w-4 h-4 text-[#15803D]" />
+                    <span>/reviews/PR-002-character-avatars-review.md — Lead Architect Audit</span>
+                  </span>
+                  <span className="font-mono text-[11px] text-[#15803D] font-bold flex items-center gap-1">
+                    <GitMerge className="w-3.5 h-3.5" />
+                    <span>APPROVED &amp; MERGED</span>
+                  </span>
+                </div>
+                <ul className="space-y-1.5 text-[#5C4938]">
+                  <li>
+                    • <strong>Path Isolation:</strong> PASS — 17 files in{' '}
+                    <code>public/assets/game/avatars/**</code> + 1 update in{' '}
+                    <code>tasks/TASK-002-character-avatars.md</code>. Zero files modified in{' '}
+                    <code>src/</code>.
+                  </li>
+                  <li>
+                    • <strong>16 Character Portraits (512×512 RGBA PNG):</strong> PASS — All 16{' '}
+                    <code>avatar_&lt;id&gt;.png</code> files verified against{' '}
+                    <code>avatar_manifest.json</code> SHA-256 checksums and PNG IHDR headers.
+                  </li>
+                  <li>
+                    • <strong>UI Mount Points Wired:</strong> Character Selection Grid, Hover Tooltips,
+                    Loadout Strip, Top-Right Live Standings, Spectator Bar, and Post-Race Podium.
+                  </li>
+                </ul>
               </div>
-              <ul className="space-y-1.5 text-[#5C4938]">
-                <li>
-                  • <strong>Path Isolation:</strong> PASS — 22 asset files in{' '}
-                  <code>public/assets/game/**</code> + 1 update in{' '}
-                  <code>tasks/TASK-001-hud-assets.md</code>. Zero files modified in{' '}
-                  <code>src/</code>.
-                </li>
-                <li>
-                  • <strong>PNG-First Policy:</strong> PASS — 3 PNG banners
-                  (1280×720, 800×800) + 17 PNG HUD icons (512×512 with transparent
-                  corners) verified against SHA-256 manifest.
-                </li>
-                <li>
-                  • <strong>Dynamic SVG Exception:</strong> PASS — Inlined{' '}
-                  <code>hud_rank_shield_frame.svg</code> with dynamic{' '}
-                  <code>--shield-outer</code> / <code>--shield-inner</code> rank
-                  colors and live ordinal text at <code>(32, 38)</code>.
-                </li>
-              </ul>
+
+              <div className="bg-[#F8F2E8] border-2 border-[#E5D9C5] rounded-2xl p-4 space-y-2">
+                <div className="flex items-center justify-between border-b border-[#E5D9C5] pb-2">
+                  <span className="font-extrabold text-[#2B2118] flex items-center gap-1.5">
+                    <ShieldCheck className="w-4 h-4 text-[#7E9B6B]" />
+                    <span>/reviews/PR-001-hud-assets-review.md — Lead Architect Audit</span>
+                  </span>
+                  <span className="font-mono text-[11px] text-[#7E9B6B] font-bold">
+                    APPROVED &amp; MERGED
+                  </span>
+                </div>
+                <p className="text-[#5C4938]">
+                  20 HUD PNGs + 1 Dynamic SVG Rank Shield delivered in Sprint 01.
+                </p>
+              </div>
             </div>
           )}
 
           {activeTab === 'tasks' && (
             <div className="space-y-3 text-xs">
-              <div className="bg-[#F8F2E8] border-2 border-[#F59E0B] rounded-2xl p-4 space-y-2">
+              <div className="bg-[#F8F2E8] border-2 border-[#7E9B6B] rounded-2xl p-4 space-y-2">
                 <div className="flex items-center justify-between border-b border-[#E5D9C5] pb-2">
                   <span className="font-extrabold text-[#2B2118] flex items-center gap-1.5">
-                    <Sparkles className="w-4 h-4 text-[#F59E0B]" />
-                    <span>/tasks/TASK-002-character-avatars.md — Assigned to agent-asset-gen (Agent 2)</span>
+                    <CheckCircle2 className="w-4 h-4 text-[#15803D]" />
+                    <span>/tasks/TASK-002-character-avatars.md — Delivered by agent-asset-gen (Agent 2)</span>
                   </span>
-                  <span className="font-mono text-[11px] bg-[#FEF3C7] text-[#B45309] px-2 py-0.5 rounded font-bold border border-[#F59E0B]">
-                    Status: OPEN (Awaiting Agent 2 PR)
+                  <span className="font-mono text-[11px] bg-[#DCFCE7] text-[#15803D] px-2 py-0.5 rounded font-bold">
+                    Status: MERGED (2e4f29b)
                   </span>
                 </div>
                 <p className="text-[#5C4938]">
-                  Specifies all <strong>16 playable character avatar PNG portraits</strong> (<code>512×512</code>) in{' '}
-                  <code>public/assets/game/avatars/avatar_&lt;char_id&gt;.png</code> +{' '}
-                  <code>avatar_manifest.json</code> on branch <code>agent/asset-gen/character-avatars</code>.
-                  UI components are pre-wired with <code>&lt;CharacterAvatarEmblem /&gt;</code> so icons auto-populate upon PR merge.
+                  All 16 playable character avatar PNG portraits (<code>512×512</code>) and{' '}
+                  <code>avatar_manifest.json</code> delivered on branch{' '}
+                  <code>agent/asset-gen/character-avatars</code>, audited in{' '}
+                  <code>reviews/PR-002-character-avatars-review.md</code>, and wired into all UI surfaces.
                 </p>
               </div>
 
@@ -288,13 +300,12 @@ export const GitAgentHubModal: React.FC<GitAgentHubModalProps> = ({
                     <span>/tasks/TASK-001-hud-assets.md — Delivered by agent-asset-gen</span>
                   </span>
                   <span className="font-mono text-[11px] bg-[#DCFCE7] text-[#15803D] px-2 py-0.5 rounded font-bold">
-                    Status: MERGED (PR #1)
+                    Status: MERGED (26273c0)
                   </span>
                 </div>
                 <p className="text-[#5C4938]">
                   All 7 checklist items completed by <code>agent-asset-gen</code> on
-                  branch <code>agent/asset-gen/hud-icons-and-banners</code> (commit{' '}
-                  <code>26273c0</code>) and merged into <code>main</code> after review.
+                  branch <code>agent/asset-gen/hud-icons-and-banners</code> and merged into <code>main</code>.
                 </p>
               </div>
             </div>
@@ -302,18 +313,18 @@ export const GitAgentHubModal: React.FC<GitAgentHubModalProps> = ({
 
           {activeTab === 'plans' && (
             <div className="space-y-3 text-xs">
-              <div className="bg-[#F8F2E8] border-2 border-[#38BDF8] rounded-2xl p-4 space-y-2">
+              <div className="bg-[#F8F2E8] border-2 border-[#7E9B6B] rounded-2xl p-4 space-y-2">
                 <div className="flex items-center justify-between border-b border-[#E5D9C5] pb-2">
                   <span className="font-extrabold text-[#2B2118] flex items-center gap-1.5">
-                    <GitPullRequest className="w-4 h-4 text-[#0284C7]" />
+                    <GitPullRequest className="w-4 h-4 text-[#15803D]" />
                     <span>/plans/PLAN-002-character-avatars-and-3d-lobby.md — Sprint 02 Blueprint</span>
                   </span>
-                  <span className="font-mono text-[11px] text-[#0284C7] font-bold">
-                    Track B Live · Track A Dispatched
+                  <span className="font-mono text-[11px] text-[#15803D] font-bold">
+                    Track A &amp; Track B Complete
                   </span>
                 </div>
                 <p className="text-[#5C4938]">
-                  <strong>Track A:</strong> Dispatched <code>TASK-002</code> to Agent 2 (<code>agent-asset-gen</code>) for 16 character avatar PNGs.<br />
+                  <strong>Track A:</strong> Reviewed &amp; merged Agent 2&apos;s 16 character avatar PNGs (<code>TASK-002</code>) into all UI mount points.<br />
                   <strong>Track B:</strong> Added unified <code>&apos;cool&apos;</code> hero idle stance animation &amp; Live 3D Character Preview Stage alongside the character selection grid.
                 </p>
               </div>
