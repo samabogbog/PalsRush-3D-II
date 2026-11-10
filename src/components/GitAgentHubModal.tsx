@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   GitBranch,
   GitMerge,
@@ -32,16 +32,31 @@ export const GitAgentHubModal: React.FC<GitAgentHubModalProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<HubTab>('topology');
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   return (
     <div
+      onClick={onClose}
       className="pointer-events-auto fixed inset-0 z-40 flex items-center justify-center bg-black/65 p-4 select-none"
       role="dialog"
       aria-modal="true"
       aria-label="Multi-Agent Git Collaboration Hub"
     >
-      <div className="bg-[#FFFDF9] border-2 border-[#2B2118] border-b-8 rounded-3xl max-w-5xl w-full p-5 sm:p-6 shadow-2xl max-h-[90vh] flex flex-col">
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="bg-[#FFFDF9] border-2 border-[#2B2118] border-b-8 rounded-3xl max-w-5xl w-full p-5 sm:p-6 shadow-2xl max-h-[90vh] flex flex-col"
+      >
         {/* Top Header */}
         <div className="flex items-center justify-between gap-4 pb-3.5 border-b-2 border-[#E5D9C5]">
           <div className="flex items-center gap-3">
@@ -60,10 +75,10 @@ export const GitAgentHubModal: React.FC<GitAgentHubModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="px-3.5 py-1.5 rounded-xl bg-[#2B2118] text-[#FFFDF9] text-xs font-extrabold border-2 border-[#2B2118] border-b-4 active:translate-y-0.5 flex items-center gap-1.5 whitespace-nowrap shrink-0"
+            className="px-3.5 py-2 rounded-xl bg-[#EF4444] hover:bg-[#DC2626] text-white text-xs font-extrabold border-2 border-[#2B2118] border-b-4 active:translate-y-0.5 flex items-center gap-1.5 whitespace-nowrap shrink-0"
           >
-            <X className="w-4 h-4" />
-            <span>Back to Game</span>
+            <X className="w-4 h-4 stroke-[2.8]" />
+            <span>ปิดหน้าต่าง (Close)</span>
           </button>
         </div>
 

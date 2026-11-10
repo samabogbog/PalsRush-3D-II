@@ -17,6 +17,10 @@ import {
   stepRaceSimulation,
   TOTAL_TRACK_LENGTH,
   TRACK_SEGMENTS,
+  RIVER_STEPPING_STONES,
+  TRACK_CATALOG,
+  setActiveTrack,
+  getActiveTrackId,
 } from '../game/raceEngine';
 
 test('all 16 chibi characters across 4 rows are defined in order matching reference image', () => {
@@ -178,4 +182,26 @@ test('Party Race engine spawns 8 racers with custom 1-of-5 Active & 1-of-5 Passi
   });
   assert.ok(state.elapsedRaceSec > 0, 'elapsedRaceSec advances during racing phase');
 });
+
+test('setActiveTrack switches cleanly between woodland and snow_glacier with ice chutes and iceberg stones', () => {
+  assert.ok(TRACK_CATALOG.woodland && TRACK_CATALOG.snow_glacier);
+  setActiveTrack('snow_glacier');
+  assert.equal(getActiveTrackId(), 'snow_glacier');
+  assert.equal(TRACK_SEGMENTS.length, 280);
+  assert.ok(
+    TOTAL_TRACK_LENGTH > 1700 && TOTAL_TRACK_LENGTH < 2150,
+    `expected ~1845u snow circuit, got ${TOTAL_TRACK_LENGTH}`
+  );
+  const hasIceSurface = TRACK_SEGMENTS.some((s) => s.surfaceType === 'ice');
+  const hasPackedSnow = TRACK_SEGMENTS.some((s) => s.surfaceType === 'packed_snow');
+  assert.ok(hasIceSurface, 'snow_glacier track should include glossy ice chute segments');
+  assert.ok(hasPackedSnow, 'snow_glacier track should include packed snow segments');
+  assert.ok(RIVER_STEPPING_STONES.length >= 15, 'snow_glacier should generate floating iceberg stepping stones');
+
+  // Switch back to woodland cleanly
+  setActiveTrack('woodland');
+  assert.equal(getActiveTrackId(), 'woodland');
+  assert.equal(TRACK_SEGMENTS.length, 280);
+});
+
 

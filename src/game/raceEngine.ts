@@ -12,13 +12,54 @@ import {
   PassiveSkillId,
 } from '../models/characterTypes';
 
+export type TrackId = 'woodland' | 'snow_glacier';
+
+export interface TrackMetadata {
+  id: TrackId;
+  name: string;
+  thaiName: string;
+  subtitle: string;
+  badgeText: string;
+  accentHex: string;
+  secondaryHex: string;
+  lengthLabel: string;
+  features: string[];
+}
+
+export const TRACK_CATALOG: Record<TrackId, TrackMetadata> = {
+  woodland: {
+    id: 'woodland',
+    name: 'Woodland Forest Circuit',
+    thaiName: 'สนามป่ามหัศจรรย์ (Woodland Forest)',
+    subtitle: 'Dense Pine Woods • Shallow Creek • Plank Bridges • River Stones',
+    badgeText: 'FOREST TRAIL',
+    accentHex: '#10B981',
+    secondaryHex: '#C86D3B',
+    lengthLabel: '1,820m',
+    features: ['Shallow Creek Ford', 'Canopy Plank Bridge', 'Deep River Stones'],
+  },
+  snow_glacier: {
+    id: 'snow_glacier',
+    name: 'Glacier Peak Circuit',
+    thaiName: 'สนามหิมะและถ้ำคริสตัลน้ำแข็ง (Glacier Peak)',
+    subtitle: 'Ice Palace • Aurora Crystal Bridge • Bobsled Ice Chute • Iceberg Hop',
+    badgeText: 'SNOW & ICE',
+    accentHex: '#38BDF8',
+    secondaryHex: '#818CF8',
+    lengthLabel: '1,845m',
+    features: ['Ice Palace & Igloos', 'Crystal Sky Bridge', 'Arctic Iceberg Hop'],
+  },
+};
+
 export type TrackSurfaceType =
   | 'dirt'
   | 'cobble'
   | 'brick'
   | 'wood_plank'
   | 'shallow_water'
-  | 'deep_water';
+  | 'deep_water'
+  | 'ice'
+  | 'packed_snow';
 
 export type TrackBorderType = 'wood_fence' | 'bush_hedge' | 'none';
 
@@ -376,6 +417,310 @@ export const TRACK_CONTROL_POINTS: TrackWaypoint[] = [
   },
 ];
 
+/**
+ * 28 Control Points defining the spectacular Snow & Ice Grand Circuit (~1,845u):
+ * "Glacier Peak Circuit" — featuring Nordic Ski Chalet Village, Slushy Meltwater Ford,
+ * Crystal Ice-Brick Ascent, Aurora Crystal Plank Sky Bridge, Olympic Bobsled Ice Chute,
+ * Sub-Zero Arctic River with Floating 3D Icebergs/Ice Floes to hop across,
+ * Glowing Ice Cavern Rib Tunnel, and the Grand Ice Palace Final Sprint!
+ */
+export const SNOW_TRACK_CONTROL_POINTS: TrackWaypoint[] = [
+  // 0..1: Frostbite Nordic Ski Village (Packed Snow + Candy-Cane / Frost Fence)
+  {
+    x: 0,
+    y: 0.0,
+    z: 18,
+    width: 11.4,
+    zoneName: 'Frostbite Ski Chalet Plaza',
+    surfaceType: 'packed_snow',
+    borderType: 'wood_fence',
+  },
+  {
+    x: 0,
+    y: 0.0,
+    z: -46,
+    width: 11.0,
+    zoneName: 'Snowman & Igloo Promenade',
+    surfaceType: 'packed_snow',
+    borderType: 'wood_fence',
+  },
+
+  // 2..3: Unavoidable Slushy Glacial Meltwater Stream (Must wade through icy slush!)
+  {
+    x: -36,
+    y: 0.0,
+    z: -112,
+    width: 11.4,
+    zoneName: 'Shivering Slush Meltwater Ford (Wade Through!)',
+    surfaceType: 'shallow_water',
+    borderType: 'bush_hedge',
+    isShallowWater: true,
+  },
+  {
+    x: 26,
+    y: 0.6,
+    z: -174,
+    width: 11.0,
+    zoneName: 'Shivering Slush Meltwater Ford (Wade Through!)',
+    surfaceType: 'shallow_water',
+    borderType: 'bush_hedge',
+    isShallowWater: true,
+  },
+
+  // 4..6: Glacial Ice-Block & Frosted Cobble Climb toward the Ice Palace
+  {
+    x: -28,
+    y: 5.4,
+    z: -236,
+    width: 10.0,
+    zoneName: 'Frosted Granite Ridge Climb',
+    surfaceType: 'cobble',
+    borderType: 'bush_hedge',
+  },
+  {
+    x: 48,
+    y: 10.2,
+    z: -282,
+    width: 9.8,
+    zoneName: 'Crystal Ice Palace Ascent',
+    surfaceType: 'brick',
+    borderType: 'wood_fence',
+  },
+  {
+    x: 134,
+    y: 13.8,
+    z: -264,
+    width: 9.6,
+    zoneName: 'Grand Ice Fortress Courtyard',
+    surfaceType: 'ice',
+    borderType: 'wood_fence',
+  },
+
+  // 7..9: Aurora Crystal Plank Suspension Bridge (High Altitude Translucent Ice Planks!)
+  {
+    x: 204,
+    y: 15.2,
+    z: -206,
+    width: 7.8,
+    zoneName: 'Aurora Crystal Plank Skybridge',
+    surfaceType: 'wood_plank',
+    borderType: 'wood_fence',
+    isPlankBridge: true,
+    isHighBridge: true,
+  },
+  {
+    x: 252,
+    y: 15.8,
+    z: -128,
+    width: 7.6,
+    zoneName: 'Aurora Crystal Plank Skybridge',
+    surfaceType: 'wood_plank',
+    borderType: 'wood_fence',
+    isPlankBridge: true,
+    isHighBridge: true,
+  },
+  {
+    x: 232,
+    y: 14.4,
+    z: -48,
+    width: 7.8,
+    zoneName: 'Aurora Crystal Plank Skybridge',
+    surfaceType: 'wood_plank',
+    borderType: 'wood_fence',
+    isPlankBridge: true,
+    isHighBridge: true,
+  },
+
+  // 10..12: Olympic Bobsled Glossy Ice Chute (High-Speed Downhill Ice Glide!)
+  {
+    x: 176,
+    y: 10.8,
+    z: 16,
+    width: 10.6,
+    zoneName: 'Glacier Bobsled Ice Chute',
+    surfaceType: 'ice',
+    borderType: 'wood_fence',
+    isDownhillSlope: true,
+  },
+  {
+    x: 212,
+    y: 6.4,
+    z: 88,
+    width: 10.8,
+    zoneName: 'Glacier Bobsled Ice Chute',
+    surfaceType: 'ice',
+    borderType: 'bush_hedge',
+    isDownhillSlope: true,
+  },
+  {
+    x: 162,
+    y: 2.2,
+    z: 152,
+    width: 10.4,
+    zoneName: 'Snowdrift Slalom Run',
+    surfaceType: 'packed_snow',
+    borderType: 'bush_hedge',
+    isDownhillSlope: true,
+  },
+
+  // 13..14: Penguins' Snowbank Bend approaching the Freezing Arctic Fjord
+  {
+    x: 112,
+    y: 1.0,
+    z: 204,
+    width: 10.0,
+    zoneName: 'Polar Snowbank Bend',
+    surfaceType: 'packed_snow',
+    borderType: 'bush_hedge',
+  },
+  {
+    x: 60,
+    y: 0.4,
+    z: 222,
+    width: 9.6,
+    zoneName: 'Arctic Fjord Ice Edge',
+    surfaceType: 'cobble',
+    borderType: 'wood_fence',
+  },
+
+  // 15..17: Sub-Zero Deep Arctic River — Hop Across Floating 3D Icebergs / Ice Floes!
+  {
+    x: 18,
+    y: 0.35,
+    z: 222,
+    width: 9.0,
+    zoneName: 'Sub-Zero Fjord (Hop the Floating Icebergs!)',
+    surfaceType: 'deep_water',
+    borderType: 'none',
+    isDeepWaterHazard: true,
+    isBridgeOverWater: true,
+  },
+  {
+    x: -22,
+    y: 0.35,
+    z: 222,
+    width: 9.0,
+    zoneName: 'Sub-Zero Fjord (Hop the Floating Icebergs!)',
+    surfaceType: 'deep_water',
+    borderType: 'none',
+    isDeepWaterHazard: true,
+    isBridgeOverWater: true,
+  },
+  {
+    x: -62,
+    y: 0.35,
+    z: 222,
+    width: 9.0,
+    zoneName: 'Sub-Zero Fjord (Hop the Floating Icebergs!)',
+    surfaceType: 'deep_water',
+    borderType: 'none',
+    isDeepWaterHazard: true,
+    isBridgeOverWater: true,
+  },
+
+  // 18..21: Frozen West Shore & Crystal Ice-Rib Cavern Climb
+  {
+    x: -108,
+    y: 0.5,
+    z: 220,
+    width: 9.8,
+    zoneName: 'Glacier West Snowbank',
+    surfaceType: 'packed_snow',
+    borderType: 'wood_fence',
+  },
+  {
+    x: -164,
+    y: 3.4,
+    z: 238,
+    width: 10.2,
+    zoneName: 'Glowing Crystal Rib Cavern',
+    surfaceType: 'ice',
+    borderType: 'bush_hedge',
+  },
+  {
+    x: -222,
+    y: 7.4,
+    z: 184,
+    width: 9.8,
+    zoneName: 'Frost Giant Ice-Brick Climb',
+    surfaceType: 'brick',
+    borderType: 'bush_hedge',
+  },
+  {
+    x: -234,
+    y: 11.4,
+    z: 106,
+    width: 7.8,
+    zoneName: 'Northern Lights Ice-Plank Bridge',
+    surfaceType: 'wood_plank',
+    borderType: 'wood_fence',
+    isPlankBridge: true,
+    isHighBridge: true,
+  },
+
+  // 22..24: Avalanche Ice-Brick & Glossy Glacier Chute
+  {
+    x: -186,
+    y: 8.2,
+    z: 36,
+    width: 10.4,
+    zoneName: 'Avalanche Ice-Brick Chute',
+    surfaceType: 'brick',
+    borderType: 'wood_fence',
+    isDownhillSlope: true,
+  },
+  {
+    x: -218,
+    y: 3.8,
+    z: -40,
+    width: 10.6,
+    zoneName: 'Mirror Ice Skating Rink',
+    surfaceType: 'ice',
+    borderType: 'bush_hedge',
+    isDownhillSlope: true,
+  },
+  {
+    x: -166,
+    y: 0.6,
+    z: -104,
+    width: 10.2,
+    zoneName: 'Snowflake Pine Alley',
+    surfaceType: 'packed_snow',
+    borderType: 'bush_hedge',
+  },
+
+  // 25..27: Second Frozen Meltwater Ford + Nordic Chalet Final Sprint
+  {
+    x: -106,
+    y: 0.0,
+    z: -66,
+    width: 11.2,
+    zoneName: 'Frozen Lagoon Shallows (Wade Through!)',
+    surfaceType: 'shallow_water',
+    borderType: 'bush_hedge',
+    isShallowWater: true,
+  },
+  {
+    x: -92,
+    y: 2.4,
+    z: 18,
+    width: 10.0,
+    zoneName: 'Winter Lantern Crest',
+    surfaceType: 'cobble',
+    borderType: 'wood_fence',
+  },
+  {
+    x: -44,
+    y: 1.0,
+    z: 54,
+    width: 10.8,
+    zoneName: 'Glacier Peak Final Sprint',
+    surfaceType: 'ice',
+    borderType: 'wood_fence',
+    isDownhillSlope: true,
+  },
+];
+
 function catmullRom(p0: number, p1: number, p2: number, p3: number, t: number): number {
   const t2 = t * t;
   const t3 = t2 * t;
@@ -390,18 +735,14 @@ function catmullRom(p0: number, p1: number, p2: number, p3: number, t: number): 
 
 const SUBDIVISIONS_PER_CONTROL = 10;
 
-/**
- * Dense smooth waypoints generated by Catmull-Rom spline interpolation
- * so there are zero sharp corners anywhere on the circuit.
- */
-export const TRACK_WAYPOINTS: TrackWaypoint[] = (() => {
+function buildWaypointsFromControlPoints(controlPoints: TrackWaypoint[]): TrackWaypoint[] {
   const pts: TrackWaypoint[] = [];
-  const n = TRACK_CONTROL_POINTS.length;
+  const n = controlPoints.length;
   for (let i = 0; i < n; i++) {
-    const p0 = TRACK_CONTROL_POINTS[(i - 1 + n) % n];
-    const p1 = TRACK_CONTROL_POINTS[i];
-    const p2 = TRACK_CONTROL_POINTS[(i + 1) % n];
-    const p3 = TRACK_CONTROL_POINTS[(i + 2) % n];
+    const p0 = controlPoints[(i - 1 + n) % n];
+    const p1 = controlPoints[i];
+    const p2 = controlPoints[(i + 1) % n];
+    const p3 = controlPoints[(i + 2) % n];
 
     for (let s = 0; s < SUBDIVISIONS_PER_CONTROL; s++) {
       const t = s / SUBDIVISIONS_PER_CONTROL;
@@ -428,14 +769,14 @@ export const TRACK_WAYPOINTS: TrackWaypoint[] = (() => {
     }
   }
   return pts;
-})();
+}
 
-export const TRACK_SEGMENTS: TrackSegment[] = (() => {
+function buildSegmentsFromWaypoints(waypoints: TrackWaypoint[]): TrackSegment[] {
   const segs: TrackSegment[] = [];
   let accum = 0;
-  for (let i = 0; i < TRACK_WAYPOINTS.length; i++) {
-    const wp0 = TRACK_WAYPOINTS[i];
-    const wp1 = TRACK_WAYPOINTS[(i + 1) % TRACK_WAYPOINTS.length];
+  for (let i = 0; i < waypoints.length; i++) {
+    const wp0 = waypoints[i];
+    const wp1 = waypoints[(i + 1) % waypoints.length];
     const dx = wp1.x - wp0.x;
     const dy = wp1.y - wp0.y;
     const dz = wp1.z - wp0.z;
@@ -478,9 +819,27 @@ export const TRACK_SEGMENTS: TrackSegment[] = (() => {
     accum += length;
   }
   return segs;
-})();
+}
 
-export const TOTAL_TRACK_LENGTH =
+let activeTrackId: TrackId = 'woodland';
+
+export function getActiveTrackId(): TrackId {
+  return activeTrackId;
+}
+
+/**
+ * Dense smooth waypoints generated by Catmull-Rom spline interpolation
+ * so there are zero sharp corners anywhere on the circuit.
+ */
+export const TRACK_WAYPOINTS: TrackWaypoint[] = buildWaypointsFromControlPoints(
+  TRACK_CONTROL_POINTS
+);
+
+export const TRACK_SEGMENTS: TrackSegment[] = buildSegmentsFromWaypoints(
+  TRACK_WAYPOINTS
+);
+
+export let TOTAL_TRACK_LENGTH =
   TRACK_SEGMENTS[TRACK_SEGMENTS.length - 1].endDist;
 
 export interface TrackSample {
@@ -658,7 +1017,7 @@ export interface SteppingStoneSpec {
   yaw: number;
 }
 
-export const RIVER_STEPPING_STONES: SteppingStoneSpec[] = (() => {
+function buildRiverSteppingStones(): SteppingStoneSpec[] {
   const stones: SteppingStoneSpec[] = [];
   const deepSegs = TRACK_SEGMENTS.filter((s) => s.isDeepWaterHazard);
   if (deepSegs.length === 0) return stones;
@@ -700,10 +1059,13 @@ export const RIVER_STEPPING_STONES: SteppingStoneSpec[] = (() => {
     stepIdx++;
   }
   return stones;
-})();
+}
+
+export const RIVER_STEPPING_STONES: SteppingStoneSpec[] =
+  buildRiverSteppingStones();
 
 // ============================================================================
-// TRACK OBSTACLES & ITEMS DEFINITIONS ACROSS THE ~1,820u CIRCUIT
+// TRACK OBSTACLES & ITEMS DEFINITIONS ACROSS THE CIRCUIT
 // ============================================================================
 
 export interface SlimePadSpec {
@@ -793,113 +1155,158 @@ export interface ShockwaveEffect {
   maxRadius: number;
 }
 
-export const SLIME_PADS: SlimePadSpec[] = [
-  { frac: 0.08, lat: -1.8, r: 2.5 },
-  { frac: 0.11, lat: 1.8, r: 2.5 },
-  { frac: 0.16, lat: -1.4, r: 2.4 },
-  { frac: 0.21, lat: 1.6, r: 2.4 },
-  { frac: 0.46, lat: -2.0, r: 2.6 },
-  { frac: 0.49, lat: 1.8, r: 2.6 },
-  { frac: 0.52, lat: -1.5, r: 2.7 },
-  { frac: 0.55, lat: 1.6, r: 2.6 },
-  { frac: 0.58, lat: 0.0, r: 2.5 },
-  { frac: 0.61, lat: -1.8, r: 2.5 },
-  { frac: 0.72, lat: 1.7, r: 2.5 },
-  { frac: 0.75, lat: -1.7, r: 2.5 },
-  { frac: 0.88, lat: 1.8, r: 2.4 },
-  { frac: 0.93, lat: -1.6, r: 2.4 },
-].map((cfg, idx) => {
-  const dist = cfg.frac * TOTAL_TRACK_LENGTH;
-  const s = sampleTrackAtDistance(dist);
-  return {
-    id: `slime_${idx}`,
-    trackDist: dist,
-    lateralOffset: cfg.lat,
-    x: s.x + s.rightX * cfg.lat,
-    y: s.y,
-    z: s.z + s.rightZ * cfg.lat,
-    radius: cfg.r,
-  };
-});
+function buildSlimePads(): SlimePadSpec[] {
+  return [
+    { frac: 0.08, lat: -1.8, r: 2.5 },
+    { frac: 0.11, lat: 1.8, r: 2.5 },
+    { frac: 0.16, lat: -1.4, r: 2.4 },
+    { frac: 0.21, lat: 1.6, r: 2.4 },
+    { frac: 0.46, lat: -2.0, r: 2.6 },
+    { frac: 0.49, lat: 1.8, r: 2.6 },
+    { frac: 0.52, lat: -1.5, r: 2.7 },
+    { frac: 0.55, lat: 1.6, r: 2.6 },
+    { frac: 0.58, lat: 0.0, r: 2.5 },
+    { frac: 0.61, lat: -1.8, r: 2.5 },
+    { frac: 0.72, lat: 1.7, r: 2.5 },
+    { frac: 0.75, lat: -1.7, r: 2.5 },
+    { frac: 0.88, lat: 1.8, r: 2.4 },
+    { frac: 0.93, lat: -1.6, r: 2.4 },
+  ].map((cfg, idx) => {
+    const dist = cfg.frac * TOTAL_TRACK_LENGTH;
+    const s = sampleTrackAtDistance(dist);
+    return {
+      id: `slime_${idx}`,
+      trackDist: dist,
+      lateralOffset: cfg.lat,
+      x: s.x + s.rightX * cfg.lat,
+      y: s.y,
+      z: s.z + s.rightZ * cfg.lat,
+      radius: cfg.r,
+    };
+  });
+}
 
-export const TURNTABLES: TurntableSpec[] = [
-  { frac: 0.26, speed: 1.55, r: 4.0 },
-  { frac: 0.31, speed: -1.75, r: 4.0 },
-  { frac: 0.54, speed: 1.65, r: 4.2 },
-  { frac: 0.78, speed: -1.7, r: 4.0 },
-  { frac: 0.91, speed: 1.6, r: 4.2 },
-].map((cfg, idx) => {
-  const dist = cfg.frac * TOTAL_TRACK_LENGTH;
-  const s = sampleTrackAtDistance(dist);
-  return {
-    id: `turntable_${idx}`,
-    trackDist: dist,
-    x: s.x,
-    y: s.y,
-    z: s.z,
-    radius: cfg.r,
-    angularSpeed: cfg.speed,
-    barHalfLength: cfg.r * 0.92,
-  };
-});
+function buildTurntables(): TurntableSpec[] {
+  return [
+    { frac: 0.26, speed: 1.55, r: 4.0 },
+    { frac: 0.31, speed: -1.75, r: 4.0 },
+    { frac: 0.54, speed: 1.65, r: 4.2 },
+    { frac: 0.78, speed: -1.7, r: 4.0 },
+    { frac: 0.91, speed: 1.6, r: 4.2 },
+  ].map((cfg, idx) => {
+    const dist = cfg.frac * TOTAL_TRACK_LENGTH;
+    const s = sampleTrackAtDistance(dist);
+    return {
+      id: `turntable_${idx}`,
+      trackDist: dist,
+      x: s.x,
+      y: s.y,
+      z: s.z,
+      radius: cfg.r,
+      angularSpeed: cfg.speed,
+      barHalfLength: cfg.r * 0.92,
+    };
+  });
+}
 
-export const ROLLING_BOULDERS: RollingBoulderSpec[] = [
-  { frac: 0.14, speed: 2.2, phase: 0.0, r: 1.1, hex: '#8C7A6B', ball: false },
-  { frac: 0.19, speed: 2.5, phase: 1.5, r: 1.15, hex: '#F43F5E', ball: true },
-  { frac: 0.36, speed: 2.4, phase: 2.8, r: 1.1, hex: '#3B82F6', ball: true },
-  { frac: 0.41, speed: 2.6, phase: 4.1, r: 1.15, hex: '#78685A', ball: false },
-  { frac: 0.68, speed: 2.3, phase: 0.9, r: 1.1, hex: '#F59E0B', ball: true },
-  { frac: 0.74, speed: 2.6, phase: 2.4, r: 1.15, hex: '#8C7A6B', ball: false },
-  { frac: 0.83, speed: 2.5, phase: 3.7, r: 1.15, hex: '#EC4899', ball: true },
-  { frac: 0.86, speed: 2.7, phase: 5.1, r: 1.2, hex: '#78685A', ball: false },
-  { frac: 0.89, speed: 2.4, phase: 1.2, r: 1.1, hex: '#10B981', ball: true },
-  { frac: 0.95, speed: 2.6, phase: 2.9, r: 1.15, hex: '#8C7A6B', ball: false },
-].map((cfg, idx) => {
-  const dist = cfg.frac * TOTAL_TRACK_LENGTH;
-  const s = sampleTrackAtDistance(dist);
-  return {
-    id: `boulder_${idx}`,
-    trackDist: dist,
-    centerX: s.x,
-    centerY: s.y,
-    centerZ: s.z,
-    rightX: s.rightX,
-    rightZ: s.rightZ,
-    sweepHalfWidth: s.width * 0.42,
-    speed: cfg.speed,
-    phase: cfg.phase,
-    radius: cfg.r,
-    colorHex: cfg.hex,
-    isBeachBall: cfg.ball,
-  };
-});
+function buildRollingBoulders(trackId: TrackId): RollingBoulderSpec[] {
+  const isSnow = trackId === 'snow_glacier';
+  return [
+    { frac: 0.14, speed: 2.2, phase: 0.0, r: 1.15, hex: isSnow ? '#F8FAFC' : '#8C7A6B', ball: false },
+    { frac: 0.19, speed: 2.5, phase: 1.5, r: 1.15, hex: isSnow ? '#38BDF8' : '#F43F5E', ball: true },
+    { frac: 0.36, speed: 2.4, phase: 2.8, r: 1.15, hex: isSnow ? '#818CF8' : '#3B82F6', ball: true },
+    { frac: 0.41, speed: 2.6, phase: 4.1, r: 1.2, hex: isSnow ? '#E2E8F0' : '#78685A', ball: false },
+    { frac: 0.68, speed: 2.3, phase: 0.9, r: 1.15, hex: isSnow ? '#22D3EE' : '#F59E0B', ball: true },
+    { frac: 0.74, speed: 2.6, phase: 2.4, r: 1.2, hex: isSnow ? '#F8FAFC' : '#8C7A6B', ball: false },
+    { frac: 0.83, speed: 2.5, phase: 3.7, r: 1.15, hex: isSnow ? '#C084FC' : '#EC4899', ball: true },
+    { frac: 0.86, speed: 2.7, phase: 5.1, r: 1.25, hex: isSnow ? '#E2E8F0' : '#78685A', ball: false },
+    { frac: 0.89, speed: 2.4, phase: 1.2, r: 1.15, hex: isSnow ? '#34D399' : '#10B981', ball: true },
+    { frac: 0.95, speed: 2.6, phase: 2.9, r: 1.2, hex: isSnow ? '#F8FAFC' : '#8C7A6B', ball: false },
+  ].map((cfg, idx) => {
+    const dist = cfg.frac * TOTAL_TRACK_LENGTH;
+    const s = sampleTrackAtDistance(dist);
+    return {
+      id: `boulder_${idx}`,
+      trackDist: dist,
+      centerX: s.x,
+      centerY: s.y,
+      centerZ: s.z,
+      rightX: s.rightX,
+      rightZ: s.rightZ,
+      sweepHalfWidth: s.width * 0.42,
+      speed: cfg.speed,
+      phase: cfg.phase,
+      radius: cfg.r,
+      colorHex: cfg.hex,
+      isBeachBall: cfg.ball,
+    };
+  });
+}
 
-export const BOOST_PADS: BoostPadSpec[] = [
-  { frac: 0.04, lat: 0 },
-  { frac: 0.13, lat: -1.4 },
-  { frac: 0.23, lat: 0 },
-  { frac: 0.34, lat: -1.5 },
-  { frac: 0.38, lat: 1.5 },
-  { frac: 0.43, lat: 0 },
-  { frac: 0.59, lat: 0 },
-  { frac: 0.69, lat: 0 },
-  { frac: 0.8, lat: -1.4 },
-  { frac: 0.84, lat: 1.4 },
-  { frac: 0.96, lat: -1.5 },
-  { frac: 0.98, lat: 1.5 },
-].map((cfg, idx) => {
-  const dist = cfg.frac * TOTAL_TRACK_LENGTH;
-  const s = sampleTrackAtDistance(dist);
-  return {
-    id: `boost_${idx}`,
-    trackDist: dist,
-    lateralOffset: cfg.lat,
-    x: s.x + s.rightX * cfg.lat,
-    y: s.y,
-    z: s.z + s.rightZ * cfg.lat,
-    yaw: Math.atan2(-s.dirX, -s.dirZ),
-  };
-});
+function buildBoostPads(): BoostPadSpec[] {
+  return [
+    { frac: 0.04, lat: 0 },
+    { frac: 0.13, lat: -1.4 },
+    { frac: 0.23, lat: 0 },
+    { frac: 0.34, lat: -1.5 },
+    { frac: 0.38, lat: 1.5 },
+    { frac: 0.43, lat: 0 },
+    { frac: 0.59, lat: 0 },
+    { frac: 0.69, lat: 0 },
+    { frac: 0.8, lat: -1.4 },
+    { frac: 0.84, lat: 1.4 },
+    { frac: 0.96, lat: -1.5 },
+    { frac: 0.98, lat: 1.5 },
+  ].map((cfg, idx) => {
+    const dist = cfg.frac * TOTAL_TRACK_LENGTH;
+    const s = sampleTrackAtDistance(dist);
+    return {
+      id: `boost_${idx}`,
+      trackDist: dist,
+      lateralOffset: cfg.lat,
+      x: s.x + s.rightX * cfg.lat,
+      y: s.y,
+      z: s.z + s.rightZ * cfg.lat,
+      yaw: Math.atan2(-s.dirX, -s.dirZ),
+    };
+  });
+}
+
+export const SLIME_PADS: SlimePadSpec[] = buildSlimePads();
+export const TURNTABLES: TurntableSpec[] = buildTurntables();
+export const ROLLING_BOULDERS: RollingBoulderSpec[] = buildRollingBoulders(activeTrackId);
+export const BOOST_PADS: BoostPadSpec[] = buildBoostPads();
+
+/**
+ * Switches the active circuit ('woodland' or 'snow_glacier') and rebuilds all
+ * spline segments, stepping stones / icebergs, hazards, and boost pads in-place.
+ */
+export function setActiveTrack(trackId: TrackId): void {
+  activeTrackId = trackId;
+  const controlPts =
+    trackId === 'snow_glacier' ? SNOW_TRACK_CONTROL_POINTS : TRACK_CONTROL_POINTS;
+  const newWaypoints = buildWaypointsFromControlPoints(controlPts);
+  TRACK_WAYPOINTS.splice(0, TRACK_WAYPOINTS.length, ...newWaypoints);
+
+  const newSegments = buildSegmentsFromWaypoints(TRACK_WAYPOINTS);
+  TRACK_SEGMENTS.splice(0, TRACK_SEGMENTS.length, ...newSegments);
+  TOTAL_TRACK_LENGTH = TRACK_SEGMENTS[TRACK_SEGMENTS.length - 1].endDist;
+
+  const newStones = buildRiverSteppingStones();
+  RIVER_STEPPING_STONES.splice(0, RIVER_STEPPING_STONES.length, ...newStones);
+
+  const newSlimes = buildSlimePads();
+  SLIME_PADS.splice(0, SLIME_PADS.length, ...newSlimes);
+
+  const newTurntables = buildTurntables();
+  TURNTABLES.splice(0, TURNTABLES.length, ...newTurntables);
+
+  const newBoulders = buildRollingBoulders(trackId);
+  ROLLING_BOULDERS.splice(0, ROLLING_BOULDERS.length, ...newBoulders);
+
+  const newBoosts = buildBoostPads();
+  BOOST_PADS.splice(0, BOOST_PADS.length, ...newBoosts);
+}
 
 export function createInitialItemBoxes(): ItemBoxState[] {
   const boxFractions = [
@@ -1622,6 +2029,11 @@ export function stepRaceSimulation(
       topSpeed *= wadeMult;
     }
 
+    // Glossy Glacier Ice surface speed glide ("ทางน้ำแข็งลื่นสปีดพุ่ง")
+    if (currentProj.surfaceType === 'ice' && r.y - r.groundY < 0.35) {
+      topSpeed *= 1.1;
+    }
+
     // Check Sticky Slime Pads (only if near ground level)
     let inSlime = false;
     if (r.y - r.groundY < 0.45 && r.dashTimer <= 0) {
@@ -1856,10 +2268,11 @@ export function stepRaceSimulation(
       }
     }
 
-    // Apply velocity & knockback decay
+    // Apply velocity & knockback decay (with slightly slicker ice traction on 'ice' surfaces)
     const targetVx = moveDirX * topSpeed;
     const targetVz = moveDirZ * topSpeed;
-    const accel = r.y > r.groundY + 0.15 ? 6.5 : 12.0;
+    const groundAccel = currentProj.surfaceType === 'ice' ? 8.2 : 12.0;
+    const accel = r.y > r.groundY + 0.15 ? 6.5 : groundAccel;
     r.vx += (targetVx - r.vx) * Math.min(1, accel * clampedDt);
     r.vz += (targetVz - r.vz) * Math.min(1, accel * clampedDt);
 
