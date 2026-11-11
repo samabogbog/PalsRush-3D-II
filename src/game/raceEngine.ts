@@ -1375,6 +1375,7 @@ export interface RacerState {
   respawnBlinkTimer: number;
   landingBoostTimer: number;
   slapAnimTimer: number;
+  hazardCooldown: number;
   pokeImpulse: number;
   slapsLanded: number;
   // Bot AI steering
@@ -1489,6 +1490,7 @@ export function createInitialRaceState(
       respawnBlinkTimer: 0,
       landingBoostTimer: 0,
       slapAnimTimer: 0,
+      hazardCooldown: 0,
       pokeImpulse: 0,
       slapsLanded: 0,
       botPreferredLane: (col - 1.5) * 0.9,
@@ -1533,6 +1535,41 @@ function pushEvent(
   }
 }
 
+function applyBallisticKnockback(
+  target: RacerState,
+  dirX: number,
+  dirZ: number,
+  horizSpeed: number,
+  upwardVy: number,
+  stunSec: number
+): void {
+  const len = Math.hypot(dirX, dirZ);
+  const nx = len > 0.001 ? dirX / len : 0;
+  const nz = len > 0.001 ? dirZ / len : 1;
+  const resist = target.passiveSkillId === 'bouncy_belly' ? 0.62 : 1.0;
+
+  // Dampen conflicting run momentum so knockback follows a clean ballistic arc
+  target.vx *= 0.32;
+  target.vz *= 0.32;
+
+  const nextKx = target.knockVx * 0.35 + nx * horizSpeed * resist;
+  const nextKz = target.knockVz * 0.35 + nz * horizSpeed * resist;
+  const kMag = Math.hypot(nextKx, nextKz);
+  const maxK = 16.0;
+  if (kMag > maxK) {
+    target.knockVx = (nextKx / kMag) * maxK;
+    target.knockVz = (nextKz / kMag) * maxK;
+  } else {
+    target.knockVx = nextKx;
+    target.knockVz = nextKz;
+  }
+
+  target.vy = Math.max(target.vy, upwardVy * (0.85 + 0.15 * resist));
+  target.y = Math.max(target.groundY + 0.08, target.y);
+  target.stunTimer = Math.max(target.stunTimer, stunSec * resist);
+  target.pokeImpulse = 1.15;
+}
+
 /**
  * Triggers a racer's Primary Active Skill (Key Q) — supports all 5 Active Skills.
  */
@@ -1567,7 +1604,7 @@ export function activateRacerSkillQ(
       };
     }
   } else if (racer.activeSkillId === 'spring') {
-    racer.vy = 16.5;
+    racer.vy = 15.8;
     racer.y = Math.max(racer.groundY + 0.08, racer.y);
     racer.dashTimer = Math.max(racer.dashTimer, 0.85);
     if (racer.isPlayer) {
@@ -1596,15 +1633,19 @@ export function activateRacerSkillQ(
       if (dist < 4.0 && dist > 0.001) {
         if (other.shieldTimer > 0) {
           other.shieldTimer = 0;
+          other.hazardCooldown = 0.5;
           continue;
         }
-        const resist = other.passiveSkillId === 'bouncy_belly' ? 0.55 : 1.0;
-        const push = ((4.0 - dist) / 4.0) * 14.5 * resist;
-        other.knockVx += (dx / dist) * push;
-        other.knockVz += (dz / dist) * push;
-        other.slowTimer = Math.max(other.slowTimer, 2.2);
-        other.stunTimer = Math.max(other.stunTimer, 0.55);
-        other.pokeImpulse = 1.0;
+        const falloff = 0.55 + 0.45 * ((4.0 - dist) / 4.0);
+        applyBallisticKnockback(
+          other,
+          dx,
+          dz,
+          13.5 * falloff,
+          6.4 * falloff,
+          0.5
+        );
+        other.slowTimer = Math.max(other.slowTimer, 2.0);
       }
     }
     if (racer.isPlayer) {
@@ -1721,12 +1762,14 @@ export function activateRacerItemE(
         bestTarget.furthestCheckpointDist
       );
       const sideSign = proj.lateralOffset >= 0 ? 1 : -1;
-      const resist = bestTarget.passiveSkillId === 'bouncy_belly' ? 0.55 : 1.0;
-      bestTarget.knockVx += proj.rightX * sideSign * 21.0 * resist;
-      bestTarget.knockVz += proj.rightZ * sideSign * 21.0 * resist;
-      bestTarget.vy = 5.5;
-      bestTarget.stunTimer = 0.65;
-      bestTarget.pokeImpulse = 1.2;
+      applyBallisticKnockback(
+        bestTarget,
+        proj.rightX * sideSign,
+        proj.rightZ * sideSign,
+        14.8,
+        7.2,
+        0.58
+      );
       racer.slapsLanded += 1;
       pushEvent(
         state,
@@ -1798,8 +1841,8 @@ export function activateRacerSlapF(
       hitAny = true;
       if (other.shieldTimer > 0) {
         other.shieldTimer = 0;
-        racer.knockVx -= (dx / Math.max(0.1, dist)) * 12.0;
-        racer.knockVz -= (dz / Math.max(0.1, dist)) * 12.0;
+        other.hazardCooldown = 0.5;
+        applyBallisticKnockback(racer, -dx, -dz, 10.5, 4.8, 0.25);
         pushEvent(
           state,
           `🫧 ${other.spec.shortName}'s Bubble Shield bounced ${racer.spec.shortName}!`,
@@ -1821,19 +1864,12 @@ export function activateRacerSlapF(
           ? 1
           : -1;
 
-      const resist = other.passiveSkillId === 'bouncy_belly' ? 0.55 : 1.0;
-      const knockSpeed = 19.5 * resist;
+      const dirX =
+        proj.rightX * sideSign * 0.78 + (dx / Math.max(0.1, dist)) * 0.22;
+      const dirZ =
+        proj.rightZ * sideSign * 0.78 + (dz / Math.max(0.1, dist)) * 0.22;
 
-      other.knockVx +=
-        (proj.rightX * sideSign * 0.85 + (dx / Math.max(0.1, dist)) * 0.15) *
-        knockSpeed;
-      other.knockVz +=
-        (proj.rightZ * sideSign * 0.85 + (dz / Math.max(0.1, dist)) * 0.15) *
-        knockSpeed;
-      other.vy = Math.max(other.vy, 4.8);
-      other.y = Math.max(other.groundY + 0.05, other.y);
-      other.stunTimer = Math.max(other.stunTimer, 0.45);
-      other.pokeImpulse = 1.25;
+      applyBallisticKnockback(other, dirX, dirZ, 14.2, 6.6, 0.42);
       racer.slapsLanded += 1;
 
       if (racer.isPlayer || other.isPlayer) {
@@ -1954,6 +1990,7 @@ export function stepRaceSimulation(
     r.respawnBlinkTimer = Math.max(0, r.respawnBlinkTimer - clampedDt);
     r.landingBoostTimer = Math.max(0, r.landingBoostTimer - clampedDt);
     r.slapAnimTimer = Math.max(0, r.slapAnimTimer - clampedDt);
+    r.hazardCooldown = Math.max(0, r.hazardCooldown - clampedDt);
     r.pokeImpulse = Math.max(0, r.pokeImpulse - clampedDt * 2.2);
 
     const stunRecoveryRate = r.passiveSkillId === 'nimble_paws' ? 1.35 : 1.0;
@@ -1991,9 +2028,10 @@ export function stepRaceSimulation(
         const dx = other.x - r.x;
         const dz = other.z - r.z;
         const dist = Math.hypot(dx, dz);
-        if (dist < 2.55 && other.stunTimer <= 0) {
+        if (dist < 2.55 && other.stunTimer <= 0 && other.hazardCooldown <= 0) {
           if (other.shieldTimer > 0) {
             other.shieldTimer = 0;
+            other.hazardCooldown = 0.55;
             continue;
           }
           const oProj = projectPointToTrack(
@@ -2002,11 +2040,15 @@ export function stepRaceSimulation(
             other.furthestCheckpointDist
           );
           const sideSign = oProj.lateralOffset >= 0 ? 1 : -1;
-          const resist = other.passiveSkillId === 'bouncy_belly' ? 0.55 : 1.0;
-          other.knockVx += oProj.rightX * sideSign * 17.5 * resist;
-          other.knockVz += oProj.rightZ * sideSign * 17.5 * resist;
-          other.vy = Math.max(other.vy, 4.2);
-          other.stunTimer = 0.45;
+          applyBallisticKnockback(
+            other,
+            oProj.rightX * sideSign * 0.7 + (dx / Math.max(0.1, dist)) * 0.3,
+            oProj.rightZ * sideSign * 0.7 + (dz / Math.max(0.1, dist)) * 0.3,
+            13.2,
+            6.2,
+            0.42
+          );
+          other.hazardCooldown = 0.55;
           r.slapsLanded += 1;
         }
       }
@@ -2268,44 +2310,64 @@ export function stepRaceSimulation(
       }
     }
 
-    // Apply velocity & knockback decay (with slightly slicker ice traction on 'ice' surfaces)
-    const targetVx = moveDirX * topSpeed;
-    const targetVz = moveDirZ * topSpeed;
-    const groundAccel = currentProj.surfaceType === 'ice' ? 8.2 : 12.0;
-    const accel = r.y > r.groundY + 0.15 ? 6.5 : groundAccel;
+    // Apply velocity & momentum (preserve horizontal momentum while airborne or knocked back)
+    const isAirborne = r.y > r.groundY + 0.12;
+    const targetVx = r.stunTimer > 0 ? 0 : moveDirX * topSpeed;
+    const targetVz = r.stunTimer > 0 ? 0 : moveDirZ * topSpeed;
+    const groundAccel = currentProj.surfaceType === 'ice' ? 7.8 : 12.5;
+    const accel = r.stunTimer > 0 ? 3.2 : isAirborne ? 5.8 : groundAccel;
     r.vx += (targetVx - r.vx) * Math.min(1, accel * clampedDt);
     r.vz += (targetVz - r.vz) * Math.min(1, accel * clampedDt);
 
-    // Spinning Turntable Platform & Sweeping Beam physics
+    // Spinning Turntable Platform & Sweeping Beam physics (with instant depenetration + cooldown)
     for (const tt of TURNTABLES) {
       const dx = r.x - tt.x;
       const dz = r.z - tt.z;
       const dist = Math.hypot(dx, dz);
       if (dist < tt.radius) {
-        const tangX = -dz * tt.angularSpeed * 0.42;
-        const tangZ = dx * tt.angularSpeed * 0.42;
-        r.x += tangX * clampedDt;
-        r.z += tangZ * clampedDt;
+        if (r.y - r.groundY < 0.25) {
+          const tangX = -dz * tt.angularSpeed * 0.38;
+          const tangZ = dx * tt.angularSpeed * 0.38;
+          r.x += tangX * clampedDt;
+          r.z += tangZ * clampedDt;
+        }
 
-        if (r.y - r.groundY < 0.65) {
+        if (r.y - r.groundY < 0.68 && r.hazardCooldown <= 0) {
           const barAngle = state.elapsedRaceSec * tt.angularSpeed;
           const barDirX = Math.cos(barAngle);
           const barDirZ = Math.sin(barAngle);
           const projAlong = dx * barDirX + dz * barDirZ;
           if (Math.abs(projAlong) < tt.barHalfLength) {
-            const perpDist = Math.abs(-dx * barDirZ + dz * barDirX);
-            if (perpDist < 0.62) {
+            const signedPerp = -dx * barDirZ + dz * barDirX;
+            const perpDist = Math.abs(signedPerp);
+            const hitRadius = 0.72;
+            if (perpDist < hitRadius) {
+              // Instant depenetration outside the sweeping bar so it never multi-hits
+              const pushSign =
+                Math.abs(signedPerp) > 0.02
+                  ? Math.sign(signedPerp)
+                  : Math.sign(tt.angularSpeed) || 1;
+              const normalX = -barDirZ * pushSign;
+              const normalZ = barDirX * pushSign;
+              const overlap = hitRadius - perpDist + 0.12;
+              r.x += normalX * overlap;
+              r.z += normalZ * overlap;
+              r.hazardCooldown = 0.55;
+
               if (r.shieldTimer > 0) {
                 r.shieldTimer = 0;
+                applyBallisticKnockback(r, normalX, normalZ, 6.0, 3.8, 0.12);
               } else {
-                const resist = r.passiveSkillId === 'bouncy_belly' ? 0.55 : 1.0;
-                const normalX = -barDirZ * Math.sign(tt.angularSpeed);
-                const normalZ = barDirX * Math.sign(tt.angularSpeed);
-                r.knockVx += normalX * 15.0 * resist;
-                r.knockVz += normalZ * 15.0 * resist;
-                r.vy = 4.6;
-                r.y = r.groundY + 0.08;
-                r.stunTimer = Math.max(r.stunTimer, 0.35);
+                const sweepNormalX = -barDirZ * Math.sign(tt.angularSpeed);
+                const sweepNormalZ = barDirX * Math.sign(tt.angularSpeed);
+                applyBallisticKnockback(
+                  r,
+                  sweepNormalX * 0.75 + normalX * 0.25,
+                  sweepNormalZ * 0.75 + normalZ * 0.25,
+                  12.8,
+                  6.4,
+                  0.38
+                );
               }
             }
           }
@@ -2313,7 +2375,7 @@ export function stepRaceSimulation(
       }
     }
 
-    // Rolling Boulders & Giant Beach Balls collision
+    // Rolling Boulders & Giant Beach Balls collision (with radial depenetration + cooldown)
     for (const b of ROLLING_BOULDERS) {
       const offset =
         Math.sin(state.elapsedRaceSec * b.speed + b.phase) * b.sweepHalfWidth;
@@ -2322,42 +2384,36 @@ export function stepRaceSimulation(
       const dx = r.x - bx;
       const dz = r.z - bz;
       const dist = Math.hypot(dx, dz);
-      if (dist < b.radius + 0.68 && r.y - r.groundY < b.radius * 1.45) {
-        if (r.shieldTimer > 0) {
-          r.shieldTimer = 0;
-        } else {
-          const resist = r.passiveSkillId === 'bouncy_belly' ? 0.55 : 1.0;
-          const nx = dx / Math.max(0.1, dist);
-          const nz = dz / Math.max(0.1, dist);
-          r.knockVx += nx * 18.0 * resist;
-          r.knockVz += nz * 18.0 * resist;
-          r.vy = 5.5;
-          r.y = r.groundY + 0.08;
-          r.stunTimer = Math.max(r.stunTimer, 0.5);
-          r.pokeImpulse = 1.2;
-          if (r.isPlayer) {
-            state.bannerCallout = {
-              text: b.isBeachBall ? 'BONKED BY GIANT BALL!' : 'HIT BY BOULDER!',
-              colorHex: '#EF4444',
-              ttl: 1.0,
-            };
-          }
-        }
-      }
-    }
+      const minRadius = b.radius + 0.72;
+      if (dist < minRadius && r.y - r.groundY < b.radius * 1.45) {
+        const nx = dist > 0.01 ? dx / dist : b.rightX;
+        const nz = dist > 0.01 ? dz / dist : b.rightZ;
+        // Push racer cleanly outside the boulder surface immediately
+        const overlap = minRadius - dist + 0.08;
+        r.x += nx * overlap;
+        r.z += nz * overlap;
 
-    // Soft Racer-vs-Racer body bump separation (skip while hopping across deep water stones)
-    if (!currentProj.isDeepWaterHazard) {
-      for (const other of state.racers) {
-        if (other.id === r.id || other.finished) continue;
-        const dx = r.x - other.x;
-        const dz = r.z - other.z;
-        const dist = Math.hypot(dx, dz);
-        const minSep = 1.12;
-        if (dist < minSep && dist > 0.001) {
-          const push = (minSep - dist) * 4.5 * clampedDt;
-          r.x += (dx / dist) * push;
-          r.z += (dz / dist) * push;
+        if (r.hazardCooldown <= 0) {
+          r.hazardCooldown = 0.58;
+          if (r.shieldTimer > 0) {
+            r.shieldTimer = 0;
+            applyBallisticKnockback(r, nx, nz, 6.5, 4.0, 0.15);
+          } else {
+            // Combine radial normal + boulder travel direction for natural elastic rebound
+            const boulderVelSign = Math.cos(
+              state.elapsedRaceSec * b.speed + b.phase
+            );
+            const launchX = nx * 0.75 + b.rightX * boulderVelSign * 0.25;
+            const launchZ = nz * 0.75 + b.rightZ * boulderVelSign * 0.25;
+            applyBallisticKnockback(r, launchX, launchZ, 13.8, 7.2, 0.45);
+            if (r.isPlayer) {
+              state.bannerCallout = {
+                text: b.isBeachBall ? 'BONKED BY GIANT BALL!' : 'HIT BY BOULDER!',
+                colorHex: '#EF4444',
+                ttl: 1.0,
+              };
+            }
+          }
         }
       }
     }
@@ -2366,27 +2422,46 @@ export function stepRaceSimulation(
     r.x += (r.vx + r.knockVx) * clampedDt;
     r.z += (r.vz + r.knockVz) * clampedDt;
 
-    const knockDecay = Math.pow(0.015, clampedDt * stunRecoveryRate);
+    // Air vs. Ground Knockback Drag:
+    // Low drag in the air preserves a natural parabolic arc; ground friction slows the slide on landing
+    const knockDragRate =
+      r.y > r.groundY + 0.05 || Math.abs(r.vy) > 0.5
+        ? 1.55
+        : 6.8 * stunRecoveryRate;
+    const knockDecay = Math.exp(-knockDragRate * clampedDt);
     r.knockVx *= knockDecay;
     r.knockVz *= knockDecay;
+    if (Math.hypot(r.knockVx, r.knockVz) < 0.08) {
+      r.knockVx = 0;
+      r.knockVz = 0;
+    }
 
     // Project new position onto smooth spline track
     const proj = projectPointToTrack(r.x, r.z, r.furthestCheckpointDist);
     const nextGroundY = proj.closestY;
 
     // Integrate vertical jump / gravity relative to undulating 3D track elevation
-    // Use 0.24 threshold when vy == 0 so downhill slopes never cause rapid run<->jump flickering!
     const isActivelyJumping =
-      r.vy > 0 || (r.vy < 0 && r.y > nextGroundY + 0.02) || r.y > nextGroundY + 0.24;
+      r.vy > 0 ||
+      (r.vy < 0 && r.y > nextGroundY + 0.02) ||
+      r.y > nextGroundY + 0.24;
     r.groundY = nextGroundY;
     if (isActivelyJumping) {
       r.y += r.vy * clampedDt;
-      r.vy -= 28.0 * clampedDt; // crisp gravity
+      r.vy -= 26.5 * clampedDt; // smooth ballistic gravity
       if (r.y <= r.groundY) {
         r.y = r.groundY;
-        r.vy = 0;
-        if (r.passiveSkillId === 'feather_hop') {
-          r.landingBoostTimer = 0.65;
+        // Natural elastic ground bounce when landing from a knockback/stun arc!
+        if (
+          (r.stunTimer > 0 || Math.hypot(r.knockVx, r.knockVz) > 3.5) &&
+          r.vy < -3.6
+        ) {
+          r.vy = Math.min(4.2, -r.vy * 0.36);
+        } else {
+          r.vy = 0;
+          if (r.passiveSkillId === 'feather_hop') {
+            r.landingBoostTimer = 0.65;
+          }
         }
       }
     } else {
@@ -2522,18 +2597,33 @@ export function stepRaceSimulation(
       continue;
     }
 
-    // Soft guard curbs (Wooden Fences / Bush Hedges) on normal road & shallow water segments
+    // Smooth Elastic Guard Curbs (Wooden Fences / Ice Walls) without segment-seam snapping
     if (
       !proj.isBridgeOverWater &&
       !proj.isHighBridge &&
       !proj.isDeepWaterHazard &&
       Math.abs(proj.lateralOffset) > halfWidth
     ) {
-      const clampedLat = Math.sign(proj.lateralOffset) * halfWidth;
-      r.x = proj.closestX + proj.rightX * clampedLat;
-      r.z = proj.closestZ + proj.rightZ * clampedLat;
-      r.knockVx *= 0.3;
-      r.knockVz *= 0.3;
+      const sideSign = Math.sign(proj.lateralOffset) || 1;
+      const penetration = Math.abs(proj.lateralOffset) - halfWidth;
+      // Push inward along track lateral normal only (prevents forward/backward jerks on corners)
+      const inNormalX = -proj.rightX * sideSign;
+      const inNormalZ = -proj.rightZ * sideSign;
+      r.x += inNormalX * penetration;
+      r.z += inNormalZ * penetration;
+
+      // Reflect outward normal velocity component with soft elastic restitution (0.35)
+      const totalVx = r.vx + r.knockVx;
+      const totalVz = r.vz + r.knockVz;
+      const outwardVn =
+        totalVx * (proj.rightX * sideSign) + totalVz * (proj.rightZ * sideSign);
+      if (outwardVn > 0) {
+        const bounceImpulse = outwardVn * 1.35;
+        r.knockVx += inNormalX * bounceImpulse * 0.55;
+        r.knockVz += inNormalZ * bounceImpulse * 0.55;
+        r.vx += inNormalX * outwardVn * 0.8;
+        r.vz += inNormalZ * outwardVn * 0.8;
+      }
     }
 
     // Forward checkpoint progression & 1-Lap Finish detection
@@ -2595,6 +2685,80 @@ export function stepRaceSimulation(
       r.pose = 'run';
     } else {
       r.pose = 'idle';
+    }
+  }
+
+  // Symmetric Pairwise Rigid-Body Elastic Racer-vs-Racer Collision Solver
+  const minSep = 1.18;
+  for (let i = 0; i < state.racers.length; i++) {
+    const rA = state.racers[i];
+    if (rA.finished || rA.respawnBlinkTimer > 0) continue;
+    const projA = projectPointToTrack(rA.x, rA.z, rA.furthestCheckpointDist);
+    if (projA.isDeepWaterHazard) continue;
+
+    for (let j = i + 1; j < state.racers.length; j++) {
+      const rB = state.racers[j];
+      if (rB.finished || rB.respawnBlinkTimer > 0) continue;
+      if (Math.abs(rA.y - rB.y) > 1.35) continue;
+
+      const dx = rB.x - rA.x;
+      const dz = rB.z - rA.z;
+      const dist = Math.hypot(dx, dz);
+      if (dist < minSep) {
+        const nx = dist > 0.001 ? dx / dist : 1;
+        const nz = dist > 0.001 ? dz / dist : 0;
+        const overlap = minSep - dist;
+
+        const massA =
+          (rA.passiveSkillId === 'bouncy_belly' ? 1.45 : 1.0) *
+          (rA.dashTimer > 0 ? 1.5 : 1.0);
+        const massB =
+          (rB.passiveSkillId === 'bouncy_belly' ? 1.45 : 1.0) *
+          (rB.dashTimer > 0 ? 1.5 : 1.0);
+        const invA = 1 / massA;
+        const invB = 1 / massB;
+        const invSum = invA + invB;
+
+        // 1. Positional depenetration so characters never clip inside each other
+        rA.x -= nx * overlap * (invA / invSum);
+        rA.z -= nz * overlap * (invA / invSum);
+        rB.x += nx * overlap * (invB / invSum);
+        rB.z += nz * overlap * (invB / invSum);
+
+        // 2. Elastic velocity impulse exchange along collision normal
+        const vAx = rA.vx + rA.knockVx;
+        const vAz = rA.vz + rA.knockVz;
+        const vBx = rB.vx + rB.knockVx;
+        const vBz = rB.vz + rB.knockVz;
+        const relVn = (vBx - vAx) * nx + (vBz - vAz) * nz;
+        if (relVn < 0) {
+          const restitution = 0.52;
+          const jImp = (-(1 + restitution) * relVn) / invSum;
+          const impX = nx * jImp;
+          const impZ = nz * jImp;
+
+          rA.knockVx -= impX * invA * 0.65;
+          rA.knockVz -= impZ * invA * 0.65;
+          rB.knockVx += impX * invB * 0.65;
+          rB.knockVz += impZ * invB * 0.65;
+
+          rA.pokeImpulse = Math.max(rA.pokeImpulse, 0.45);
+          rB.pokeImpulse = Math.max(rB.pokeImpulse, 0.45);
+        }
+
+        // 3. Dash Shoulder-Bump: Dashing racer knocks non-dashing rival sideways!
+        if (rA.dashTimer > 0 && rB.dashTimer <= 0 && rB.hazardCooldown <= 0) {
+          rB.hazardCooldown = 0.45;
+          applyBallisticKnockback(rB, nx, nz, 10.2, 4.6, 0.25);
+        } else if (
+          rB.dashTimer > 0 &&
+          rA.dashTimer <= 0 &&
+          rA.hazardCooldown <= 0
+        ) {
+          rA.hazardCooldown = 0.45;
+          applyBallisticKnockback(rA, -nx, -nz, 10.2, 4.6, 0.25);
+        }
+      }
     }
   }
 

@@ -92,6 +92,7 @@ interface EnemyEntity {
   y: number;
   z: number;
   vx: number;
+  vy: number;
   vz: number;
   yaw: number;
   hp: number;
@@ -451,6 +452,8 @@ export const DungeonBrawlerCanvas: React.FC<DungeonBrawlerCanvasProps> = ({
       y: 0,
       z: 8,
       vy: 0,
+      knockVx: 0,
+      knockVz: 0,
       yaw: 0,
       hp: baseStats.maxHp,
       maxHp: baseStats.maxHp,
@@ -459,6 +462,7 @@ export const DungeonBrawlerCanvas: React.FC<DungeonBrawlerCanvasProps> = ({
       critPct: baseStats.critPct,
       attackCd: 0,
       skillQCd: 0,
+      ultECooldown: 0,
       ultECd: 0,
       swingAnimTimer: 0,
       shieldTimer: 0,
@@ -576,6 +580,7 @@ export const DungeonBrawlerCanvas: React.FC<DungeonBrawlerCanvasProps> = ({
           y: 0,
           z: -7,
           vx: 0,
+          vy: 0,
           vz: 0,
           yaw: Math.PI,
           hp: maxHp,
@@ -631,6 +636,7 @@ export const DungeonBrawlerCanvas: React.FC<DungeonBrawlerCanvasProps> = ({
               y: 0,
               z: -Math.cos(ang) * dist * 0.7 - 2,
               vx: 0,
+              vy: 0,
               vz: 0,
               yaw: 0,
               hp: maxHp,
@@ -662,6 +668,7 @@ export const DungeonBrawlerCanvas: React.FC<DungeonBrawlerCanvasProps> = ({
             y: 0,
             z: -8.5,
             vx: 0,
+            vy: 0,
             vz: 0,
             yaw: 0,
             hp: bossMaxHp,
@@ -734,7 +741,7 @@ export const DungeonBrawlerCanvas: React.FC<DungeonBrawlerCanvasProps> = ({
     window.addEventListener('keyup', onKeyUp);
     renderer.domElement.addEventListener('pointerdown', onPointerDown);
 
-    // Combat Damage Helper
+    // Combat Damage Helper with Ballistic Parabolic Knockback
     const dealDamageToEnemy = (
       ent: EnemyEntity,
       damageMultiplier: number,
@@ -749,13 +756,16 @@ export const DungeonBrawlerCanvas: React.FC<DungeonBrawlerCanvasProps> = ({
         Math.round(raw * (0.92 + Math.random() * 0.16))
       );
       ent.hp = Math.max(0, ent.hp - finalDmg);
-      ent.hitFlashTimer = 0.22;
+      ent.hitFlashTimer = 0.28;
 
       const dx = ent.x - playerState.x;
       const dz = ent.z - playerState.z;
       const dist = Math.max(0.1, Math.hypot(dx, dz));
-      ent.vx += (dx / dist) * knockbackForce;
-      ent.vz += (dz / dist) * knockbackForce;
+      const massResist = ent.kind === 'boss' ? 0.45 : ent.kind === 'golem' ? 0.7 : 1.0;
+      ent.vx = ent.vx * 0.35 + (dx / dist) * knockbackForce * massResist;
+      ent.vz = ent.vz * 0.35 + (dz / dist) * knockbackForce * massResist;
+      ent.vy = Math.max(ent.vy, Math.min(8.5, (3.8 + knockbackForce * 0.28) * massResist));
+      ent.y = Math.max(0.06, ent.y);
 
       pushDamageCallout(
         isCrit ? `CRIT BONK! -${finalDmg}` : `-${finalDmg}`,
@@ -836,14 +846,24 @@ export const DungeonBrawlerCanvas: React.FC<DungeonBrawlerCanvasProps> = ({
               ? 1.3
               : 1.0);
 
-        playerState.x += moveX * speed * dt;
-        playerState.z += moveZ * speed * dt;
+        playerState.x += (moveX * speed + playerState.knockVx) * dt;
+        playerState.z += (moveZ * speed + playerState.knockVz) * dt;
+        const pKnockDrag = playerState.y > 0.08 ? 1.8 : 7.2;
+        playerState.knockVx *= Math.exp(-pKnockDrag * dt);
+        playerState.knockVz *= Math.exp(-pKnockDrag * dt);
 
-        // Clamp inside circular arena
+        // Clamp inside circular arena with elastic wall rebound
         const pDist = Math.hypot(playerState.x, playerState.z);
         if (pDist > ARENA_RADIUS - 1.2) {
-          playerState.x = (playerState.x / pDist) * (ARENA_RADIUS - 1.2);
-          playerState.z = (playerState.z / pDist) * (ARENA_RADIUS - 1.2);
+          const nx = playerState.x / pDist;
+          const nz = playerState.z / pDist;
+          playerState.x = nx * (ARENA_RADIUS - 1.2);
+          playerState.z = nz * (ARENA_RADIUS - 1.2);
+          const outVn = playerState.knockVx * nx + playerState.knockVz * nz;
+          if (outVn > 0) {
+            playerState.knockVx -= nx * outVn * 1.4;
+            playerState.knockVz -= nz * outVn * 1.4;
+          }
         }
 
         if (mag > 0.08) {
@@ -865,13 +885,25 @@ export const DungeonBrawlerCanvas: React.FC<DungeonBrawlerCanvasProps> = ({
           );
         }
 
-        // Jump / Hop Dodge
+        // Jump / Hop Dodge + Elastic Knockback Bounce
         if (pendingActionsRef.current.jump && playerState.y <= 0.05) {
-          playerState.vy = 9.2;
+          playerState.vy = 9.5;
+          playerState.y = 0.06;
         }
-        playerState.y += playerState.vy * dt;
-        if (playerState.y > 0) {
-          playerState.vy -= 24.0 * dt;
+        if (playerState.y > 0 || playerState.vy > 0) {
+          playerState.y += playerState.vy * dt;
+          playerState.vy -= 25.0 * dt;
+          if (playerState.y <= 0) {
+            playerState.y = 0;
+            if (
+              Math.hypot(playerState.knockVx, playerState.knockVz) > 3.0 &&
+              playerState.vy < -3.5
+            ) {
+              playerState.vy = Math.min(3.8, -playerState.vy * 0.34);
+            } else {
+              playerState.vy = 0;
+            }
+          }
         } else {
           playerState.y = 0;
           playerState.vy = 0;
@@ -884,7 +916,7 @@ export const DungeonBrawlerCanvas: React.FC<DungeonBrawlerCanvasProps> = ({
           for (const ent of enemies) {
             const d = Math.hypot(ent.x - playerState.x, ent.z - playerState.z);
             if (d <= 3.8 + ent.radius) {
-              dealDamageToEnemy(ent, 1.0, 6.5);
+              dealDamageToEnemy(ent, 1.0, 7.5);
             }
           }
         }
@@ -917,7 +949,7 @@ export const DungeonBrawlerCanvas: React.FC<DungeonBrawlerCanvasProps> = ({
           for (const ent of enemies) {
             const d = Math.hypot(ent.x - playerState.x, ent.z - playerState.z);
             if (d <= 5.5 + ent.radius) {
-              dealDamageToEnemy(ent, 1.65, 10.5);
+              dealDamageToEnemy(ent, 1.65, 11.5);
             }
           }
         }
@@ -928,8 +960,8 @@ export const DungeonBrawlerCanvas: React.FC<DungeonBrawlerCanvasProps> = ({
           playerState.swingAnimTimer = 0.4;
           const weaponName =
             EQUIPMENT_CATALOG[playerLoadout.weapon || 'w_squeaky_duck']
-              ?.thaiName || 'ท่าไม้ตายอาวุธ';
-          bannerText = `ULTIMATE: ${weaponName}!!`;
+              ?.name || 'WEAPON ULTIMATE';
+          bannerText = `ULTIMATE: ${weaponName.toUpperCase()}!!`;
           bannerTimer = 2.0;
 
           // Hits all enemies in a wide 8.5u radius for 2.4x weapon damage + heals 15% HP!
@@ -940,7 +972,7 @@ export const DungeonBrawlerCanvas: React.FC<DungeonBrawlerCanvasProps> = ({
           for (const ent of enemies) {
             const d = Math.hypot(ent.x - playerState.x, ent.z - playerState.z);
             if (d <= 8.5 + ent.radius) {
-              dealDamageToEnemy(ent, 2.4, 14.0);
+              dealDamageToEnemy(ent, 2.4, 14.5);
             }
           }
         }
@@ -950,7 +982,7 @@ export const DungeonBrawlerCanvas: React.FC<DungeonBrawlerCanvasProps> = ({
           for (const ent of enemies) {
             const d = Math.hypot(ent.x - playerState.x, ent.z - playerState.z);
             if (d <= 3.6 + ent.radius) {
-              dealDamageToEnemy(ent, 0.55, 4.0);
+              dealDamageToEnemy(ent, 0.55, 5.2);
             }
           }
         }
@@ -959,6 +991,27 @@ export const DungeonBrawlerCanvas: React.FC<DungeonBrawlerCanvasProps> = ({
         pendingActionsRef.current.q = false;
         pendingActionsRef.current.e = false;
         pendingActionsRef.current.jump = false;
+
+        // Pairwise Enemy-vs-Enemy Elastic Collision Separation (prevents enemies stacking into 1 point!)
+        for (let i = 0; i < enemies.length; i++) {
+          for (let j = i + 1; j < enemies.length; j++) {
+            const eA = enemies[i];
+            const eB = enemies[j];
+            const dx = eB.x - eA.x;
+            const dz = eB.z - eA.z;
+            const dist = Math.hypot(dx, dz);
+            const minSep = eA.radius + eB.radius + 0.35;
+            if (dist < minSep) {
+              const nx = dist > 0.001 ? dx / dist : 1;
+              const nz = dist > 0.001 ? dz / dist : 0;
+              const overlap = (minSep - dist) * 0.5;
+              eA.x -= nx * overlap;
+              eA.z -= nz * overlap;
+              eB.x += nx * overlap;
+              eB.z += nz * overlap;
+            }
+          }
+        }
 
         // Update Enemies & Check Deaths
         for (let i = enemies.length - 1; i >= 0; i--) {
@@ -983,15 +1036,59 @@ export const DungeonBrawlerCanvas: React.FC<DungeonBrawlerCanvasProps> = ({
           const dist = Math.max(0.01, Math.hypot(dx, dz));
           ent.yaw = Math.atan2(dx, dz);
 
-          // Move toward player + apply knockback decay
-          if (dist > ent.radius + 1.05) {
+          // Move toward player when not stunned by knockback
+          const knockMag = Math.hypot(ent.vx, ent.vz);
+          if (dist > ent.radius + 1.05 && knockMag < 3.5) {
             ent.x += (dx / dist) * ent.speed * dt;
             ent.z += (dz / dist) * ent.speed * dt;
           }
+
+          // Enemy-vs-Player Elastic Body Separation + Bump
+          const minPlayerSep = ent.radius + 0.88;
+          if (dist < minPlayerSep && Math.abs(playerState.y - ent.y) < 1.3) {
+            const nx = dx / dist;
+            const nz = dz / dist;
+            const overlap = minPlayerSep - dist;
+            playerState.x += nx * overlap * 0.65;
+            playerState.z += nz * overlap * 0.65;
+            ent.x -= nx * overlap * 0.35;
+            ent.z -= nz * overlap * 0.35;
+          }
+
           ent.x += ent.vx * dt;
           ent.z += ent.vz * dt;
-          ent.vx *= Math.pow(0.04, dt);
-          ent.vz *= Math.pow(0.04, dt);
+          const eDrag = ent.y > 0.08 ? 1.8 : 6.8;
+          ent.vx *= Math.exp(-eDrag * dt);
+          ent.vz *= Math.exp(-eDrag * dt);
+
+          // Enemy vertical parabolic hop & bounce
+          if (ent.y > 0 || ent.vy > 0) {
+            ent.y += ent.vy * dt;
+            ent.vy -= 25.0 * dt;
+            if (ent.y <= 0) {
+              ent.y = 0;
+              if (knockMag > 2.5 && ent.vy < -3.2) {
+                ent.vy = Math.min(3.5, -ent.vy * 0.35);
+              } else {
+                ent.vy = 0;
+              }
+            }
+          }
+
+          // Clamp enemy inside arena with elastic bounce
+          const eArenaDist = Math.hypot(ent.x, ent.z);
+          const maxEDist = ARENA_RADIUS - ent.radius - 0.5;
+          if (eArenaDist > maxEDist) {
+            const enx = ent.x / eArenaDist;
+            const enz = ent.z / eArenaDist;
+            ent.x = enx * maxEDist;
+            ent.z = enz * maxEDist;
+            const outVn = ent.vx * enx + ent.vz * enz;
+            if (outVn > 0) {
+              ent.vx -= enx * outVn * 1.45;
+              ent.vz -= enz * outVn * 1.45;
+            }
+          }
 
           // Boss AoE Slam Telegraph
           if (ent.kind === 'boss') {
@@ -1014,6 +1111,10 @@ export const DungeonBrawlerCanvas: React.FC<DungeonBrawlerCanvasProps> = ({
                   Math.round((ent.atk * 1.35 - playerState.def * 0.4) * shieldMult)
                 );
                 playerState.hp = Math.max(0, playerState.hp - dmg);
+                playerState.knockVx += (dx / dist) * 11.5 * shieldMult;
+                playerState.knockVz += (dz / dist) * 11.5 * shieldMult;
+                playerState.vy = Math.max(playerState.vy, 6.2 * shieldMult);
+                playerState.y = Math.max(0.06, playerState.y);
                 pushDamageCallout(`BOSS SLAM -${dmg}`, false, '#EF4444');
               }
             }
@@ -1030,16 +1131,30 @@ export const DungeonBrawlerCanvas: React.FC<DungeonBrawlerCanvasProps> = ({
                 Math.round((ent.atk - playerState.def * 0.42) * shieldMult)
               );
               playerState.hp = Math.max(0, playerState.hp - dmg);
+              playerState.knockVx += (dx / dist) * 6.8 * shieldMult;
+              playerState.knockVz += (dz / dist) * 6.8 * shieldMult;
+              playerState.vy = Math.max(playerState.vy, 3.8 * shieldMult);
+              playerState.y = Math.max(0.05, playerState.y);
               pushDamageCallout(`-${dmg} HP`, false, '#F87171');
             }
           }
 
-          // Update Enemy Visuals
+          // Update Enemy Visuals with 3D Knockback Tumble Tilt
           const vis = enemyVisuals.get(ent.id);
           if (vis) {
-            const hop = Math.abs(Math.sin(ent.animPhase)) * 0.22;
+            const hop =
+              ent.y > 0.04
+                ? ent.y
+                : Math.abs(Math.sin(ent.animPhase)) * 0.22;
             vis.wrapper.position.set(ent.x, hop, ent.z);
+            vis.wrapper.rotation.order = 'YXZ';
             vis.wrapper.rotation.y = ent.yaw;
+            vis.wrapper.rotation.x = Math.max(
+              -0.48,
+              Math.min(0.48, -knockMag * 0.038)
+            );
+            vis.wrapper.rotation.z =
+              ent.hitFlashTimer > 0 ? Math.sin(now * 0.04) * 0.22 : 0;
             if (vis.rig) {
               const rFrame = computeCharacterKinematics(
                 'run',

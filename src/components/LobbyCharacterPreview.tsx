@@ -121,9 +121,9 @@ export const LobbyCharacterPreview: React.FC<LobbyCharacterPreviewProps> = ({
 
     const scene = new THREE.Scene();
 
-    // Camera framed nicely on the single pedestal character
+    // Camera framed nicely on the single pedestal character with generous headroom in landscape
     const camera = new THREE.PerspectiveCamera(30, width / height, 0.1, 50);
-    camera.position.set(0, 1.85, 5.25);
+    camera.position.set(0, 1.95, 5.85);
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
@@ -132,7 +132,7 @@ export const LobbyCharacterPreview: React.FC<LobbyCharacterPreviewProps> = ({
     controls.enableZoom = false;
     controls.minPolarAngle = Math.PI * 0.28;
     controls.maxPolarAngle = Math.PI * 0.48;
-    controls.target.set(0, 1.02, 0);
+    controls.target.set(0, 1.08, 0);
     controls.update();
 
     // Studio 3-Point Warm Arcade Lighting
@@ -335,26 +335,36 @@ export const LobbyCharacterPreview: React.FC<LobbyCharacterPreviewProps> = ({
   }, []);
 
   return (
-    <div className="relative w-full h-full min-h-[120px] flex-1 bg-gradient-to-b from-[#2B2118] via-[#3A2C20] to-[#2B2118] border-2 sm:border-3 border-[#2B2118] rounded-2xl sm:rounded-3xl p-2 sm:p-3 flex flex-col justify-between shadow-inner overflow-hidden">
+    <div className="relative w-full h-full min-h-[110px] flex-1 bg-gradient-to-b from-[#2B2118] via-[#3A2C20] to-[#1E1610] border-2 sm:border-3 border-[#2B2118] rounded-2xl sm:rounded-3xl shadow-inner overflow-hidden">
       {/* Subtle Radial Spotlight Behind the 3D Model */}
       <div
-        className="pointer-events-none absolute inset-0 opacity-35 transition-colors duration-300"
+        className="pointer-events-none absolute inset-0 opacity-45 transition-colors duration-300"
         style={{
           background: `radial-gradient(circle at 50% 48%, ${character.primaryHex} 0%, transparent 68%)`,
         }}
       />
 
-      {/* Top Overlay: Character Number, Name & Accessory Badge */}
-      <div className="relative z-10 flex items-start justify-between gap-2 shrink-0">
-        <div className="min-w-0">
-          <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#F59E0B] text-[#2B2118] text-[9px] sm:text-[10px] font-black uppercase tracking-wider border border-[#1A130D]">
-            <Sparkles className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-            <span>#{character.index + 1} · 3D LIVE STAGE</span>
+      {/* Full-Bleed Interactive 3D Character Canvas */}
+      <div
+        ref={mountRef}
+        onClick={() => setCheerCount((c) => c + 1)}
+        title="Drag to rotate 3D model · Click to cheer!"
+        className="absolute inset-0 z-0 w-full h-full"
+      />
+
+      {/* Top Floating Overlay: Character Number, Name & 360° Toggle */}
+      <div className="pointer-events-none absolute top-2 inset-x-2.5 z-10 flex items-start justify-between gap-2">
+        <div className="min-w-0 bg-[#1A130D]/75 backdrop-blur-xs border border-white/15 rounded-xl px-2.5 py-1 shadow-md">
+          <div className="flex items-center gap-1.5">
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-full bg-[#F59E0B] text-[#2B2118] text-[8px] sm:text-[9px] font-black uppercase tracking-wider">
+              <Sparkles className="w-2.5 h-2.5" />
+              <span>#{character.index + 1}</span>
+            </span>
+            <h3 className="text-xs sm:text-sm font-black text-[#FFFDF9] leading-tight truncate">
+              {character.name}
+            </h3>
           </div>
-          <h3 className="mt-0.5 text-sm sm:text-lg font-black text-[#FFFDF9] leading-tight drop-shadow truncate">
-            {character.name}
-          </h3>
-          <p className="hidden sm:block text-[11px] font-bold text-[#FDE047] leading-snug truncate">
+          <p className="hidden md:block text-[10px] font-bold text-[#FDE047] leading-snug truncate mt-0.5">
             {character.accessory}
           </p>
         </div>
@@ -364,34 +374,23 @@ export const LobbyCharacterPreview: React.FC<LobbyCharacterPreviewProps> = ({
           type="button"
           onClick={() => setAutoRotate((prev) => !prev)}
           title="Toggle Auto-Sway / Drag 3D Model to Rotate"
-          className={`p-1 sm:p-1.5 rounded-xl border-2 text-[10px] font-black flex items-center gap-1 transition-colors shrink-0 ${
+          className={`pointer-events-auto px-2 py-1 rounded-xl border-2 text-[10px] font-black flex items-center gap-1 transition-colors shrink-0 shadow-md ${
             autoRotate
               ? 'bg-[#84CC16] text-[#2B2118] border-[#1A130D]'
-              : 'bg-[#1A130D]/80 text-[#F3E8D6] border-white/20 hover:bg-[#423326]'
+              : 'bg-[#1A130D]/85 text-[#F3E8D6] border-white/20 hover:bg-[#423326]'
           }`}
         >
-          <RotateCw className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-          <span className="hidden sm:inline">360°</span>
+          <RotateCw className="w-3 h-3" />
+          <span>360°</span>
         </button>
       </div>
 
-      {/* Center Interactive 3D Character Canvas */}
-      <div
-        ref={mountRef}
-        onClick={() => setCheerCount((c) => c + 1)}
-        title="Drag to rotate 3D model · Click to cheer!"
-        className="relative z-10 flex-1 w-full min-h-[75px]"
-      />
-
-      {/* Bottom Overlay: Pose Switcher Pills (Default: Cool Hero Pose!) */}
-      <div className="relative z-10 flex items-center justify-between gap-1.5 pt-1 border-t border-white/15 shrink-0">
-        <span className="text-[9px] sm:text-[10px] font-extrabold text-[#E5D9C5] uppercase tracking-wider">
-          Pose:
-        </span>
-        <div className="flex items-center gap-1">
+      {/* Bottom Floating Overlay: Pose Switcher Pills */}
+      <div className="pointer-events-none absolute bottom-2 inset-x-2.5 z-10 flex items-center justify-center">
+        <div className="pointer-events-auto inline-flex items-center gap-1 bg-[#1A130D]/80 backdrop-blur-xs border border-white/15 rounded-xl p-1 shadow-lg">
           {[
-            { id: 'cool' as const, label: 'COOL POSE' },
-            { id: 'jump' as const, label: 'HAPPY HOP' },
+            { id: 'cool' as const, label: 'COOL' },
+            { id: 'jump' as const, label: 'HOP' },
             { id: 'run' as const, label: 'SPRINT' },
           ].map((p) => {
             const active = previewPose === p.id;
@@ -403,10 +402,10 @@ export const LobbyCharacterPreview: React.FC<LobbyCharacterPreviewProps> = ({
                   setPreviewPose(p.id);
                   setCheerCount((c) => c + 1);
                 }}
-                className={`px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-lg sm:rounded-xl text-[9px] sm:text-[10px] font-black border transition-colors ${
+                className={`px-2 py-0.5 rounded-lg text-[9px] sm:text-[10px] font-black border transition-colors ${
                   active
                     ? 'bg-[#FDE047] text-[#2B2118] border-[#1A130D] shadow'
-                    : 'bg-[#1A130D]/75 text-[#F3E8D6] border-white/15 hover:bg-[#3A2C20]'
+                    : 'bg-transparent text-[#F3E8D6] border-transparent hover:bg-white/10'
                 }`}
               >
                 {p.label}

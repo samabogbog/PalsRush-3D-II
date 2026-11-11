@@ -204,4 +204,69 @@ test('setActiveTrack switches cleanly between woodland and snow_glacier with ice
   assert.equal(TRACK_SEGMENTS.length, 280);
 });
 
+test('3D Physics: parabolic knockback arc, low air drag, elastic bounce, and pairwise rigid-body collisions', () => {
+  const state = createInitialRaceState('bear', 'dash', 'bouncy_belly');
+  state.phase = 'racing';
+  const r0 = state.racers[0];
+  const r1 = state.racers[1];
+
+  // Place r1 right next to r0 and slap r1
+  r1.x = r0.x + 1.2;
+  r1.z = r0.z;
+  const slapped = activateRacerSlapF(state, r0);
+  assert.equal(slapped, true);
+  assert.ok(r1.vy > 4.0, 'Slapped racer should be launched into an upward parabolic arc (vy > 4)');
+  assert.ok(r1.y > r1.groundY, 'Slapped racer should lift off the ground immediately');
+
+  // Step 1 frame while airborne and verify low air drag preserves horizontal knockback momentum
+  const initialKnockSpeed = Math.hypot(r1.knockVx, r1.knockVz);
+  stepRaceSimulation(state, 0.05, {
+    moveForward: 0,
+    moveRight: 0,
+    cameraYaw: 0,
+    jumpRequested: false,
+    skillQRequested: false,
+    itemERequested: false,
+    slapFRequested: false,
+  });
+  const afterAirStepSpeed = Math.hypot(r1.knockVx, r1.knockVz);
+  assert.ok(
+    afterAirStepSpeed > initialKnockSpeed * 0.88,
+    'Airborne knockback should experience low air drag so the arc looks natural'
+  );
+
+  // Test symmetric pairwise racer-vs-racer body collision depenetration & impulse
+  const r2 = state.racers[2];
+  const r3 = state.racers[3];
+  r2.x = 0;
+  r2.z = 10;
+  r2.vx = 9;
+  r2.vz = 0;
+  r3.x = 0.8; // overlapping (< 1.50 minDist)
+  r3.z = 10;
+  r3.vx = -5;
+  r3.vz = 0;
+
+  stepRaceSimulation(state, 0.016, {
+    moveForward: 0,
+    moveRight: 0,
+    cameraYaw: 0,
+    jumpRequested: false,
+    skillQRequested: false,
+    itemERequested: false,
+    slapFRequested: false,
+  });
+
+  const separatedDist = Math.hypot(r3.x - r2.x, r3.z - r2.z);
+  assert.ok(
+    separatedDist >= 1.17,
+    `Overlapping racers should cleanly depenetrate to >= 1.17u (got ${separatedDist.toFixed(2)})`
+  );
+  assert.ok(
+    r2.knockVx < 0 && r3.knockVx > 0,
+    'Colliding racers should exchange opposite elastic velocity impulses'
+  );
+});
+
+
 

@@ -10,9 +10,12 @@
     padding: 0;
     overflow: hidden;
     overscroll-behavior: none;
-    touch-action: manipulation;
+    touch-action: none;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
     user-select: none;
     -webkit-user-select: none;
+    -webkit-touch-callout: none;
     -webkit-tap-highlight-color: transparent;
   }
 

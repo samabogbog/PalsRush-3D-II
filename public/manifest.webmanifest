@@ -1,0 +1,31 @@
+{
+  "name": "BlockyPals 3D — Party Race & Brawler",
+  "short_name": "BlockyPals",
+  "description": "3D Chibi Block Animals Party Race, Dungeon Raid & Brawler PvP Arcade Game",
+  "theme_color": "#2B2118",
+  "background_color": "#2B2118",
+  "display": "standalone",
+  "orientation": "landscape",
+  "scope": "/",
+  "start_url": "/",
+  "icons": [
+    {
+      "src": "/pwa-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-maskable-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

@@ -33,6 +33,7 @@ import {
 import { AuthAndRankModal } from './components/AuthAndRankModal';
 import { GitAgentHubModal } from './components/GitAgentHubModal';
 import { HomeHubScreen } from './components/HomeHubScreen';
+import { MobileViewportAndLandscapeGuard } from './components/PWAAndLandscapeManager';
 import { TrackId } from './game/raceEngine';
 import {
   auth,
@@ -475,12 +476,14 @@ export default function App() {
 
   return (
     <div
-      className="relative w-screen h-dvh overflow-hidden bg-[#FAF3E8] text-[#2B2118] flex flex-col select-none"
+      className="relative w-screen h-dvh overflow-hidden bg-[#FAF3E8] text-[#2B2118] flex flex-col select-none touch-none"
       data-mode={appMode}
       data-track={selectedTrackId}
       data-character={selectedCharacter.id}
       data-pose={pose}
     >
+      <MobileViewportAndLandscapeGuard />
+
       {/* Main 3D Viewport Area (100% Full-Screen Game Viewport in All Modes) */}
       <main className="relative flex-1 w-full h-full overflow-hidden">
         {appMode === 'home' ? (

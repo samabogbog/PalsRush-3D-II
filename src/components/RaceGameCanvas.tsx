@@ -2141,6 +2141,10 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
         wasAirborne: boolean;
         animTime: number;
         smoothGroundY: number;
+        smoothPitch: number;
+        smoothRoll: number;
+        prevYaw: number;
+        squashY: number;
       }
     >();
 
@@ -2638,6 +2642,10 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
             wasAirborne: false,
             animTime: i * 0.43,
             smoothGroundY: r.groundY,
+            smoothPitch: 0,
+            smoothRoll: 0,
+            prevYaw: r.yaw,
+            squashY: 0,
           };
           racerStepState.set(r.id, stepInfo);
         }
@@ -2650,8 +2658,43 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
             (r.groundY - stepInfo.smoothGroundY) * Math.min(1, dt * 24.0);
         }
 
+        // Compute natural 3D Knockback Tumble Tilt & Cornering Bank Lean
+        const sinY = Math.sin(r.yaw);
+        const cosY = Math.cos(r.yaw);
+        const fwdX = -sinY;
+        const fwdZ = -cosY;
+        const rightX = cosY;
+        const rightZ = -sinY;
+
+        const knockFwd = r.knockVx * fwdX + r.knockVz * fwdZ;
+        const knockRight = r.knockVx * rightX + r.knockVz * rightZ;
+
+        let yawDiff = r.yaw - stepInfo.prevYaw;
+        while (yawDiff > Math.PI) yawDiff -= Math.PI * 2;
+        while (yawDiff < -Math.PI) yawDiff += Math.PI * 2;
+        stepInfo.prevYaw = r.yaw;
+        const yawRate = Math.max(-6, Math.min(6, yawDiff / Math.max(0.005, dt)));
+
+        const stunWobble =
+          r.stunTimer > 0 ? Math.sin(elapsed * 22.0 + i) * 0.24 : 0;
+        const targetPitch = Math.max(
+          -0.55,
+          Math.min(0.55, -knockFwd * 0.038 + (r.vy > 1.5 ? -0.1 : 0))
+        );
+        const targetRoll = Math.max(
+          -0.62,
+          Math.min(0.62, -knockRight * 0.042 + yawRate * 0.032 + stunWobble)
+        );
+
+        const tiltAlpha = 1 - Math.exp(-14.0 * dt);
+        stepInfo.smoothPitch += (targetPitch - stepInfo.smoothPitch) * tiltAlpha;
+        stepInfo.smoothRoll += (targetRoll - stepInfo.smoothRoll) * tiltAlpha;
+
         vis.container.position.set(r.x, stepInfo.smoothGroundY, r.z);
+        vis.container.rotation.order = 'YXZ';
         vis.container.rotation.y = r.yaw;
+        vis.container.rotation.x = stepInfo.smoothPitch;
+        vis.container.rotation.z = stepInfo.smoothRoll;
 
         if (r.respawnBlinkTimer > 0) {
           vis.container.visible = Math.floor(r.respawnBlinkTimer * 14) % 2 === 0;
@@ -2683,6 +2726,21 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
         }
 
         const airOffset = Math.max(0, r.y - r.groundY);
+        const isAirborneNow = airOffset > 0.14;
+        if (stepInfo.wasAirborne && !isAirborneNow) {
+          stepInfo.squashY = -0.16; // Cute squash on landing/bounce
+        } else if (!stepInfo.wasAirborne && isAirborneNow && r.vy > 4.0) {
+          stepInfo.squashY = 0.12; // Stretch on launch
+        }
+        stepInfo.squashY *= Math.exp(-12.0 * dt);
+
+        const baseScale = 0.75;
+        vis.rig.rootGroup.scale.set(
+          baseScale * (1 - stepInfo.squashY * 0.55),
+          baseScale * (1 + stepInfo.squashY),
+          baseScale * (1 - stepInfo.squashY * 0.55)
+        );
+
         frame.rootY += airOffset / 0.75;
         applyKinematicsToRig(vis.rig, frame);
         animateEquipmentOnRig(
@@ -2692,7 +2750,6 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
         );
 
         // Spawn cute footstep dust/smoke puffs (or water splash puffs in shallow water) behind feet!
-        const isAirborneNow = airOffset > 0.14;
         const isNearCamera =
           r.id === cameraFocusRacer?.id ||
           !cameraFocusRacer ||
