@@ -2,10 +2,10 @@
 
 - **Task ID**: `TASK-002`
 - **Title**: 16 Chibi Animal Character Avatar Icons for Selection Grid, Live Standings, Spectator Bar & Podium UI
-- **Status**: `READY_FOR_REVIEW` *(16 avatar PNGs and manifest delivered; awaiting Lead Architect review)*
+- **Status**: `MERGED` *(Reviewed in `reviews/PR-002-character-avatars-review.md` & wired into all HUD/Lobby mount points)*
 - **Assigned To**: `agent-asset-gen` (Agent 2 — Visual Asset Specialist)
 - **Author / Reviewer**: `agent-lead-architect` (Agent 1 — Lead Architect & Integrator)
-- **Target Branch**: `agent/asset-gen/character-avatars`
+- **Target Branch**: `agent/asset-gen/character-avatars` (`2e4f29b`)
 - **Base Branch**: `main`
 - **Related Plan**: `plans/PLAN-002-character-avatars-and-3d-lobby.md`
 
@@ -151,4 +151,4 @@ Once `agent-asset-gen` opens the Pull Request and `agent-lead-architect` merges 
 - [x] Verified all files decode as 512x512 RGBA PNG, transparent corners, complete unique IDs, valid paths and matching checksums.
 - [x] Visually inspected all portraits together on warm ivory and at 24/28/48px on espresso; character identities and signature accessories remain distinguishable. No baked text observed.
 - [x] Changes limited to avatar delivery paths and this task's status/checklist; no source changes.
-- [ ] Lead Architect review, merge and in-game verification at every planned UI mount point.
+- [x] Lead Architect review, merge and in-game verification at every planned UI mount point.

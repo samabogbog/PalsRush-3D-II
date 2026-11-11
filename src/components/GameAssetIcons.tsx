@@ -69,65 +69,57 @@ export const ACTION_ICON_PATHS = {
 } as const;
 
 /**
- * Character Avatar Emblem (`TASK-002`):
- * Automatically renders `/assets/game/avatars/avatar_<id>.png` once Agent 2's PR is merged,
- * and falls back to a tactile blocky chibi color-block badge while `TASK-002` is OPEN.
+ * Character Avatar Emblem (`TASK-002` — Delivered by `agent-asset-gen` in PR #1 / `2e4f29b`):
+ * Renders `/assets/game/avatars/avatar_<id>.png` (512×512 circular badge with transparent corners)
+ * across Character Selection, Loadout Strip, Top-Right Standings, Spectator Bar, and Podium.
  */
 export const CharacterAvatarEmblem: React.FC<{
   characterId: CharacterId;
   primaryHex: string;
-  secondaryHex: string;
+  secondaryHex?: string;
   accentHex?: string;
   size?: number;
   className?: string;
 }> = ({
   characterId,
   primaryHex,
-  secondaryHex,
+  secondaryHex = '#FFFDF9',
   accentHex = '#F59E0B',
-  size = 34,
+  size = 38,
   className = '',
 }) => {
-  const [loaded, setLoaded] = useState(false);
   const [failed, setFailed] = useState(false);
+
+  if (!failed) {
+    return (
+      <img
+        src={CHARACTER_AVATAR_PATHS[characterId]}
+        alt={characterId}
+        width={size}
+        height={size}
+        onError={() => setFailed(true)}
+        className={`shrink-0 object-contain drop-shadow-xs select-none ${className}`}
+      />
+    );
+  }
 
   return (
     <div
       style={{
         width: size,
         height: size,
-        backgroundColor: loaded ? 'transparent' : primaryHex,
+        backgroundColor: primaryHex,
       }}
-      className={`relative shrink-0 rounded-xl border-2 border-[#2B2118] flex items-center justify-center overflow-hidden shadow-2xs ${className}`}
+      className={`relative shrink-0 rounded-full border-2 border-[#2B2118] flex items-center justify-center overflow-hidden shadow-2xs ${className}`}
     >
-      {!failed && (
-        <img
-          src={CHARACTER_AVATAR_PATHS[characterId]}
-          alt={characterId}
-          width={size}
-          height={size}
-          onLoad={() => setLoaded(true)}
-          onError={() => setFailed(true)}
-          className={`w-full h-full object-cover transition-opacity duration-150 ${
-            loaded ? 'opacity-100' : 'opacity-0 absolute inset-0'
-          }`}
-        />
-      )}
-      {!loaded && (
-        <>
-          {/* Blocky Chibi Ears + Muzzle + Eyes + Accessory Band Fallback */}
-          <span
-            className="w-[46%] h-[42%] rounded-full border border-black/25 flex items-center justify-center"
-            style={{ backgroundColor: secondaryHex }}
-          />
-          <span className="absolute top-[28%] left-[24%] w-1.5 h-1.5 rounded-full bg-[#2B2118]" />
-          <span className="absolute top-[28%] right-[24%] w-1.5 h-1.5 rounded-full bg-[#2B2118]" />
-          <span
-            className="absolute bottom-0 inset-x-0 h-[20%] border-t border-black/25"
-            style={{ backgroundColor: accentHex }}
-          />
-        </>
-      )}
+      <span
+        className="w-[46%] h-[42%] rounded-full border border-black/25 flex items-center justify-center"
+        style={{ backgroundColor: secondaryHex }}
+      />
+      <span
+        className="absolute bottom-0 inset-x-0 h-[20%] border-t border-black/25"
+        style={{ backgroundColor: accentHex }}
+      />
     </div>
   );
 };

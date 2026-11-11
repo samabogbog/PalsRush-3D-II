@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { X, FolderGit2 } from 'lucide-react';
+import { X, FolderGit2, Home } from 'lucide-react';
 import {
   ACTIVE_SKILLS,
   ActiveSkillId,
@@ -11,11 +11,29 @@ import {
   PassiveSkillId,
   POSES,
 } from './models/characterTypes';
+import {
+  computeCharacterCombatStats,
+  DEFAULT_STARTER_LOADOUT,
+  EQUIPMENT_CATALOG,
+  EquippedLoadout,
+  UserProfileData,
+} from './models/equipmentTypes';
 import { ChibiStageCanvas } from './components/ChibiStageCanvas';
 import { ControlDock } from './components/ControlDock';
 import { RaceGameCanvas, RaceHudSnapshot } from './components/RaceGameCanvas';
 import { RaceHudOverlay } from './components/RaceHudOverlay';
+import {
+  DungeonBrawlerCanvas,
+  DungeonBrawlerHudSnapshot,
+} from './components/DungeonBrawlerCanvas';
+import {
+  DungeonBrawlerHud,
+  MatchRewardResult,
+} from './components/DungeonBrawlerHud';
+import { AuthAndRankModal } from './components/AuthAndRankModal';
 import { GitAgentHubModal } from './components/GitAgentHubModal';
+import { HomeHubScreen } from './components/HomeHubScreen';
+import { TrackId } from './game/raceEngine';
 
 const ROW_GROUPS = [
   { row: 1 as const, label: 'Row 01: Woodland', startIndex: 0 },
@@ -24,10 +42,35 @@ const ROW_GROUPS = [
   { row: 4 as const, label: 'Row 04: Birds & Pond', startIndex: 12 },
 ];
 
-export type AppMode = 'race' | 'studio';
+const SESSION_STORAGE_KEY = 'pals_rush_sqlite_session_v1';
+
+export type AppMode = 'home' | 'race' | 'combat' | 'studio';
 
 export default function App() {
-  const [appMode, setAppMode] = useState<AppMode>('race');
+  const [appMode, setAppMode] = useState<AppMode>('home');
+  const [combatSubMode, setCombatSubMode] = useState<'dungeon' | 'pvp'>(
+    'dungeon'
+  );
+  const [dungeonStage, setDungeonStage] = useState<number>(1);
+  const [combatSessionKey, setCombatSessionKey] = useState<number>(1);
+  const [lastCombatReward, setLastCombatReward] =
+    useState<MatchRewardResult | null>(null);
+
+  // SQLite Member Profile & 4-Slot Shared Equipment State
+  const [userProfile, setUserProfile] = useState<UserProfileData | null>(null);
+  const [playerLoadout, setPlayerLoadout] = useState<EquippedLoadout>(
+    DEFAULT_STARTER_LOADOUT
+  );
+  const [armoryModalState, setArmoryModalState] = useState<{
+    isOpen: boolean;
+    tab: 'auth' | 'armory' | 'leaderboard';
+  }>({
+    isOpen: false,
+    tab: 'armory',
+  });
+
+  const [selectedTrackId, setSelectedTrackId] =
+    useState<TrackId>('snow_glacier');
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
   const [sliderValue, setSliderValue] = useState<number>(0);
   const [pose, setPose] = useState<AnimationPose>('idle');
@@ -47,9 +90,13 @@ export default function App() {
   const [selectedPassiveSkillId, setSelectedPassiveSkillId] =
     useState<PassiveSkillId>(CHARACTERS[0].passiveSkillId);
   const [raceSessionKey, setRaceSessionKey] = useState<number>(1);
-  const [isRaceLobbyOpen, setIsRaceLobbyOpen] = useState<boolean>(true);
+  const [isRaceLobbyOpen, setIsRaceLobbyOpen] = useState<boolean>(false);
   const [externalActionTrigger, setExternalActionTrigger] = useState<{
     type: 'q' | 'e' | 'f' | 'jump' | null;
+    seq: number;
+  }>({ type: null, seq: 0 });
+  const [externalCombatTrigger, setExternalCombatTrigger] = useState<{
+    type: 'atk' | 'q' | 'e' | 'jump' | null;
     seq: number;
   }>({ type: null, seq: 0 });
   const [spectatedRacerId, setSpectatedRacerId] = useState<CharacterId | null>(
@@ -61,13 +108,130 @@ export default function App() {
   const activePoseSpec = POSES.find((p) => p.id === pose) || POSES[0];
   const formattedNumber = String(selectedIndex + 1).padStart(2, '0');
 
+  // Initialize or resume SQLite Member / Guest Quick Play profile on boot
+  const applyProfileState = useCallback((profile: UserProfileData) => {
+    setUserProfile(profile);
+    setPlayerLoadout(profile.loadout);
+    try {
+      localStorage.setItem(SESSION_STORAGE_KEY, profile.sessionToken);
+    } catch {
+      // ignore storage restrictions
+    }
+    const foundChar = CHARACTERS.find(
+      (c) => c.id === profile.selectedCharacterId
+    );
+    if (foundChar) {
+      setSelectedIndex(foundChar.index);
+      setSliderValue(foundChar.index);
+    }
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    const initSession = async () => {
+      try {
+        let savedToken = '';
+        try {
+          savedToken = localStorage.getItem(SESSION_STORAGE_KEY) || '';
+        } catch {
+          // ignore
+        }
+        const res = await fetch('/api/auth/guest', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessionToken: savedToken || undefined }),
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!cancelled && data.user) {
+          applyProfileState(data.user);
+        }
+      } catch {
+        // Fallback offline default state
+      }
+    };
+    initSession();
+    return () => {
+      cancelled = true;
+    };
+  }, [applyProfileState]);
+
+  const syncLoadoutToServer = useCallback(
+    async (payload: {
+      selectedCharacterId?: CharacterId;
+      activeSkillId?: ActiveSkillId;
+      passiveSkillId?: PassiveSkillId;
+      loadout?: Partial<EquippedLoadout>;
+    }) => {
+      if (payload.loadout) {
+        setPlayerLoadout((prev) => ({ ...prev, ...payload.loadout }));
+      }
+      if (!userProfile?.sessionToken) return;
+      try {
+        const res = await fetch('/api/profile/loadout', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${userProfile.sessionToken}`,
+          },
+          body: JSON.stringify(payload),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.user) {
+            setUserProfile(data.user);
+            setPlayerLoadout(data.user.loadout);
+          }
+        }
+      } catch {
+        // ignore network error
+      }
+    },
+    [userProfile?.sessionToken]
+  );
+
+  const handleReportMatchCompletion = useCallback(
+    async (payload: {
+      mode: 'race' | 'dungeon' | 'pvp';
+      victory: boolean;
+      rankPlacement?: number;
+      stageCleared?: number;
+      bossDefeated?: boolean;
+      enemiesDefeated?: number;
+    }) => {
+      if (!userProfile?.sessionToken) return;
+      try {
+        const res = await fetch('/api/match/complete', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${userProfile.sessionToken}`,
+          },
+          body: JSON.stringify(payload),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.user) {
+            setUserProfile(data.user);
+          }
+          if (data.reward) {
+            setLastCombatReward(data.reward);
+          }
+        }
+      } catch {
+        // ignore
+      }
+    },
+    [userProfile?.sessionToken]
+  );
+
   const [hudSnapshot, setHudSnapshot] = useState<RaceHudSnapshot>(() => ({
     phase: 'countdown',
     countdownSec: 3.0,
     elapsedRaceSec: 0,
     playerRank: 1,
     progressPercent: 0,
-    zoneName: 'Start / Finish Meadow',
+    zoneName: 'Frostbite Ski Chalet Plaza',
     elevationMeters: 0,
     qCooldown: 0,
     fCooldown: 0,
@@ -87,7 +251,7 @@ export default function App() {
       finished: false,
       finishTimeSec: null,
       progressPercent: 0,
-      x: (idx % 4 - 1.5) * 2.2,
+      x: ((idx % 4) - 1.5) * 2.2,
       z: 14 + Math.floor(idx / 4) * 3.2,
       yaw: 0,
     })),
@@ -95,26 +259,63 @@ export default function App() {
     bannerCallout: null,
   }));
 
-  const handleSelectCharacter = useCallback((index: number) => {
-    const clamped =
-      ((index % CHARACTERS.length) + CHARACTERS.length) % CHARACTERS.length;
-    const char = CHARACTERS[clamped];
-    setSelectedIndex(clamped);
-    setSliderValue(clamped);
-    setSelectedActiveSkillId(char.activeSkillId);
-    setSelectedPassiveSkillId(char.passiveSkillId);
-    setShowAllLineup(false);
-  }, []);
+  const [combatHudSnapshot, setCombatHudSnapshot] =
+    useState<DungeonBrawlerHudSnapshot>(() => ({
+      subMode: 'dungeon',
+      stageNumber: 1,
+      stageName: 'Stage 1: Jelly Slime Ruins',
+      phase: 'fighting',
+      waveIndex: 1,
+      totalWaves: 3,
+      playerHp: 650,
+      playerMaxHp: 650,
+      playerStats: computeCharacterCombatStats(1, DEFAULT_STARTER_LOADOUT),
+      attackCooldown: 0,
+      skillQCooldown: 0,
+      ultECooldown: 0,
+      enemiesAlive: 4,
+      enemiesDefeatedTotal: 0,
+      bossInfo: null,
+      bannerText: null,
+      recentDamages: [],
+    }));
 
-  const handleSelectCharacterById = useCallback((id: CharacterId) => {
-    const found = CHARACTERS.find((c) => c.id === id);
-    if (found) {
-      setSelectedIndex(found.index);
-      setSliderValue(found.index);
-      setSelectedActiveSkillId(found.activeSkillId);
-      setSelectedPassiveSkillId(found.passiveSkillId);
-    }
-  }, []);
+  const handleSelectCharacter = useCallback(
+    (index: number) => {
+      const clamped =
+        ((index % CHARACTERS.length) + CHARACTERS.length) % CHARACTERS.length;
+      const char = CHARACTERS[clamped];
+      setSelectedIndex(clamped);
+      setSliderValue(clamped);
+      setSelectedActiveSkillId(char.activeSkillId);
+      setSelectedPassiveSkillId(char.passiveSkillId);
+      setShowAllLineup(false);
+      syncLoadoutToServer({
+        selectedCharacterId: char.id,
+        activeSkillId: char.activeSkillId,
+        passiveSkillId: char.passiveSkillId,
+      });
+    },
+    [syncLoadoutToServer]
+  );
+
+  const handleSelectCharacterById = useCallback(
+    (id: CharacterId) => {
+      const found = CHARACTERS.find((c) => c.id === id);
+      if (found) {
+        setSelectedIndex(found.index);
+        setSliderValue(found.index);
+        setSelectedActiveSkillId(found.activeSkillId);
+        setSelectedPassiveSkillId(found.passiveSkillId);
+        syncLoadoutToServer({
+          selectedCharacterId: found.id,
+          activeSkillId: found.activeSkillId,
+          passiveSkillId: found.passiveSkillId,
+        });
+      }
+    },
+    [syncLoadoutToServer]
+  );
 
   const handleScrubSlider = useCallback((val: number) => {
     setSliderValue(val);
@@ -139,9 +340,39 @@ export default function App() {
     []
   );
 
+  const handleTriggerCombatAction = useCallback(
+    (type: 'atk' | 'q' | 'e' | 'jump') => {
+      setExternalCombatTrigger((prev) => ({ type, seq: prev.seq + 1 }));
+    },
+    []
+  );
+
   const handleJoystickChange = useCallback((x: number, y: number) => {
     joystickInputRef.current = { x, y };
   }, []);
+
+  const handleLaunchCombatMode = useCallback((subMode: 'dungeon' | 'pvp') => {
+    setCombatSubMode(subMode);
+    setLastCombatReward(null);
+    setIsRaceLobbyOpen(false);
+    setAppMode('combat');
+    setCombatSessionKey((k) => k + 1);
+  }, []);
+
+  const handleGoHome = useCallback(() => {
+    setIsRaceLobbyOpen(false);
+    setSpectatedRacerId(null);
+    setAppMode('home');
+  }, []);
+
+  const handleEquipDroppedItem = useCallback(
+    (itemId: string) => {
+      const spec = EQUIPMENT_CATALOG[itemId];
+      if (!spec) return;
+      syncLoadoutToServer({ loadout: { [spec.slot]: itemId } });
+    },
+    [syncLoadoutToServer]
+  );
 
   // Studio keyboard shortcuts (only active when in 'studio' mode)
   useEffect(() => {
@@ -188,33 +419,166 @@ export default function App() {
     <div
       className="relative w-screen h-screen overflow-hidden bg-[#FAF3E8] text-[#2B2118] flex flex-col select-none"
       data-mode={appMode}
+      data-track={selectedTrackId}
       data-character={selectedCharacter.id}
       data-pose={pose}
     >
-      {/* Main 3D Viewport Area (100% Full-Screen Game Viewport in Both Modes) */}
+      {/* Main 3D Viewport Area (100% Full-Screen Game Viewport in All Modes) */}
       <main className="relative flex-1 w-full h-full overflow-hidden">
-        {appMode === 'race' ? (
+        {appMode === 'home' ? (
+          <>
+            <HomeHubScreen
+              selectedCharacter={selectedCharacter}
+              selectedActiveSkillId={selectedActiveSkillId}
+              selectedPassiveSkillId={selectedPassiveSkillId}
+              selectedTrackId={selectedTrackId}
+              dungeonStage={dungeonStage}
+              userProfile={
+                userProfile
+                  ? { ...userProfile, loadout: playerLoadout }
+                  : null
+              }
+              playerLoadout={playerLoadout}
+              onSelectCharacterByIndex={handleSelectCharacter}
+              onSelectCharacterById={handleSelectCharacterById}
+              onSelectTrack={(tId) => setSelectedTrackId(tId)}
+              onSelectDungeonStage={(st) => setDungeonStage(st)}
+              onStartPartyRace={() => {
+                setIsRaceLobbyOpen(false);
+                setSpectatedRacerId(null);
+                setAppMode('race');
+                setRaceSessionKey((k) => k + 1);
+              }}
+              onOpenHeroSkillLocker={() => {
+                setIsRaceLobbyOpen(true);
+              }}
+              onStartDungeonRaid={(stage) => {
+                setDungeonStage(stage);
+                setCombatSubMode('dungeon');
+                setLastCombatReward(null);
+                setIsRaceLobbyOpen(false);
+                setAppMode('combat');
+                setCombatSessionKey((k) => k + 1);
+              }}
+              onStartPvpBrawler={() => {
+                setCombatSubMode('pvp');
+                setLastCombatReward(null);
+                setIsRaceLobbyOpen(false);
+                setAppMode('combat');
+                setCombatSessionKey((k) => k + 1);
+              }}
+              onOpenModal={(tab) =>
+                setArmoryModalState({ isOpen: true, tab })
+              }
+              onOpenStudio={() => setAppMode('studio')}
+              onOpenGitHub={() => setIsGitHubModalOpen(true)}
+            />
+
+            {/* Allow opening the Hero & Skill Locker Modal directly on top of Home Hub when clicked */}
+            {isRaceLobbyOpen && (
+              <RaceHudOverlay
+                selectedTrackId={selectedTrackId}
+                onSelectTrack={(tId) => {
+                  setSelectedTrackId(tId);
+                  setSpectatedRacerId(null);
+                }}
+                selectedCharacter={selectedCharacter}
+                selectedActiveSkillId={selectedActiveSkillId}
+                selectedPassiveSkillId={selectedPassiveSkillId}
+                userProfile={
+                  userProfile
+                    ? { ...userProfile, loadout: playerLoadout }
+                    : null
+                }
+                hud={hudSnapshot}
+                isLobbyOpen={true}
+                onSelectCharacter={handleSelectCharacterById}
+                onSelectActiveSkill={(sk) => {
+                  setSelectedActiveSkillId(sk);
+                  syncLoadoutToServer({ activeSkillId: sk });
+                }}
+                onSelectPassiveSkill={(pk) => {
+                  setSelectedPassiveSkillId(pk);
+                  syncLoadoutToServer({ passiveSkillId: pk });
+                }}
+                onStartRace={() => {
+                  setIsRaceLobbyOpen(false);
+                  setSpectatedRacerId(null);
+                  setAppMode('race');
+                  setRaceSessionKey((k) => k + 1);
+                }}
+                onRestartRace={() => {
+                  setIsRaceLobbyOpen(false);
+                  setSpectatedRacerId(null);
+                  setAppMode('race');
+                  setRaceSessionKey((k) => k + 1);
+                }}
+                onOpenLobby={() => setIsRaceLobbyOpen(true)}
+                onCloseLobby={() => setIsRaceLobbyOpen(false)}
+                onGoHome={handleGoHome}
+                onOpenGitHub={() => setIsGitHubModalOpen(true)}
+                onSwitchToStudio={() => {
+                  setIsRaceLobbyOpen(false);
+                  setAppMode('studio');
+                }}
+                onOpenArmoryModal={(tab) =>
+                  setArmoryModalState({ isOpen: true, tab })
+                }
+                onLaunchCombatMode={handleLaunchCombatMode}
+                onTriggerAction={handleTriggerRaceAction}
+                onJoystickChange={handleJoystickChange}
+                spectatedRacerId={spectatedRacerId}
+                onSelectSpectatedRacer={setSpectatedRacerId}
+              />
+            )}
+          </>
+        ) : appMode === 'race' ? (
           <>
             <RaceGameCanvas
+              trackId={selectedTrackId}
               playerCharacterId={selectedCharacter.id}
               playerActiveSkillId={selectedActiveSkillId}
               playerPassiveSkillId={selectedPassiveSkillId}
+              playerLoadout={playerLoadout}
               raceSessionKey={raceSessionKey}
               isLobbyOpen={isRaceLobbyOpen}
               externalActionTrigger={externalActionTrigger}
               joystickInputRef={joystickInputRef}
               spectatedRacerId={spectatedRacerId}
               onHudUpdate={setHudSnapshot}
+              onPlayerFinishRace={(rank) => {
+                handleReportMatchCompletion({
+                  mode: 'race',
+                  victory: rank === 1,
+                  rankPlacement: rank,
+                });
+              }}
             />
             <RaceHudOverlay
+              selectedTrackId={selectedTrackId}
+              onSelectTrack={(tId) => {
+                setSelectedTrackId(tId);
+                setSpectatedRacerId(null);
+              }}
               selectedCharacter={selectedCharacter}
               selectedActiveSkillId={selectedActiveSkillId}
               selectedPassiveSkillId={selectedPassiveSkillId}
+              userProfile={
+                userProfile
+                  ? { ...userProfile, loadout: playerLoadout }
+                  : null
+              }
               hud={hudSnapshot}
               isLobbyOpen={isRaceLobbyOpen}
               onSelectCharacter={handleSelectCharacterById}
-              onSelectActiveSkill={setSelectedActiveSkillId}
-              onSelectPassiveSkill={setSelectedPassiveSkillId}
+              onSelectActiveSkill={(sk) => {
+                setSelectedActiveSkillId(sk);
+                syncLoadoutToServer({ activeSkillId: sk });
+              }}
+              onSelectPassiveSkill={(pk) => {
+                setSelectedPassiveSkillId(pk);
+                syncLoadoutToServer({ passiveSkillId: pk });
+              }}
               onStartRace={() => {
                 setIsRaceLobbyOpen(false);
                 setSpectatedRacerId(null);
@@ -226,12 +590,74 @@ export default function App() {
                 setRaceSessionKey((k) => k + 1);
               }}
               onOpenLobby={() => setIsRaceLobbyOpen(true)}
+              onCloseLobby={() => setIsRaceLobbyOpen(false)}
+              onGoHome={handleGoHome}
               onOpenGitHub={() => setIsGitHubModalOpen(true)}
               onSwitchToStudio={() => setAppMode('studio')}
+              onOpenArmoryModal={(tab) =>
+                setArmoryModalState({ isOpen: true, tab })
+              }
+              onLaunchCombatMode={handleLaunchCombatMode}
               onTriggerAction={handleTriggerRaceAction}
               onJoystickChange={handleJoystickChange}
               spectatedRacerId={spectatedRacerId}
               onSelectSpectatedRacer={setSpectatedRacerId}
+            />
+          </>
+        ) : appMode === 'combat' ? (
+          <>
+            <DungeonBrawlerCanvas
+              subMode={combatSubMode}
+              stageNumber={dungeonStage}
+              playerCharacterId={selectedCharacter.id}
+              playerActiveSkillId={selectedActiveSkillId}
+              playerPassiveSkillId={selectedPassiveSkillId}
+              playerLevel={userProfile?.level ?? 1}
+              playerLoadout={playerLoadout}
+              sessionKey={combatSessionKey}
+              externalActionTrigger={externalCombatTrigger}
+              joystickInputRef={joystickInputRef}
+              onHudUpdate={setCombatHudSnapshot}
+              onMatchComplete={(payload) => {
+                handleReportMatchCompletion(payload);
+              }}
+            />
+            <DungeonBrawlerHud
+              hud={combatHudSnapshot}
+              userProfile={
+                userProfile
+                  ? { ...userProfile, loadout: playerLoadout }
+                  : null
+              }
+              selectedCharacter={selectedCharacter}
+              selectedActiveSkillId={selectedActiveSkillId}
+              selectedPassiveSkillId={selectedPassiveSkillId}
+              lastReward={lastCombatReward}
+              onSelectSubMode={(sub) => {
+                setCombatSubMode(sub);
+                setLastCombatReward(null);
+                setCombatSessionKey((k) => k + 1);
+              }}
+              onSelectStage={(st) => {
+                setDungeonStage(st);
+                setLastCombatReward(null);
+                setCombatSessionKey((k) => k + 1);
+              }}
+              onRestartCombat={() => {
+                setLastCombatReward(null);
+                setCombatSessionKey((k) => k + 1);
+              }}
+              onSwitchToRaceMode={() => {
+                setIsRaceLobbyOpen(false);
+                setAppMode('race');
+              }}
+              onGoHome={handleGoHome}
+              onOpenArmoryModal={(tab) =>
+                setArmoryModalState({ isOpen: true, tab })
+              }
+              onEquipDroppedItem={handleEquipDroppedItem}
+              onTriggerCombatAction={handleTriggerCombatAction}
+              onJoystickChange={handleJoystickChange}
             />
           </>
         ) : (
@@ -304,7 +730,20 @@ export default function App() {
 
                 <button
                   type="button"
-                  onClick={() => setAppMode('race')}
+                  onClick={handleGoHome}
+                  data-testid="studio-go-home-btn"
+                  className="h-11 px-4 rounded-2xl bg-[#FDE047] hover:bg-[#FACC15] text-[#2B2118] border-3 border-[#2B2118] border-b-6 text-sm font-black shadow-lg flex items-center gap-1.5"
+                >
+                  <Home className="w-4 h-4" />
+                  <span>หน้าแรก</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsRaceLobbyOpen(false);
+                    setAppMode('race');
+                  }}
                   className="h-11 px-4 rounded-2xl bg-[#84CC16] hover:bg-[#A3E635] text-[#2B2118] border-3 border-[#2B2118] border-b-6 text-sm font-black shadow-lg"
                 >
                   RACE!
@@ -354,6 +793,27 @@ export default function App() {
           </>
         )}
       </main>
+
+      {/* SQLite Member Auth, 4-Slot Gear Armory & 3-Mode Seasonal Leaderboards Modal */}
+      <AuthAndRankModal
+        isOpen={armoryModalState.isOpen}
+        initialTab={armoryModalState.tab}
+        userProfile={
+          userProfile ? { ...userProfile, loadout: playerLoadout } : null
+        }
+        selectedCharacter={selectedCharacter}
+        onClose={() =>
+          setArmoryModalState((prev) => ({ ...prev, isOpen: false }))
+        }
+        onGoHome={handleGoHome}
+        onAuthSuccess={(profile) => {
+          applyProfileState(profile);
+        }}
+        onUpdateLoadout={(nextLoadout) => {
+          syncLoadoutToServer({ loadout: nextLoadout });
+        }}
+        onLaunchCombatMode={handleLaunchCombatMode}
+      />
 
       {/* Multi-Agent Git Hub Inspector Modal */}
       <GitAgentHubModal

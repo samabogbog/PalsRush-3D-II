@@ -15,13 +15,20 @@ import {
   CharacterRig,
   createContactShadowTexture,
 } from '../models/proceduralBlocks';
+import { EquippedLoadout } from '../models/equipmentTypes';
+import {
+  animateEquipmentOnRig,
+  attachEquipmentToCharacterRig,
+} from '../models/equipmentMeshes';
 
 export interface LobbyCharacterPreviewProps {
   character: CharacterSpec;
+  loadout?: EquippedLoadout;
 }
 
 export const LobbyCharacterPreview: React.FC<LobbyCharacterPreviewProps> = ({
   character,
+  loadout,
 }) => {
   const mountRef = useRef<HTMLDivElement | null>(null);
   const [previewPose, setPreviewPose] = useState<AnimationPose>('cool');
@@ -30,11 +37,15 @@ export const LobbyCharacterPreview: React.FC<LobbyCharacterPreviewProps> = ({
 
   const stateRef = useRef<{
     character: CharacterSpec;
+    loadout?: EquippedLoadout;
+    loadoutKey: string;
     pose: AnimationPose;
     autoRotate: boolean;
     pokeImpulse: number;
   }>({
     character,
+    loadout,
+    loadoutKey: JSON.stringify(loadout || {}),
     pose: previewPose,
     autoRotate,
     pokeImpulse: 0.9,
@@ -48,6 +59,15 @@ export const LobbyCharacterPreview: React.FC<LobbyCharacterPreviewProps> = ({
       stateRef.current.pokeImpulse = 0.95;
     }
   }, [character]);
+
+  useEffect(() => {
+    const nextKey = JSON.stringify(loadout || {});
+    if (stateRef.current.loadoutKey !== nextKey) {
+      stateRef.current.loadout = loadout;
+      stateRef.current.loadoutKey = nextKey;
+      stateRef.current.pokeImpulse = 0.75;
+    }
+  }, [loadout]);
 
   useEffect(() => {
     stateRef.current.pose = previewPose;
@@ -75,12 +95,22 @@ export const LobbyCharacterPreview: React.FC<LobbyCharacterPreviewProps> = ({
       alpha: true,
       powerPreference: 'high-performance',
     });
+    const gl = renderer.getContext();
+    const dbg = gl.getExtension('WEBGL_debug_renderer_info');
+    const glRenderer = dbg
+      ? String(gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL))
+      : '';
+    const isSoftwareGl =
+      /SwiftShader|llvmpipe|Software|Microsoft Basic Render/i.test(glRenderer);
+
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 0.98;
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(
+      isSoftwareGl ? 1 : Math.min(window.devicePixelRatio, 2)
+    );
     renderer.setSize(width, height);
-    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.enabled = !isSoftwareGl;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
     renderer.domElement.setAttribute('data-testid', 'lobby-3d-character-canvas');
@@ -112,7 +142,7 @@ export const LobbyCharacterPreview: React.FC<LobbyCharacterPreviewProps> = ({
 
     const keyLight = new THREE.DirectionalLight(0xfff4df, 1.45);
     keyLight.position.set(4.2, 8.5, 6.0);
-    keyLight.castShadow = true;
+    keyLight.castShadow = !isSoftwareGl;
     keyLight.shadow.mapSize.width = 512;
     keyLight.shadow.mapSize.height = 512;
     keyLight.shadow.camera.near = 1;
@@ -177,6 +207,7 @@ export const LobbyCharacterPreview: React.FC<LobbyCharacterPreviewProps> = ({
     const shadowTex = createContactShadowTexture();
     const rigCache = new Map<CharacterId, CharacterRig>();
     let activeCharId: CharacterId | null = null;
+    let activeLoadoutKey = '';
     let activeRig: CharacterRig | null = null;
 
     const ensureCharacterRig = (spec: CharacterSpec): CharacterRig => {
@@ -190,18 +221,29 @@ export const LobbyCharacterPreview: React.FC<LobbyCharacterPreviewProps> = ({
 
     const syncSelectedCharacter = () => {
       const targetSpec = stateRef.current.character;
-      if (activeCharId === targetSpec.id && activeRig) return;
+      const targetLoadoutKey = stateRef.current.loadoutKey;
+      const charChanged = activeCharId !== targetSpec.id || !activeRig;
+      const loadoutChanged = activeLoadoutKey !== targetLoadoutKey;
+
+      if (!charChanged && !loadoutChanged) return;
+
+      if (charChanged) {
+        if (activeRig) {
+          turntableGroup.remove(activeRig.rootGroup);
+        }
+        activeRig = ensureCharacterRig(targetSpec);
+        activeCharId = targetSpec.id;
+        turntableGroup.add(activeRig.rootGroup);
+
+        // Update pedestal accent colors to match the selected character
+        plinthTopMat.color.set(targetSpec.primaryHex);
+        studMat.color.set(targetSpec.accentHex);
+      }
 
       if (activeRig) {
-        turntableGroup.remove(activeRig.rootGroup);
+        attachEquipmentToCharacterRig(activeRig, stateRef.current.loadout);
+        activeLoadoutKey = targetLoadoutKey;
       }
-      activeRig = ensureCharacterRig(targetSpec);
-      activeCharId = targetSpec.id;
-      turntableGroup.add(activeRig.rootGroup);
-
-      // Update pedestal accent colors to match the selected character
-      plinthTopMat.color.set(targetSpec.primaryHex);
-      studMat.color.set(targetSpec.accentHex);
     };
 
     syncSelectedCharacter();
@@ -219,10 +261,23 @@ export const LobbyCharacterPreview: React.FC<LobbyCharacterPreviewProps> = ({
     resizeObserver.observe(container);
 
     let animFrameId = 0;
+    let stopped = false;
+    let pacingTimer: ReturnType<typeof setTimeout> | null = null;
     const clock = new THREE.Clock();
 
+    const afterDraw = () => {
+      if (stopped) return;
+      if (isSoftwareGl) {
+        gl.finish();
+        pacingTimer = setTimeout(() => {
+          if (!stopped) animFrameId = requestAnimationFrame(animate);
+        }, 140);
+      } else {
+        animFrameId = requestAnimationFrame(animate);
+      }
+    };
+
     const animate = () => {
-      animFrameId = requestAnimationFrame(animate);
       const dt = Math.min(clock.getDelta(), 0.05);
       const elapsed = clock.getElapsedTime();
 
@@ -248,16 +303,20 @@ export const LobbyCharacterPreview: React.FC<LobbyCharacterPreviewProps> = ({
           stateRef.current.pokeImpulse
         );
         applyKinematicsToRig(activeRig, frame);
+        animateEquipmentOnRig(activeRig, elapsed);
       }
 
       controls.update();
       renderer.render(scene, camera);
+      afterDraw();
     };
 
-    animate();
+    animFrameId = requestAnimationFrame(animate);
 
     return () => {
+      stopped = true;
       cancelAnimationFrame(animFrameId);
+      if (pacingTimer) clearTimeout(pacingTimer);
       resizeObserver.disconnect();
       controls.dispose();
       for (const rig of rigCache.values()) {
