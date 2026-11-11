@@ -1,0 +1,282 @@
+{
+  "entities": {
+    "PublicPlayerProfile": {
+      "title": "PublicPlayerProfile",
+      "description": "Player profile, 4-slot 3D equipment loadout, level progression, and 3-mode seasonal rankings (zero PII).",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the profile owner.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "username": {
+          "type": "string",
+          "description": "Unique player handle.",
+          "minLength": 2,
+          "maxLength": 40,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Public display name shown on leaderboards.",
+          "minLength": 1,
+          "maxLength": 50
+        },
+        "characterId": {
+          "type": "string",
+          "description": "Selected chibi animal character ID.",
+          "minLength": 2,
+          "maxLength": 32,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "level": {
+          "type": "integer",
+          "description": "Current player level."
+        },
+        "exp": {
+          "type": "integer",
+          "description": "Current experience points."
+        },
+        "nextLevelExp": {
+          "type": "integer",
+          "description": "Experience required for next level."
+        },
+        "coins": {
+          "type": "integer",
+          "description": "Player coin balance."
+        },
+        "weapon": {
+          "type": "string",
+          "description": "Equipped weapon ID.",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "headgear": {
+          "type": "string",
+          "description": "Equipped headgear ID.",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "cape": {
+          "type": "string",
+          "description": "Equipped cape ID.",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "aura": {
+          "type": "string",
+          "description": "Equipped aura ID.",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "inventory": {
+          "type": "array",
+          "description": "Bounded list of unlocked equipment item IDs (max 30)."
+        },
+        "combatPower": {
+          "type": "integer",
+          "description": "Calculated combat power from level and 4-slot gear."
+        },
+        "seasonNumber": {
+          "type": "integer",
+          "description": "Active competitive season number."
+        },
+        "seasonName": {
+          "type": "string",
+          "description": "Active competitive season title.",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "raceRp": {
+          "type": "integer",
+          "description": "Party Race seasonal Rank Points."
+        },
+        "raceWins": {
+          "type": "integer",
+          "description": "Party Race seasonal wins."
+        },
+        "raceMatches": {
+          "type": "integer",
+          "description": "Party Race seasonal matches."
+        },
+        "dungeonRp": {
+          "type": "integer",
+          "description": "Dungeon Raid seasonal Rank Points."
+        },
+        "highestStage": {
+          "type": "integer",
+          "description": "Highest Dungeon stage cleared."
+        },
+        "bossesDefeated": {
+          "type": "integer",
+          "description": "Total Dungeon bosses defeated."
+        },
+        "pvpRp": {
+          "type": "integer",
+          "description": "Brawler PvP seasonal Rank Points."
+        },
+        "pvpWins": {
+          "type": "integer",
+          "description": "Brawler PvP seasonal wins."
+        },
+        "pvpMatches": {
+          "type": "integer",
+          "description": "Brawler PvP seasonal matches."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server update timestamp."
+        }
+      },
+      "required": [
+        "ownerId",
+        "username",
+        "displayName",
+        "characterId",
+        "level",
+        "exp",
+        "nextLevelExp",
+        "coins",
+        "weapon",
+        "headgear",
+        "cape",
+        "aura",
+        "inventory",
+        "combatPower",
+        "seasonNumber",
+        "seasonName",
+        "raceRp",
+        "raceWins",
+        "raceMatches",
+        "dungeonRp",
+        "highestStage",
+        "bossesDefeated",
+        "pvpRp",
+        "pvpWins",
+        "pvpMatches",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "PrivateUserInfo": {
+      "title": "PrivateUserInfo",
+      "description": "Isolated PII subcollection document storing verified user email.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the owner.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Private user email address.",
+          "minLength": 3,
+          "maxLength": 120
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server update timestamp."
+        }
+      },
+      "required": [
+        "ownerId",
+        "email",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "MatchRecord": {
+      "title": "MatchRecord",
+      "description": "Completed match record for Party Race, Dungeon Raid, or Brawler PvP.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the player.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "mode": {
+          "type": "string",
+          "description": "Game mode identifier.",
+          "enum": ["race", "dungeon", "pvp"],
+          "minLength": 3,
+          "maxLength": 16
+        },
+        "status": {
+          "type": "string",
+          "description": "Terminal match status.",
+          "enum": ["active", "completed"],
+          "minLength": 6,
+          "maxLength": 16
+        },
+        "rpDelta": {
+          "type": "integer",
+          "description": "Rank Point change from the match."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server update timestamp."
+        }
+      },
+      "required": [
+        "ownerId",
+        "mode",
+        "status",
+        "rpDelta",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/PublicPlayerProfile"
+      },
+      "description": "Player profile, 4-slot 3D gear loadout, and 3-mode seasonal rankings."
+    },
+    "/users/{userId}/private/{docId}": {
+      "schema": {
+        "$ref": "#/entities/PrivateUserInfo"
+      },
+      "description": "Strictly isolated PII subcollection storing private account email."
+    },
+    "/users/{userId}/matches/{matchId}": {
+      "schema": {
+        "$ref": "#/entities/MatchRecord"
+      },
+      "description": "Per-player match history subcollection governed by parent user Master Gate."
+    }
+  }
+}

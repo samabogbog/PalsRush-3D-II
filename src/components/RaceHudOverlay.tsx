@@ -611,20 +611,20 @@ export const RaceHudOverlay: React.FC<RaceHudOverlayProps> = ({
   };
 
   return (
-    <div className="pointer-events-none absolute inset-0 z-10 flex flex-col justify-between p-2.5 sm:p-4 select-none overflow-hidden">
-      {/* MOBILE PORTRAIT -> LANDSCAPE ROTATION PROMPT BANNER */}
-      {isPortraitMobile && !dismissedPortraitBanner && (
-        <div className="pointer-events-auto mx-auto mb-1.5 z-40 flex items-center gap-2.5 bg-[#2B2118]/95 text-[#FFFDF9] border-2 border-[#FDE047] rounded-2xl px-3 py-1.5 shadow-2xl max-w-full">
-          <Smartphone className="w-4 h-4 text-[#FDE047] rotate-90 shrink-0 animate-pulse" />
-          <span className="text-[11px] font-black tracking-wide">
-            Best in Landscape!
+    <div className="pointer-events-none absolute inset-0 z-10 select-none overflow-hidden">
+      {/* MOBILE PORTRAIT -> LANDSCAPE ROTATION PROMPT BANNER (Floating overlay, zero layout push) */}
+      {isPortraitMobile && !dismissedPortraitBanner && !isLobbyOpen && (
+        <div className="pointer-events-auto absolute top-[76px] left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 bg-[#2B2118]/95 text-[#FFFDF9] border-2 border-[#FDE047] rounded-2xl px-2.5 py-1 shadow-2xl whitespace-nowrap">
+          <Smartphone className="w-3.5 h-3.5 text-[#FDE047] rotate-90 shrink-0" />
+          <span className="text-[10px] font-black tracking-wide">
+            Best in Landscape
           </span>
           <button
             type="button"
             onClick={handleToggleFullscreenLandscape}
-            className="px-2.5 py-1 rounded-xl bg-[#84CC16] hover:bg-[#A3E635] text-[#2B2118] text-[10px] font-black uppercase border border-[#1A130D] shrink-0"
+            className="px-2 py-0.5 rounded-lg bg-[#84CC16] hover:bg-[#A3E635] text-[#2B2118] text-[9px] font-black uppercase border border-[#1A130D] shrink-0"
           >
-            Fullscreen Landscape
+            Fullscreen
           </button>
           <button
             type="button"
@@ -637,35 +637,35 @@ export const RaceHudOverlay: React.FC<RaceHudOverlayProps> = ({
         </div>
       )}
 
-      {/* TOP GAME HUD ROW: Icon-First Rank Shield & Track Bar (Left) + Floating Icon Buttons & Mini Leaderboard (Right) */}
-      <div className="flex items-start justify-between gap-2 sm:gap-4">
-        {/* Top-Left: Sculpted Rank Shield + Compact Progress Bar + Passive Icon Badge */}
-        <div className="flex flex-col gap-1.5">
-          <div className="pointer-events-auto flex items-center gap-2">
+      {/* ==================== PINNED TOP GAME HUD ROW (NEVER SHIFTS BOTTOM CONTROLS) ==================== */}
+      <div className="absolute top-2 inset-x-2 sm:top-3.5 sm:inset-x-4 z-10 flex items-start justify-between gap-2">
+        {/* Top-Left: Sculpted Rank Shield + Fixed-Width Tabular Progress Bar + Passive Icon Badge */}
+        <div className="relative flex flex-col">
+          <div className="pointer-events-auto flex items-center gap-1.5 sm:gap-2">
             {/* Dynamic SVG Rank Shield with Hover Tooltip */}
-            <div className="relative group">
-              <div className="bg-[#2B2118]/95 border-3 border-[#1A130D] border-b-5 rounded-3xl p-1 sm:p-1.5 shadow-xl flex items-center gap-2 sm:gap-3 pr-3 sm:pr-4">
-                <div className="sm:hidden">
-                  <ArcadeRankShield rank={hud.playerRank} size={44} />
+            <div className="relative group shrink-0">
+              <div className="bg-[#2B2118]/95 border-2 sm:border-3 border-[#1A130D] rounded-2xl sm:rounded-3xl p-1 sm:p-1.5 shadow-xl flex items-center gap-2 sm:gap-2.5 pr-2.5 sm:pr-3.5">
+                <div className="sm:hidden shrink-0">
+                  <ArcadeRankShield rank={hud.playerRank} size={38} />
                 </div>
-                <div className="hidden sm:block">
-                  <ArcadeRankShield rank={hud.playerRank} size={56} />
+                <div className="hidden sm:block shrink-0">
+                  <ArcadeRankShield rank={hud.playerRank} size={52} />
                 </div>
 
-                <div className="min-w-[105px] sm:min-w-[135px]">
-                  <div className="flex items-center justify-between gap-1.5">
-                    <span className="text-xs sm:text-base font-black text-[#FDE047] tracking-wide game-text-shadow">
+                <div className="w-[106px] sm:w-[136px] shrink-0">
+                  <div className="flex items-center justify-between gap-1 tabular-nums">
+                    <span className="text-xs sm:text-base font-black text-[#FDE047] tracking-wide game-text-shadow tabular-nums">
                       {formatRaceTime(hud.elapsedRaceSec)}
                     </span>
-                    <span className="text-[11px] sm:text-xs font-black text-[#A3E635]">
+                    <span className="text-[10px] sm:text-xs font-black text-[#A3E635] tabular-nums">
                       {hud.progressPercent}%
                     </span>
                   </div>
 
                   {/* Chunky Visual Track Bar */}
-                  <div className="mt-1 w-full h-2.5 sm:h-3.5 bg-black/50 rounded-full overflow-hidden border-2 border-[#1A130D] p-0.5">
+                  <div className="mt-1 w-full h-2 sm:h-3 bg-black/50 rounded-full overflow-hidden border border-[#1A130D] p-0.5">
                     <div
-                      className="h-full bg-gradient-to-r from-[#84CC16] to-[#FDE047] rounded-full transition-all duration-150"
+                      className="h-full bg-gradient-to-r from-[#84CC16] to-[#FDE047] rounded-full transition-[width] duration-150"
                       style={{ width: `${Math.max(6, hud.progressPercent)}%` }}
                     />
                   </div>
@@ -675,17 +675,17 @@ export const RaceHudOverlay: React.FC<RaceHudOverlayProps> = ({
               {/* Hover Tooltip for Zone & Telemetry */}
               <div className="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150 absolute left-0 top-full mt-2 z-30 w-56 bg-[#2B2118] text-[#FFFDF9] border-2 border-[#FDE047] rounded-2xl p-2.5 shadow-xl text-xs">
                 <div className="font-bold text-[#FDE047]">{hud.zoneName}</div>
-                <div className="text-[11px] text-[#E5D9C5] mt-0.5">
+                <div className="text-[11px] text-[#E5D9C5] mt-0.5 tabular-nums">
                   Altitude: +{hud.elevationMeters}m · Slaps Landed: {hud.slapsLanded}
                 </div>
               </div>
             </div>
 
-            {/* Floating Passive Perk Medallion (Icon Only + Hover Tooltip!) */}
-            <div className="relative group">
-              <div className="w-11 h-11 sm:w-13 sm:h-13 rounded-2xl bg-[#FFFDF9] border-3 border-[#2B2118] border-b-5 shadow-lg flex items-center justify-center cursor-help transition-transform group-hover:scale-105">
-                <PassiveSkillEmblem passiveId={selectedPassiveSkillId} size={36} />
-                <span className="absolute -bottom-1.5 px-1.5 py-0.2 rounded-full bg-[#2B2118] text-[#38BDF8] text-[8px] sm:text-[9px] font-black tracking-wider uppercase">
+            {/* Floating Passive Perk Medallion (Fixed Size, Zero Shift) */}
+            <div className="relative group shrink-0">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-[#FFFDF9] border-2 sm:border-3 border-[#2B2118] shadow-lg flex items-center justify-center cursor-help">
+                <PassiveSkillEmblem passiveId={selectedPassiveSkillId} size={32} />
+                <span className="pointer-events-none absolute -bottom-1.5 px-1.5 py-0.2 rounded-full bg-[#2B2118] text-[#38BDF8] text-[8px] font-black tracking-wider uppercase">
                   AUTO
                 </span>
               </div>
@@ -705,13 +705,13 @@ export const RaceHudOverlay: React.FC<RaceHudOverlayProps> = ({
             </div>
           </div>
 
-          {/* Short Pop-up Event Pills (Max 2, super concise) */}
+          {/* Floating Pop-up Event Pills (Absolutely positioned below Rank Shield so they NEVER push layout!) */}
           {hud.events.length > 0 && (
-            <div className="space-y-1">
+            <div className="pointer-events-none absolute left-0 top-full mt-2 space-y-1 z-20 w-60">
               {hud.events.slice(0, 2).map((ev) => (
                 <div
                   key={ev.id}
-                  className="text-[11px] sm:text-xs font-bold text-[#2B2118] bg-[#FEF08A] px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-2xl border-2 border-[#2B2118] border-b-4 w-fit shadow-md"
+                  className="text-[10px] sm:text-xs font-bold text-[#2B2118] bg-[#FEF08A]/95 px-2.5 py-0.5 rounded-xl border-2 border-[#2B2118] w-fit shadow-md truncate max-w-full"
                 >
                   {ev.text}
                 </div>
@@ -720,171 +720,141 @@ export const RaceHudOverlay: React.FC<RaceHudOverlayProps> = ({
           )}
         </div>
 
-        {/* Top-Right: Tactile Arcade Buttons (including Home, Fullscreen Landscape Lock) + Compact Standings */}
-        <div className="flex flex-col items-end gap-1.5 sm:gap-2">
-          <div className="pointer-events-auto flex flex-wrap items-center justify-end gap-1.5 sm:gap-2">
+        {/* Top-Right: Compact Single-Row Arcade Buttons + Standings & Minimap */}
+        <div className="flex flex-col items-end gap-1.5">
+          <div className="pointer-events-auto flex items-center justify-end gap-1 sm:gap-1.5">
             {/* Back to Main Home Screen Button */}
             {onGoHome && (
-              <div className="relative group">
-                <button
-                  type="button"
-                  onClick={onGoHome}
-                  data-testid="race-go-home-btn"
-                  aria-label="Back to Main Home Screen"
-                  className="h-10 sm:h-11 px-2.5 sm:px-3.5 rounded-2xl bg-[#FDE047] hover:bg-[#FACC15] text-[#2B2118] border-3 border-[#2B2118] border-b-5 active:translate-y-0.5 transition-all flex items-center gap-1.5 shadow-lg"
-                >
-                  <MenuIconEmblem icon="home" size={22} />
-                  <span className="text-xs sm:text-sm font-black">HOME</span>
-                </button>
-                <div className="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150 absolute right-0 top-full mt-2 z-30 whitespace-nowrap bg-[#2B2118] text-[#FFFDF9] border-2 border-[#FDE047] rounded-xl px-2.5 py-1.5 text-xs shadow-lg">
-                  Main Home Menu
-                </div>
-              </div>
+              <button
+                type="button"
+                onClick={onGoHome}
+                data-testid="race-go-home-btn"
+                aria-label="Back to Main Home Screen"
+                className="h-9 sm:h-10 px-2 sm:px-3 rounded-xl sm:rounded-2xl bg-[#FDE047] hover:bg-[#FACC15] text-[#2B2118] border-2 border-[#2B2118] active:scale-95 transition-transform flex items-center gap-1 shadow-lg shrink-0"
+              >
+                <MenuIconEmblem icon="home" size={18} />
+                <span className="text-[11px] sm:text-xs font-black">HOME</span>
+              </button>
             )}
 
             {/* Fullscreen + Landscape Orientation Lock Button */}
-            <div className="relative group">
-              <button
-                type="button"
-                onClick={handleToggleFullscreenLandscape}
-                aria-label={
-                  isFullscreen
-                    ? 'Exit Fullscreen'
-                    : 'Fullscreen Landscape Mode'
-                }
-                className={`h-10 sm:h-11 px-2.5 sm:px-3 rounded-2xl border-3 border-[#2B2118] border-b-5 active:translate-y-0.5 transition-all flex items-center gap-1.5 shadow-lg ${
-                  isFullscreen
-                    ? 'bg-[#84CC16] text-[#2B2118]'
-                    : 'bg-[#2B2118] hover:bg-[#423326] text-[#FDE047]'
-                }`}
-              >
-                {isFullscreen ? (
-                  <Minimize2 className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5]" />
-                ) : (
-                  <Maximize2 className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5]" />
-                )}
-                <span className="text-[11px] sm:text-xs font-black uppercase">
-                  {isFullscreen ? 'EXIT FULL' : 'FULLSCREEN'}
-                </span>
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={handleToggleFullscreenLandscape}
+              aria-label={
+                isFullscreen ? 'Exit Fullscreen' : 'Fullscreen Landscape Mode'
+              }
+              className={`h-9 sm:h-10 px-2 sm:px-2.5 rounded-xl sm:rounded-2xl border-2 border-[#2B2118] active:scale-95 transition-transform flex items-center gap-1 shadow-lg shrink-0 ${
+                isFullscreen
+                  ? 'bg-[#84CC16] text-[#2B2118]'
+                  : 'bg-[#2B2118] hover:bg-[#423326] text-[#FDE047]'
+              }`}
+            >
+              {isFullscreen ? (
+                <Minimize2 className="w-4 h-4 stroke-[2.5]" />
+              ) : (
+                <Maximize2 className="w-4 h-4 stroke-[2.5]" />
+              )}
+              <span className="hidden md:inline text-[11px] font-black uppercase">
+                {isFullscreen ? 'EXIT' : 'FULL'}
+              </span>
+            </button>
 
             {/* 3D Dungeon Raid & PvP Mode Button */}
-            <div className="relative group">
-              <button
-                type="button"
-                onClick={() => onLaunchCombatMode?.('dungeon')}
-                data-testid="hud-open-dungeon-btn"
-                aria-label="3D Dungeon Raid & Brawler PvP"
-                className="h-10 sm:h-11 px-2.5 sm:px-3.5 rounded-2xl bg-[#EF4444] hover:bg-[#F87171] text-white border-3 border-[#2B2118] border-b-5 active:translate-y-0.5 transition-all flex items-center gap-1.5 shadow-lg"
-              >
-                <MenuIconEmblem icon="weapon" size={22} />
-                <span className="text-xs sm:text-sm font-black">DUNGEON</span>
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => onLaunchCombatMode?.('dungeon')}
+              data-testid="hud-open-dungeon-btn"
+              aria-label="3D Dungeon Raid & Brawler PvP"
+              className="h-9 sm:h-10 px-2 sm:px-3 rounded-xl sm:rounded-2xl bg-[#EF4444] hover:bg-[#F87171] text-white border-2 border-[#2B2118] active:scale-95 transition-transform flex items-center gap-1 shadow-lg shrink-0"
+            >
+              <MenuIconEmblem icon="weapon" size={18} />
+              <span className="hidden sm:inline text-xs font-black">DUNGEON</span>
+            </button>
 
             {/* 4-Slot Gear Armory & Seasonal Ranks Button */}
-            <div className="relative group">
-              <button
-                type="button"
-                onClick={() => onOpenArmoryModal?.('armory')}
-                data-testid="hud-open-armory-btn"
-                aria-label="4-Slot Gear & Seasonal Ranks"
-                className="h-10 sm:h-11 px-2.5 sm:px-3 rounded-2xl bg-[#A855F7] hover:bg-[#9333EA] text-white border-3 border-[#2B2118] border-b-5 active:translate-y-0.5 transition-all flex items-center gap-1.5 shadow-lg"
-              >
-                <MenuIconEmblem icon="gear" size={22} />
-                <span className="text-xs sm:text-sm font-black">GEAR</span>
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => onOpenArmoryModal?.('armory')}
+              data-testid="hud-open-armory-btn"
+              aria-label="4-Slot Gear & Seasonal Ranks"
+              className="h-9 sm:h-10 px-2 sm:px-3 rounded-xl sm:rounded-2xl bg-[#A855F7] hover:bg-[#9333EA] text-white border-2 border-[#2B2118] active:scale-95 transition-transform flex items-center gap-1 shadow-lg shrink-0"
+            >
+              <MenuIconEmblem icon="gear" size={18} />
+              <span className="hidden sm:inline text-xs font-black">GEAR</span>
+            </button>
 
             {/* Loadout Locker Button */}
-            <div className="relative group">
-              <button
-                type="button"
-                onClick={onOpenLobby}
-                aria-label="Hero & Skill Locker"
-                className="h-10 sm:h-11 px-2.5 sm:px-3.5 rounded-2xl bg-[#F59E0B] hover:bg-[#FBBF24] text-[#2B2118] border-3 border-[#2B2118] border-b-5 active:translate-y-0.5 transition-all flex items-center gap-1.5 shadow-lg"
-              >
-                <MenuIconEmblem icon="heroes" size={22} />
-                <span className="text-xs sm:text-sm font-black">HEROES</span>
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={onOpenLobby}
+              aria-label="Hero & Skill Locker"
+              className="h-9 sm:h-10 px-2 sm:px-3 rounded-xl sm:rounded-2xl bg-[#F59E0B] hover:bg-[#FBBF24] text-[#2B2118] border-2 border-[#2B2118] active:scale-95 transition-transform flex items-center gap-1 shadow-lg shrink-0"
+            >
+              <MenuIconEmblem icon="heroes" size={18} />
+              <span className="text-[11px] sm:text-xs font-black">HEROES</span>
+            </button>
 
             {/* 3D Studio Icon Button */}
-            <div className="relative group">
-              <button
-                type="button"
-                onClick={onSwitchToStudio}
-                aria-label="3D Model Studio"
-                className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-[#FFFDF9] hover:bg-[#FEF3C7] text-[#2B2118] border-3 border-[#2B2118] border-b-5 active:translate-y-0.5 transition-all flex items-center justify-center shadow-lg"
-              >
-                <Box className="w-4 h-4 sm:w-5 sm:h-5 text-[#6580B2] stroke-[2.5]" />
-              </button>
-              <div className="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150 absolute right-0 top-full mt-2 z-30 whitespace-nowrap bg-[#2B2118] text-[#FFFDF9] border-2 border-[#38BDF8] rounded-xl px-2.5 py-1.5 text-xs shadow-lg">
-                3D Character Studio
-              </div>
-            </div>
+            <button
+              type="button"
+              onClick={onSwitchToStudio}
+              aria-label="3D Model Studio"
+              className="hidden sm:flex w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-[#FFFDF9] hover:bg-[#FEF3C7] text-[#2B2118] border-2 border-[#2B2118] active:scale-95 transition-transform items-center justify-center shadow-lg shrink-0"
+            >
+              <Box className="w-4 h-4 text-[#6580B2] stroke-[2.5]" />
+            </button>
 
             {/* Git Agent Hub Icon Button */}
-            <div className="relative group">
-              <button
-                type="button"
-                onClick={onOpenGitHub}
-                aria-label="Git Agent Hub"
-                className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-[#FFFDF9] hover:bg-[#FEF3C7] text-[#2B2118] border-3 border-[#2B2118] border-b-5 active:translate-y-0.5 transition-all flex items-center justify-center shadow-lg"
-              >
-                <FolderGit2 className="w-4 h-4 sm:w-5 sm:h-5 text-[#C86D3B] stroke-[2.5]" />
-              </button>
-              <div className="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150 absolute right-0 top-full mt-2 z-30 whitespace-nowrap bg-[#2B2118] text-[#FFFDF9] border-2 border-[#C86D3B] rounded-xl px-2.5 py-1.5 text-xs shadow-lg">
-                Git Agent Hub (PR #1 Merged)
-              </div>
-            </div>
+            <button
+              type="button"
+              onClick={onOpenGitHub}
+              aria-label="Git Agent Hub"
+              className="hidden sm:flex w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-[#FFFDF9] hover:bg-[#FEF3C7] text-[#2B2118] border-2 border-[#2B2118] active:scale-95 transition-transform items-center justify-center shadow-lg shrink-0"
+            >
+              <FolderGit2 className="w-4 h-4 text-[#C86D3B] stroke-[2.5]" />
+            </button>
 
             {/* Restart Icon Button */}
-            <div className="relative group">
-              <button
-                type="button"
-                onClick={onRestartRace}
-                aria-label="Restart Race"
-                className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-[#2B2118] hover:bg-[#423326] text-[#FDE047] border-3 border-[#1A130D] border-b-5 active:translate-y-0.5 transition-all flex items-center justify-center shadow-lg"
-              >
-                <RotateCcw className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5]" />
-              </button>
-              <div className="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150 absolute right-0 top-full mt-2 z-30 whitespace-nowrap bg-[#2B2118] text-[#FFFDF9] border-2 border-[#FDE047] rounded-xl px-2.5 py-1.5 text-xs shadow-lg">
-                Restart Race
-              </div>
-            </div>
+            <button
+              type="button"
+              onClick={onRestartRace}
+              aria-label="Restart Race"
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-[#2B2118] hover:bg-[#423326] text-[#FDE047] border-2 border-[#1A130D] active:scale-95 transition-transform flex items-center justify-center shadow-lg shrink-0"
+            >
+              <RotateCcw className="w-4 h-4 stroke-[2.5]" />
+            </button>
           </div>
 
-          {/* Compact Arcade Top-3 Standings Pill Board + Live Track Minimap (Side-by-side for zero vertical crowding on mobile & desktop) */}
-          <div className="flex items-start gap-1.5 sm:gap-2">
-            <div className="bg-[#2B2118]/90 text-[#FFFDF9] border-3 border-[#1A130D] border-b-5 rounded-2xl px-2 py-1.5 shadow-lg w-38 sm:w-46 space-y-0.5 sm:space-y-1">
+          {/* Compact Arcade Top-3 Standings Pill Board + Live Track Minimap */}
+          <div className="flex items-start gap-1.5">
+            <div className="bg-[#2B2118]/90 text-[#FFFDF9] border-2 border-[#1A130D] rounded-2xl px-2 py-1 shadow-lg w-36 sm:w-44 space-y-0.5 tabular-nums">
               {hud.standings.slice(0, 3).map((r) => (
                 <div
                   key={r.id}
-                  className={`flex items-center justify-between text-[11px] sm:text-xs font-bold px-1.5 py-0.5 rounded-lg ${
+                  className={`flex items-center justify-between text-[10px] sm:text-xs font-bold px-1.5 py-0.5 rounded-lg ${
                     r.isPlayer
                       ? 'bg-[#F59E0B] text-[#2B2118]'
                       : 'text-[#F3E8D6]'
                   }`}
                 >
-                  <div className="flex items-center gap-1.5 truncate">
-                    <span className="font-black">{r.rank}.</span>
+                  <div className="flex items-center gap-1 truncate">
+                    <span className="font-black tabular-nums">{r.rank}.</span>
                     <CharacterAvatarEmblem
                       characterId={r.id}
                       primaryHex={r.primaryHex}
-                      size={20}
+                      size={18}
                     />
                     <span className="truncate">{r.shortName}</span>
                   </div>
-                  <span className="text-[10px] sm:text-[11px] opacity-90">
+                  <span className="text-[10px] opacity-90 tabular-nums shrink-0">
                     {r.finished ? 'WIN' : `${r.progressPercent}%`}
                   </span>
                 </div>
               ))}
             </div>
 
-            {/* Compact Real-Time Track Minimap (Desktop & Mobile) */}
+            {/* Compact Real-Time Track Minimap */}
             <TrackMinimap
               trackId={selectedTrackId}
               standings={hud.standings}
@@ -894,14 +864,14 @@ export const RaceHudOverlay: React.FC<RaceHudOverlayProps> = ({
         </div>
       </div>
 
-      {/* CENTER COUNTDOWN OR CALLOUT POPUP */}
-      <div className="flex flex-col items-center justify-center my-auto">
+      {/* ==================== PINNED CENTER COUNTDOWN OR CALLOUT POPUP (ZERO LAYOUT IMPACT) ==================== */}
+      <div className="pointer-events-none absolute inset-x-4 top-1/3 -translate-y-1/2 z-10 flex flex-col items-center justify-center">
         {hud.phase === 'countdown' && !isLobbyOpen && (
-          <div className="bg-[#2B2118] text-[#FFFDF9] px-8 py-4 sm:px-10 sm:py-6 rounded-3xl shadow-2xl border-4 border-[#F59E0B] border-b-8 text-center animate-bounce">
+          <div className="bg-[#2B2118] text-[#FFFDF9] px-7 py-3 sm:px-10 sm:py-5 rounded-3xl shadow-2xl border-4 border-[#F59E0B] text-center">
             <p className="text-xs sm:text-sm font-black text-[#FDE047] tracking-wider uppercase">
               GET READY!
             </p>
-            <div className="text-5xl sm:text-7xl font-black tracking-tight mt-0.5 text-[#FFFDF9] game-text-shadow">
+            <div className="text-4xl sm:text-6xl font-black tracking-tight mt-0.5 text-[#FFFDF9] game-text-shadow tabular-nums">
               {Math.ceil(hud.countdownSec)}
             </div>
           </div>
@@ -909,7 +879,7 @@ export const RaceHudOverlay: React.FC<RaceHudOverlayProps> = ({
 
         {hud.bannerCallout && hud.phase === 'racing' && !isLobbyOpen && (
           <div
-            className="px-5 py-2 sm:px-6 sm:py-2.5 rounded-3xl bg-[#2B2118] font-black text-base sm:text-lg tracking-wide shadow-2xl border-3 border-[#FFFDF9]/30 border-b-6"
+            className="px-4 py-1.5 sm:px-6 sm:py-2 rounded-2xl bg-[#2B2118]/95 font-black text-sm sm:text-lg tracking-wide shadow-2xl border-2 border-[#FFFDF9]/30 text-center"
             style={{ color: hud.bannerCallout.colorHex }}
           >
             {hud.bannerCallout.text}
@@ -917,12 +887,10 @@ export const RaceHudOverlay: React.FC<RaceHudOverlayProps> = ({
         )}
       </div>
 
-      {/* BOTTOM GAMEPAD BAR: Ergonomic Mobile Landscape Layout
-          - Bottom-Left: Responsive Analog Thumbstick with generous touch zone
-          - Bottom-Right: Radial Action Cluster (Skills, Prank Item, Slap & Hop) */}
-      <div className="w-full flex items-end justify-between gap-2 pb-0.5 sm:pb-1">
-        {/* BOTTOM-LEFT: Virtual Analog Thumbstick for Mobile Landscape, Tablet & Touch Steering */}
-        <div className="pointer-events-auto flex flex-col items-center gap-1 pl-1 sm:pl-2">
+      {/* ==================== PINNED BOTTOM GAMEPAD BAR (LOCKED GEOMETRY, ZERO CLS) ==================== */}
+      <div className="absolute bottom-2 inset-x-2 sm:bottom-3.5 sm:inset-x-4 z-10 flex items-end justify-between gap-2">
+        {/* BOTTOM-LEFT: Fixed-Size Virtual Analog Thumbstick */}
+        <div className="pointer-events-auto flex flex-col items-center gap-1 pl-0.5 sm:pl-1 shrink-0">
           <div
             ref={stickBaseRef}
             onPointerDown={handleStickPointerDown}
@@ -930,60 +898,54 @@ export const RaceHudOverlay: React.FC<RaceHudOverlayProps> = ({
             onPointerUp={handleStickPointerUp}
             onPointerCancel={handleStickPointerUp}
             aria-label="Virtual Analog Steering Thumbstick"
-            className={`relative w-28 h-28 sm:w-34 sm:h-34 rounded-full bg-[#2B2118]/85 border-3 border-b-6 shadow-2xl touch-none flex items-center justify-center cursor-grab active:cursor-grabbing transition-colors ${
-              isStickActive
-                ? 'border-[#FDE047] ring-4 ring-[#FDE047]/30'
-                : 'border-[#FFFDF9]/50'
+            className={`relative w-24 h-24 sm:w-32 sm:h-32 shrink-0 rounded-full bg-[#2B2118]/85 border-3 shadow-2xl touch-none flex items-center justify-center cursor-grab active:cursor-grabbing transition-colors ${
+              isStickActive ? 'border-[#FDE047]' : 'border-[#FFFDF9]/50'
             }`}
           >
-            {/* Outer Directional Chevrons */}
-            <span className="pointer-events-none absolute top-1.5 text-[10px] font-black text-[#FDE047]/90">
+            <span className="pointer-events-none absolute top-1.5 text-[9px] font-black text-[#FDE047]/90">
               ▲
             </span>
-            <span className="pointer-events-none absolute bottom-1.5 text-[10px] font-black text-[#FDE047]/90">
+            <span className="pointer-events-none absolute bottom-1.5 text-[9px] font-black text-[#FDE047]/90">
               ▼
             </span>
-            <span className="pointer-events-none absolute left-2 text-[10px] font-black text-[#FDE047]/90">
+            <span className="pointer-events-none absolute left-2 text-[9px] font-black text-[#FDE047]/90">
               ◀
             </span>
-            <span className="pointer-events-none absolute right-2 text-[10px] font-black text-[#FDE047]/90">
+            <span className="pointer-events-none absolute right-2 text-[9px] font-black text-[#FDE047]/90">
               ▶
             </span>
 
-            {/* Inner Ring Guide */}
-            <div className="pointer-events-none w-16 h-16 sm:w-20 sm:h-20 rounded-full border-2 border-dashed border-[#FFFDF9]/25" />
+            <div className="pointer-events-none w-14 h-14 sm:w-18 sm:h-18 rounded-full border-2 border-dashed border-[#FFFDF9]/25" />
 
-            {/* Draggable Thumb Knob */}
+            {/* Draggable Thumb Knob (Compositor-only transform) */}
             <div
-              className="pointer-events-none w-13 h-13 sm:w-15 sm:h-15 rounded-full bg-gradient-to-b from-[#FDE047] to-[#F59E0B] border-3 border-[#2B2118] border-b-5 shadow-xl flex items-center justify-center transition-transform duration-75"
+              className="pointer-events-none w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-gradient-to-b from-[#FDE047] to-[#F59E0B] border-2 border-[#2B2118] shadow-xl flex items-center justify-center will-change-transform"
               style={{
-                transform: `translate(${knobOffset.x}px, ${knobOffset.y}px)`,
+                transform: `translate3d(${knobOffset.x}px, ${knobOffset.y}px, 0)`,
               }}
             >
-              <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-[#FFFDF9]/85 border border-[#2B2118]/40" />
+              <div className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-[#FFFDF9]/85 border border-[#2B2118]/40" />
             </div>
           </div>
 
-          <span className="px-2.5 py-0.5 rounded-full bg-[#2B2118]/90 text-[#FDE047] border border-[#1A130D] text-[9px] sm:text-[10px] font-black tracking-wide uppercase shadow">
+          <span className="px-2 py-0.5 rounded-full bg-[#2B2118]/90 text-[#FDE047] border border-[#1A130D] text-[8px] sm:text-[9px] font-black tracking-wide uppercase shadow whitespace-nowrap">
             JOYSTICK / WASD
           </span>
         </div>
 
-        {/* CENTER-BOTTOM HINT PILL (Visible on wide screens) */}
-        <div className="hidden xl:flex flex-col items-center pb-2">
-          <div className="px-3.5 py-1 rounded-full bg-[#2B2118]/80 text-[#FFFDF9] border-2 border-[#1A130D] text-[11px] font-bold shadow-md">
+        {/* CENTER-BOTTOM HINT PILL (Desktop only) */}
+        <div className="hidden xl:flex flex-col items-center pb-1">
+          <div className="px-3.5 py-1 rounded-full bg-[#2B2118]/80 text-[#FFFDF9] border border-[#1A130D] text-[11px] font-bold shadow-md whitespace-nowrap">
             Swipe Screen to Rotate Camera · Click 3D Track for 360° Mouse Look (ESC to unlock)
           </div>
         </div>
 
-        {/* BOTTOM-RIGHT: ERGONOMIC MOBILE ACTION ARC / CLUSTER
-            - Upper Arc: [Q] Active Skill + [E] Prank Item
-            - Lower Arc: [F] Sideways Slap + Giant [SPC] Hop Anchor */}
-        <div className="pointer-events-auto flex flex-col items-end gap-2 sm:gap-2.5 pr-1 sm:pr-2">
-          {/* UPPER ARC ROW: [Q] ACTIVE SKILL + [E] PRANK ITEM (Shifted slightly left in a thumb arc) */}
-          <div className="flex items-center gap-2.5 sm:gap-3 mr-3 sm:mr-4">
-            {/* SLOT 1: [Q] ACTIVE SKILL BUTTON */}
-            <div className="relative group">
+        {/* BOTTOM-RIGHT: LOCKED-GEOMETRY ACTION CLUSTER (Zero Layout Shift during Cooldown or Item Pickup) */}
+        <div className="pointer-events-auto flex flex-col items-end gap-2.5 pr-0.5 sm:pr-1 shrink-0">
+          {/* UPPER ARC ROW: [Q] ACTIVE SKILL + [E] PRANK ITEM */}
+          <div className="flex items-center gap-2.5 sm:gap-3 mr-2 sm:mr-3">
+            {/* SLOT 1: [Q] ACTIVE SKILL BUTTON (Fixed 60x60 / 68x68 box) */}
+            <div className="relative group w-[58px] h-[58px] sm:w-[68px] sm:h-[68px] shrink-0">
               <button
                 type="button"
                 onPointerDown={(e) => {
@@ -992,36 +954,42 @@ export const RaceHudOverlay: React.FC<RaceHudOverlayProps> = ({
                 }}
                 disabled={hud.qCooldown > 0}
                 aria-label={`Active Skill ${activeSkill.name}`}
-                className={`relative w-15 h-15 sm:w-18 sm:h-18 rounded-3xl border-3 border-b-7 touch-none transition-all flex flex-col items-center justify-center shadow-2xl ${
+                className={`relative w-full h-full rounded-2xl sm:rounded-3xl border-3 touch-none transition-transform duration-75 active:scale-95 will-change-transform flex flex-col items-center justify-center shadow-2xl ${
                   hud.qCooldown <= 0
-                    ? 'bg-[#FFFDF9] border-[#2B2118] hover:scale-105 hover:bg-[#FEF3C7] active:translate-y-1'
-                    : 'bg-[#3D3024] border-[#1A130D] opacity-85'
+                    ? 'bg-[#FFFDF9] border-[#2B2118] hover:bg-[#FEF3C7]'
+                    : 'bg-[#3D3024] border-[#1A130D]'
                 }`}
               >
-                <span className="absolute -top-2 -left-1.5 px-1.5 py-0.2 rounded-xl bg-[#2B2118] text-[#FDE047] border-2 border-[#FFFDF9] text-[10px] sm:text-xs font-black shadow-sm">
+                <span className="pointer-events-none absolute -top-1.5 -left-1.5 px-1.5 py-0.2 rounded-lg bg-[#2B2118] text-[#FDE047] border border-[#FFFDF9] text-[9px] sm:text-[10px] font-black shadow-xs">
                   Q
                 </span>
 
-                <ActiveSkillEmblem skillId={selectedActiveSkillId} size={44} />
+                <ActiveSkillEmblem skillId={selectedActiveSkillId} size={38} />
 
-                {hud.qCooldown > 0 ? (
-                  <div className="absolute inset-0 rounded-3xl bg-black/65 flex items-center justify-center">
-                    <span className="text-sm sm:text-base font-black text-[#FDE047] game-text-shadow">
+                {hud.qCooldown > 0 && (
+                  <div className="pointer-events-none absolute inset-0 rounded-2xl sm:rounded-3xl bg-black/70 flex items-center justify-center">
+                    <span className="text-xs sm:text-sm font-black text-[#FDE047] game-text-shadow tabular-nums">
                       {hud.qCooldown.toFixed(1)}s
                     </span>
                   </div>
-                ) : (
-                  <span className="absolute -bottom-2 px-2 py-0.5 rounded-full bg-[#84CC16] text-[#2B2118] border-2 border-[#2B2118] text-[8px] sm:text-[9px] font-black uppercase">
-                    SKILL
-                  </span>
                 )}
+
+                <span
+                  className={`pointer-events-none absolute -bottom-2 px-2 py-0.2 rounded-full border border-[#2B2118] text-[8px] font-black uppercase whitespace-nowrap ${
+                    hud.qCooldown > 0
+                      ? 'bg-[#2B2118] text-[#FDE047]'
+                      : 'bg-[#84CC16] text-[#2B2118]'
+                  }`}
+                >
+                  SKILL
+                </span>
               </button>
 
               {/* Hover Tooltip for [Q] Skill */}
               <div className="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150 absolute bottom-full right-0 mb-2.5 z-30 w-52 bg-[#2B2118] text-[#FFFDF9] border-2 border-[#FDE047] rounded-2xl p-2.5 shadow-2xl text-xs">
                 <div className="flex items-center justify-between font-black text-[#FDE047]">
                   <span>[Q] {activeSkill.name}</span>
-                  <span className="text-[10px] bg-white/15 px-1.5 py-0.5 rounded">
+                  <span className="text-[10px] bg-white/15 px-1.5 py-0.5 rounded tabular-nums">
                     CD {activeSkill.cooldownSec}s
                   </span>
                 </div>
@@ -1031,8 +999,8 @@ export const RaceHudOverlay: React.FC<RaceHudOverlayProps> = ({
               </div>
             </div>
 
-            {/* SLOT 2: [E] PRANK ITEM BUTTON */}
-            <div className="relative group">
+            {/* SLOT 2: [E] PRANK ITEM BUTTON (Fixed 58x58 / 68x68 box, no animate-pulse layout jitter) */}
+            <div className="relative group w-[58px] h-[58px] sm:w-[68px] sm:h-[68px] shrink-0">
               <button
                 type="button"
                 onPointerDown={(e) => {
@@ -1043,20 +1011,20 @@ export const RaceHudOverlay: React.FC<RaceHudOverlayProps> = ({
                 aria-label={
                   heldItemSpec ? `Use ${heldItemSpec.name}` : 'Empty Item Slot'
                 }
-                className={`relative w-15 h-15 sm:w-18 sm:h-18 rounded-3xl border-3 border-b-7 touch-none transition-all flex flex-col items-center justify-center shadow-2xl ${
+                className={`relative w-full h-full rounded-2xl sm:rounded-3xl border-3 touch-none transition-transform duration-75 active:scale-95 will-change-transform flex flex-col items-center justify-center shadow-2xl ${
                   heldItemSpec
-                    ? 'bg-[#FEF08A] border-[#2B2118] hover:scale-105 hover:bg-[#FDE047] active:translate-y-1 animate-pulse'
+                    ? 'bg-[#FEF08A] border-[#2B2118] hover:bg-[#FDE047]'
                     : 'bg-[#2B2118]/90 border-[#1A130D]'
                 }`}
               >
-                <span className="absolute -top-2 -left-1.5 px-1.5 py-0.2 rounded-xl bg-[#2B2118] text-[#FFFDF9] border-2 border-[#FFFDF9] text-[10px] sm:text-xs font-black shadow-sm">
+                <span className="pointer-events-none absolute -top-1.5 -left-1.5 px-1.5 py-0.2 rounded-lg bg-[#2B2118] text-[#FFFDF9] border border-[#FFFDF9] text-[9px] sm:text-[10px] font-black shadow-xs">
                   E
                 </span>
 
-                <PrankItemEmblem itemId={hud.heldItem} size={44} />
+                <PrankItemEmblem itemId={hud.heldItem} size={38} />
 
                 <span
-                  className={`absolute -bottom-2 px-2 py-0.5 rounded-full border-2 border-[#2B2118] text-[8px] sm:text-[9px] font-black uppercase ${
+                  className={`pointer-events-none absolute -bottom-2 px-2 py-0.2 rounded-full border border-[#2B2118] text-[8px] font-black uppercase whitespace-nowrap ${
                     heldItemSpec
                       ? 'bg-[#EF4444] text-white'
                       : 'bg-[#3D3024] text-[#D8C5AC]'
@@ -1082,8 +1050,8 @@ export const RaceHudOverlay: React.FC<RaceHudOverlayProps> = ({
 
           {/* LOWER ARC ROW: [F] SIDEWAYS SLAP + PRIMARY GIANT [SPC] HOP BUTTON */}
           <div className="flex items-end gap-2.5 sm:gap-3">
-            {/* SLOT 3: [F] SIDEWAYS SLAP BUTTON */}
-            <div className="relative group">
+            {/* SLOT 3: [F] SIDEWAYS SLAP BUTTON (Fixed 56x56 / 64x64 box) */}
+            <div className="relative group w-[56px] h-[56px] sm:w-[64px] sm:h-[64px] shrink-0">
               <button
                 type="button"
                 onPointerDown={(e) => {
@@ -1092,29 +1060,29 @@ export const RaceHudOverlay: React.FC<RaceHudOverlayProps> = ({
                 }}
                 disabled={hud.fCooldown > 0}
                 aria-label="Sideways Slap"
-                className={`relative w-14 h-14 sm:w-16 sm:h-16 rounded-3xl border-3 border-b-7 touch-none transition-all flex flex-col items-center justify-center shadow-2xl ${
+                className={`relative w-full h-full rounded-2xl sm:rounded-3xl border-3 touch-none transition-transform duration-75 active:scale-95 will-change-transform flex flex-col items-center justify-center shadow-2xl ${
                   hud.fCooldown <= 0
-                    ? 'bg-[#C86D3B] hover:bg-[#D97706] border-[#2B2118] hover:scale-105 active:translate-y-1'
-                    : 'bg-[#3D3024] border-[#1A130D] opacity-85'
+                    ? 'bg-[#C86D3B] hover:bg-[#D97706] border-[#2B2118]'
+                    : 'bg-[#3D3024] border-[#1A130D]'
                 }`}
               >
-                <span className="absolute -top-2 -left-1.5 px-1.5 py-0.2 rounded-xl bg-[#2B2118] text-[#FDE047] border-2 border-[#FFFDF9] text-[10px] sm:text-xs font-black shadow-sm">
+                <span className="pointer-events-none absolute -top-1.5 -left-1.5 px-1.5 py-0.2 rounded-lg bg-[#2B2118] text-[#FDE047] border border-[#FFFDF9] text-[9px] sm:text-[10px] font-black shadow-xs">
                   F
                 </span>
 
-                <ActionButtonEmblem action="slap" size={38} />
+                <ActionButtonEmblem action="slap" size={34} />
 
-                {hud.fCooldown > 0 ? (
-                  <div className="absolute inset-0 rounded-3xl bg-black/65 flex items-center justify-center">
-                    <span className="text-xs sm:text-sm font-black text-[#FDE047] game-text-shadow">
+                {hud.fCooldown > 0 && (
+                  <div className="pointer-events-none absolute inset-0 rounded-2xl sm:rounded-3xl bg-black/70 flex items-center justify-center">
+                    <span className="text-xs sm:text-sm font-black text-[#FDE047] game-text-shadow tabular-nums">
                       {hud.fCooldown.toFixed(1)}s
                     </span>
                   </div>
-                ) : (
-                  <span className="absolute -bottom-2 px-2 py-0.5 rounded-full bg-[#FFFDF9] text-[#2B2118] border-2 border-[#2B2118] text-[8px] sm:text-[9px] font-black uppercase">
-                    SLAP
-                  </span>
                 )}
+
+                <span className="pointer-events-none absolute -bottom-2 px-2 py-0.2 rounded-full bg-[#FFFDF9] text-[#2B2118] border border-[#2B2118] text-[8px] font-black uppercase whitespace-nowrap">
+                  SLAP
+                </span>
               </button>
 
               {/* Hover Tooltip for [F] Slap */}
@@ -1126,8 +1094,8 @@ export const RaceHudOverlay: React.FC<RaceHudOverlayProps> = ({
               </div>
             </div>
 
-            {/* SLOT 4: PRIMARY [SPACE] HOP / JUMP ANCHOR BUTTON (Largest for easy thumb reach) */}
-            <div className="relative group">
+            {/* SLOT 4: PRIMARY [SPACE] HOP / JUMP ANCHOR BUTTON (Fixed 64x64 / 74x74 circle) */}
+            <div className="relative group w-[64px] h-[64px] sm:w-[74px] sm:h-[74px] shrink-0">
               <button
                 type="button"
                 onPointerDown={(e) => {
@@ -1135,15 +1103,15 @@ export const RaceHudOverlay: React.FC<RaceHudOverlayProps> = ({
                   onTriggerAction('jump');
                 }}
                 aria-label="Hop Jump"
-                className="relative w-17 h-17 sm:w-20 sm:h-20 rounded-full border-3 border-b-8 border-[#2B2118] bg-[#84CC16] hover:bg-[#A3E635] hover:scale-105 active:translate-y-1 touch-none transition-all flex flex-col items-center justify-center shadow-2xl"
+                className="relative w-full h-full rounded-full border-3 border-[#2B2118] bg-[#84CC16] hover:bg-[#A3E635] active:scale-95 touch-none transition-transform duration-75 will-change-transform flex flex-col items-center justify-center shadow-2xl"
               >
-                <span className="absolute -top-2 -left-1 px-1.5 py-0.2 rounded-xl bg-[#2B2118] text-[#A3E635] border-2 border-[#FFFDF9] text-[9px] sm:text-[10px] font-black shadow-sm">
+                <span className="pointer-events-none absolute -top-1.5 -left-1 px-1.5 py-0.2 rounded-lg bg-[#2B2118] text-[#A3E635] border border-[#FFFDF9] text-[8px] sm:text-[9px] font-black shadow-xs">
                   SPC
                 </span>
 
-                <ActionButtonEmblem action="hop" size={46} />
+                <ActionButtonEmblem action="hop" size={40} />
 
-                <span className="absolute -bottom-2 px-2.5 py-0.5 rounded-full bg-[#FFFDF9] text-[#2B2118] border-2 border-[#2B2118] text-[9px] sm:text-[10px] font-black uppercase">
+                <span className="pointer-events-none absolute -bottom-2 px-2 py-0.2 rounded-full bg-[#FFFDF9] text-[#2B2118] border border-[#2B2118] text-[8px] sm:text-[9px] font-black uppercase whitespace-nowrap">
                   HOP
                 </span>
               </button>
@@ -1152,7 +1120,7 @@ export const RaceHudOverlay: React.FC<RaceHudOverlayProps> = ({
               <div className="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150 absolute bottom-full right-0 mb-2.5 z-30 w-48 bg-[#2B2118] text-[#FFFDF9] border-2 border-[#84CC16] rounded-2xl p-2.5 shadow-2xl text-xs">
                 <div className="font-black text-[#A3E635]">[Space] Hop Jump</div>
                 <p className="text-[11px] text-[#F3E8D6] mt-1 leading-snug">
-                  Hop across deep river stepping stones, spinning logs & slime!
+                  Hop across deep river stepping stones, spinning logs &amp; slime!
                 </p>
               </div>
             </div>
@@ -1160,7 +1128,7 @@ export const RaceHudOverlay: React.FC<RaceHudOverlayProps> = ({
         </div>
       </div>
 
-      {/* PRE-RACE LOCKER MODAL (VISUAL ICON GRID + HOVER TOOLTIPS + EASY CLOSE & HOME BUTTONS) */}
+      {/* ==================== PRE-RACE LOCKER MODAL (SINGLE SCREEN, ZERO SCROLL ON MOBILE & DESKTOP) ==================== */}
       {isLobbyOpen && (
         <div
           onClick={() => onCloseLobby?.()}
@@ -1171,25 +1139,25 @@ export const RaceHudOverlay: React.FC<RaceHudOverlayProps> = ({
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="bg-[#FFFDF9] border-4 border-[#2B2118] border-b-10 rounded-4xl max-w-4xl w-full p-3.5 sm:p-5 shadow-2xl max-h-[94dvh] overflow-y-auto"
+            className="bg-[#FFFDF9] border-3 sm:border-4 border-[#2B2118] rounded-3xl sm:rounded-4xl max-w-5xl w-full h-[min(680px,95dvh)] p-2.5 sm:p-4 shadow-2xl overflow-hidden flex flex-col justify-between gap-2 sm:gap-3"
           >
             {/* Top Navigation & Close Bar for Locker Modal */}
-            <div className="flex flex-wrap items-center justify-between gap-2 pb-3 mb-3 border-b-2 border-[#EDE3D2]">
-              <div className="flex items-center gap-2">
-                <MenuIconEmblem icon="heroes" size={26} />
-                <span className="text-base sm:text-lg font-black text-[#2B2118]">
-                  PARTY RACE SETUP — MAP, PAL & SKILLS
+            <div className="flex items-center justify-between gap-2 pb-1.5 sm:pb-2.5 border-b-2 border-[#EDE3D2] shrink-0">
+              <div className="flex items-center gap-2 min-w-0">
+                <MenuIconEmblem icon="heroes" size={22} />
+                <span className="text-xs sm:text-base font-black text-[#2B2118] truncate">
+                  PARTY RACE SETUP — MAP, PAL &amp; SKILLS
                 </span>
               </div>
-              <div className="flex items-center gap-2 ml-auto">
+              <div className="flex items-center gap-1.5 shrink-0">
                 {onGoHome && (
                   <button
                     type="button"
                     onClick={onGoHome}
                     data-testid="locker-go-home-btn"
-                    className="h-9 px-3 rounded-2xl bg-[#FDE047] hover:bg-[#FACC15] text-[#2B2118] border-2 border-[#2B2118] border-b-4 text-xs font-black flex items-center gap-1.5 shadow whitespace-nowrap shrink-0"
+                    className="h-8 sm:h-9 px-2.5 sm:px-3 rounded-xl bg-[#FDE047] hover:bg-[#FACC15] text-[#2B2118] border-2 border-[#2B2118] text-[11px] sm:text-xs font-black flex items-center gap-1 shadow whitespace-nowrap"
                   >
-                    <MenuIconEmblem icon="home" size={18} />
+                    <MenuIconEmblem icon="home" size={16} />
                     <span>HOME</span>
                   </button>
                 )}
@@ -1199,17 +1167,17 @@ export const RaceHudOverlay: React.FC<RaceHudOverlayProps> = ({
                     onClick={onCloseLobby}
                     data-testid="close-locker-modal-btn"
                     aria-label="Close Hero Locker Modal"
-                    className="h-9 px-3.5 rounded-2xl bg-[#EF4444] hover:bg-[#DC2626] text-white border-2 border-[#2B2118] border-b-4 text-xs font-black flex items-center gap-1.5 shadow whitespace-nowrap shrink-0"
+                    className="h-8 sm:h-9 px-2.5 sm:px-3 rounded-xl bg-[#EF4444] hover:bg-[#DC2626] text-white border-2 border-[#2B2118] text-[11px] sm:text-xs font-black flex items-center gap-1 shadow whitespace-nowrap"
                   >
-                    <X className="w-4 h-4 stroke-[2.8]" />
+                    <X className="w-3.5 h-3.5 stroke-[2.8]" />
                     <span>CLOSE</span>
                   </button>
                 )}
               </div>
             </div>
 
-            {/* Visual Circuit Map Image Cards (Woodland Circuit vs Glacier Peak) */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pb-3.5 border-b-3 border-[#EDE3D2]">
+            {/* Visual Circuit Map Image Cards (Always 2 Columns side-by-side so zero vertical stacking!) */}
+            <div className="grid grid-cols-2 gap-2 sm:gap-3 shrink-0">
               {(['woodland', 'snow_glacier'] as const).map((tId) => {
                 const meta = TRACK_CATALOG[tId];
                 const active = selectedTrackId === tId;
@@ -1220,9 +1188,9 @@ export const RaceHudOverlay: React.FC<RaceHudOverlayProps> = ({
                     type="button"
                     onClick={() => onSelectTrack(tId)}
                     data-testid={`select-track-${tId}`}
-                    className={`relative h-28 sm:h-32 rounded-3xl overflow-hidden border-3 text-left p-3.5 flex flex-col justify-between transition-all ${
+                    className={`relative h-16 sm:h-24 rounded-2xl sm:rounded-3xl overflow-hidden border-2 sm:border-3 text-left p-2 sm:p-3 flex flex-col justify-between transition-colors ${
                       active
-                        ? 'border-[#F59E0B] ring-4 ring-[#F59E0B]/40 scale-[1.01] shadow-xl'
+                        ? 'border-[#F59E0B] ring-2 sm:ring-4 ring-[#F59E0B]/40 shadow-lg'
                         : 'border-[#2B2118] opacity-85 hover:opacity-100'
                     }`}
                   >
@@ -1232,37 +1200,35 @@ export const RaceHudOverlay: React.FC<RaceHudOverlayProps> = ({
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-[#1A130D]/95 via-[#1A130D]/35 to-transparent" />
 
-                    <div className="relative z-10 flex items-center justify-between gap-2">
+                    <div className="relative z-10 flex items-center justify-between gap-1">
                       <span
-                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-black uppercase ${
+                        className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[8px] sm:text-[10px] font-black uppercase ${
                           isSnowMap
                             ? 'bg-[#38BDF8] text-[#082F49]'
                             : 'bg-[#A3E635] text-[#1A130D]'
                         }`}
                       >
                         {isSnowMap ? (
-                          <Snowflake className="w-3 h-3" />
+                          <Snowflake className="w-2.5 h-2.5" />
                         ) : (
-                          <Trees className="w-3 h-3" />
+                          <Trees className="w-2.5 h-2.5" />
                         )}
                         {meta.badgeText}
                       </span>
 
                       {active && (
-                        <span className="px-2 py-0.5 rounded-lg bg-[#FDE047] text-[#2B2118] text-[10px] font-black uppercase">
-                          SELECTED MAP
+                        <span className="px-1.5 py-0.5 rounded-md bg-[#FDE047] text-[#2B2118] text-[8px] sm:text-[10px] font-black uppercase">
+                          ACTIVE
                         </span>
                       )}
                     </div>
 
-                    <div className="relative z-10 flex items-end justify-between gap-2">
-                      <div>
-                        <div className="text-base sm:text-lg font-black text-white leading-tight">
-                          {meta.name}
-                        </div>
-                        <div className="text-[11px] font-bold text-[#E5D9C5]">
-                          {meta.lengthLabel} · {meta.features.slice(0, 2).join(' · ')}
-                        </div>
+                    <div className="relative z-10">
+                      <div className="text-xs sm:text-base font-black text-white leading-tight truncate">
+                        {meta.name}
+                      </div>
+                      <div className="hidden sm:block text-[10px] font-bold text-[#E5D9C5] truncate">
+                        {meta.lengthLabel} · {meta.features.slice(0, 2).join(' · ')}
                       </div>
                     </div>
                   </button>
@@ -1270,172 +1236,127 @@ export const RaceHudOverlay: React.FC<RaceHudOverlayProps> = ({
               })}
             </div>
 
-            {/* MAIN LOCKER STAGE: Live 3D Character Model Preview alongside 16-Character Grid & Skill Deck */}
-            <div className="mt-3 grid grid-cols-1 lg:grid-cols-12 gap-3.5 items-stretch">
-              {/* Left Column (4 cols on desktop): Live 3D Character Preview Stage with Cool Hero Stance + 4-Slot 3D Gear */}
-              <div className="lg:col-span-4 flex flex-col">
+            {/* MAIN LOCKER STAGE: Elastic 3D Preview + 8x2 Character Grid + Side-by-Side Skill Deck */}
+            <div className="flex-1 min-h-0 grid grid-cols-1 grid-rows-[minmax(0,0.85fr)_minmax(0,1.35fr)] lg:grid-rows-1 lg:grid-cols-12 gap-2 sm:gap-3 items-stretch overflow-hidden">
+              {/* Left / Top: Live 3D Character Preview Stage */}
+              <div className="lg:col-span-4 min-h-0 flex flex-col">
                 <LobbyCharacterPreview
                   character={selectedCharacter}
                   loadout={userProfile?.loadout}
                 />
               </div>
 
-              {/* Right Column (8 cols on desktop): 16-Character Picker + Active & Passive Skill Deck */}
-              <div className="lg:col-span-8 flex flex-col justify-between gap-3.5">
-                {/* STEP 1: 16 Chibi Characters (Avatar Emblems + Short Name + Hover Tooltip) */}
-                <div className="bg-[#F8F2E8]/70 border-3 border-[#E5D9C5] rounded-3xl p-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-black text-[#2B2118] uppercase tracking-wide">
+              {/* Right / Bottom: 16-Character 8x2 Picker + Active & Passive Skill Deck */}
+              <div className="lg:col-span-8 min-h-0 flex flex-col justify-between gap-2 overflow-hidden">
+                {/* STEP 1: 16 Chibi Characters in an 8x2 Grid on ALL viewports */}
+                <div className="bg-[#F8F2E8]/80 border-2 border-[#E5D9C5] rounded-2xl p-2 sm:p-2.5 flex-1 min-h-0 flex flex-col justify-between">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[11px] sm:text-xs font-black text-[#2B2118] uppercase tracking-wide">
                       1. Pick Your Pal (16 Heroes)
                     </span>
-                    <span className="text-xs font-bold text-[#7D6854]">
-                      Click any pal to preview in 3D
+                    <span className="text-[10px] font-bold text-[#7D6854]">
+                      #{selectedCharacter.index + 1} {selectedCharacter.name}
                     </span>
                   </div>
-                  <div className="grid grid-cols-4 sm:grid-cols-8 gap-1.5 sm:gap-2">
+                  <div className="grid grid-cols-8 gap-1 sm:gap-1.5 flex-1 items-center">
                     {CHARACTERS.map((char) => {
                       const isSelected = char.id === selectedCharacter.id;
                       return (
-                        <div key={char.id} className="relative group">
-                          <button
-                            type="button"
-                            onClick={() => onSelectCharacter(char.id)}
-                            className={`w-full py-1.5 px-1 sm:py-2 sm:px-1.5 rounded-2xl border-3 border-b-5 transition-all flex flex-col items-center gap-1 ${
-                              isSelected
-                                ? 'bg-[#F59E0B] text-[#2B2118] border-[#2B2118] scale-105 shadow-md'
-                                : 'bg-[#FFFDF9] text-[#2B2118] border-[#D9C8B0] hover:bg-[#EFE5D5]'
-                            }`}
-                          >
-                            <CharacterAvatarEmblem
-                              characterId={char.id}
-                              primaryHex={char.primaryHex}
-                              secondaryHex={char.secondaryHex}
-                              accentHex={char.accentHex}
-                              size={42}
-                            />
-                            <span className="text-[10px] sm:text-[11px] font-black truncate max-w-full">
-                              {char.shortName}
-                            </span>
-                          </button>
-
-                          {/* Character Hover Tooltip */}
-                          <div className="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150 absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-40 w-48 bg-[#2B2118] text-[#FFFDF9] border-2 border-[#F59E0B] rounded-2xl p-2.5 shadow-xl text-center">
-                            <CharacterAvatarEmblem
-                              characterId={char.id}
-                              primaryHex={char.primaryHex}
-                              secondaryHex={char.secondaryHex}
-                              accentHex={char.accentHex}
-                              size={44}
-                              className="mx-auto mb-1"
-                            />
-                            <div className="text-xs font-black text-[#FDE047]">
-                              #{char.index + 1} {char.name}
-                            </div>
-                            <div className="text-[10px] text-[#E5D9C5] mt-0.5">
-                              {char.personality} · {char.accessory}
-                            </div>
-                          </div>
-                        </div>
+                        <button
+                          key={char.id}
+                          type="button"
+                          onClick={() => onSelectCharacter(char.id)}
+                          className={`w-full py-1 px-0.5 sm:py-1.5 sm:px-1 rounded-xl border-2 transition-colors flex flex-col items-center justify-center gap-0.5 ${
+                            isSelected
+                              ? 'bg-[#F59E0B] text-[#2B2118] border-[#2B2118] shadow-xs'
+                              : 'bg-[#FFFDF9] text-[#2B2118] border-[#D9C8B0] hover:bg-[#EFE5D5]'
+                          }`}
+                        >
+                          <CharacterAvatarEmblem
+                            characterId={char.id}
+                            primaryHex={char.primaryHex}
+                            secondaryHex={char.secondaryHex}
+                            accentHex={char.accentHex}
+                            size={26}
+                          />
+                          <span className="text-[8px] sm:text-[10px] font-black truncate max-w-full leading-none">
+                            {char.shortName}
+                          </span>
+                        </button>
                       );
                     })}
                   </div>
                 </div>
 
-                {/* STEP 2 & STEP 3 SIDE-BY-SIDE: Big PNG Icons + Short Name Only, Descriptions in Hover Tooltips! */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                {/* STEP 2 & STEP 3 SIDE-BY-SIDE ON BOTH MOBILE & DESKTOP */}
+                <div className="grid grid-cols-2 gap-2 shrink-0">
                   {/* STEP 2: 5 Active Skills [Key Q] */}
-                  <div className="bg-[#F8F2E8] border-3 border-[#E5D9C5] rounded-3xl p-3">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-black text-[#C86D3B] uppercase tracking-wide">
-                        2. Active Skill [Q]
+                  <div className="bg-[#F8F2E8] border-2 border-[#E5D9C5] rounded-2xl p-2">
+                    <div className="flex items-center justify-between mb-1 gap-1">
+                      <span className="text-[10px] sm:text-xs font-black text-[#C86D3B] uppercase truncate">
+                        2. Skill [Q]
                       </span>
-                      <span className="px-2 py-0.5 rounded-lg bg-[#2B2118] text-[#FDE047] text-xs font-black">
+                      <span className="px-1.5 py-0.5 rounded bg-[#2B2118] text-[#FDE047] text-[9px] sm:text-[10px] font-black truncate">
                         {activeSkill.name}
                       </span>
                     </div>
-                    <div className="grid grid-cols-5 gap-1.5">
+                    <div className="grid grid-cols-5 gap-1">
                       {ACTIVE_SKILL_LIST.map((skillId) => {
                         const sk = ACTIVE_SKILLS[skillId];
                         const isSelected = skillId === selectedActiveSkillId;
                         return (
-                          <div key={sk.id} className="relative group">
-                            <button
-                              type="button"
-                              onClick={() => onSelectActiveSkill(sk.id)}
-                              className={`w-full p-1.5 rounded-2xl border-3 border-b-6 transition-all flex flex-col items-center gap-1 ${
-                                isSelected
-                                  ? 'bg-[#2B2118] text-[#FDE047] border-[#1A130D] scale-105 shadow-lg'
-                                  : 'bg-[#FFFDF9] text-[#2B2118] border-[#D9C8B0] hover:bg-[#FEF3C7]'
-                              }`}
-                            >
-                              <ActiveSkillEmblem skillId={sk.id} size={42} />
-                              <span className="text-[10px] font-black leading-tight text-center truncate w-full">
-                                {sk.name.split(' ')[0]}
-                              </span>
-                            </button>
-
-                            {/* Hover Tooltip for Skill Card */}
-                            <div className="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150 absolute bottom-full left-1/2 -translate-x-1/2 mb-2.5 z-40 w-52 bg-[#2B2118] text-[#FFFDF9] border-2 border-[#FDE047] rounded-2xl p-3 shadow-2xl text-xs">
-                              <div className="flex items-center justify-between font-black text-[#FDE047]">
-                                <span>{sk.name}</span>
-                                <span className="text-[10px] bg-white/15 px-1.5 py-0.5 rounded">
-                                  {sk.cooldownSec}s
-                                </span>
-                              </div>
-                              <p className="text-[11px] text-[#F3E8D6] mt-1 leading-snug">
-                                {sk.activeDescription}
-                              </p>
-                            </div>
-                          </div>
+                          <button
+                            key={sk.id}
+                            type="button"
+                            onClick={() => onSelectActiveSkill(sk.id)}
+                            title={`${sk.name}: ${sk.activeDescription}`}
+                            className={`w-full p-1 rounded-xl border-2 transition-colors flex flex-col items-center gap-0.5 ${
+                              isSelected
+                                ? 'bg-[#2B2118] text-[#FDE047] border-[#1A130D]'
+                                : 'bg-[#FFFDF9] text-[#2B2118] border-[#D9C8B0] hover:bg-[#FEF3C7]'
+                            }`}
+                          >
+                            <ActiveSkillEmblem skillId={sk.id} size={26} />
+                            <span className="text-[8px] sm:text-[9px] font-black leading-none truncate w-full text-center">
+                              {sk.name.split(' ')[0]}
+                            </span>
+                          </button>
                         );
                       })}
                     </div>
                   </div>
 
                   {/* STEP 3: 5 Passive Skills [Auto] */}
-                  <div className="bg-[#F8F2E8] border-3 border-[#E5D9C5] rounded-3xl p-3">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-black text-[#6580B2] uppercase tracking-wide">
-                        3. Passive Perk [Auto]
+                  <div className="bg-[#F8F2E8] border-2 border-[#E5D9C5] rounded-2xl p-2">
+                    <div className="flex items-center justify-between mb-1 gap-1">
+                      <span className="text-[10px] sm:text-xs font-black text-[#6580B2] uppercase truncate">
+                        3. Perk [Auto]
                       </span>
-                      <span className="px-2 py-0.5 rounded-lg bg-[#2B2118] text-[#38BDF8] text-xs font-black">
+                      <span className="px-1.5 py-0.5 rounded bg-[#2B2118] text-[#38BDF8] text-[9px] sm:text-[10px] font-black truncate">
                         {passiveSkill.name}
                       </span>
                     </div>
-                    <div className="grid grid-cols-5 gap-1.5">
+                    <div className="grid grid-cols-5 gap-1">
                       {PASSIVE_SKILL_LIST.map((pId) => {
                         const pk = PASSIVE_SKILLS[pId];
                         const isSelected = pId === selectedPassiveSkillId;
                         return (
-                          <div key={pk.id} className="relative group">
-                            <button
-                              type="button"
-                              onClick={() => onSelectPassiveSkill(pk.id)}
-                              className={`w-full p-1.5 rounded-2xl border-3 border-b-6 transition-all flex flex-col items-center gap-1 ${
-                                isSelected
-                                  ? 'bg-[#2B2118] text-[#38BDF8] border-[#1A130D] scale-105 shadow-lg'
-                                  : 'bg-[#FFFDF9] text-[#2B2118] border-[#D9C8B0] hover:bg-[#E0F2FE]'
-                              }`}
-                            >
-                              <PassiveSkillEmblem passiveId={pk.id} size={42} />
-                              <span className="text-[10px] font-black leading-tight text-center truncate w-full">
-                                {pk.name.split(' ')[0]}
-                              </span>
-                            </button>
-
-                            {/* Hover Tooltip for Passive Card */}
-                            <div className="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150 absolute bottom-full left-1/2 -translate-x-1/2 mb-2.5 z-40 w-52 bg-[#2B2118] text-[#FFFDF9] border-2 border-[#38BDF8] rounded-2xl p-3 shadow-2xl text-xs">
-                              <div className="flex items-center justify-between font-black text-[#38BDF8]">
-                                <span>{pk.name}</span>
-                                <span className="text-[10px] bg-white/15 px-1.5 py-0.5 rounded">
-                                  AUTO
-                                </span>
-                              </div>
-                              <p className="text-[11px] text-[#F3E8D6] mt-1 leading-snug">
-                                {pk.passiveDescription}
-                              </p>
-                            </div>
-                          </div>
+                          <button
+                            key={pk.id}
+                            type="button"
+                            onClick={() => onSelectPassiveSkill(pk.id)}
+                            title={`${pk.name}: ${pk.passiveDescription}`}
+                            className={`w-full p-1 rounded-xl border-2 transition-colors flex flex-col items-center gap-0.5 ${
+                              isSelected
+                                ? 'bg-[#2B2118] text-[#38BDF8] border-[#1A130D]'
+                                : 'bg-[#FFFDF9] text-[#2B2118] border-[#D9C8B0] hover:bg-[#E0F2FE]'
+                            }`}
+                          >
+                            <PassiveSkillEmblem passiveId={pk.id} size={26} />
+                            <span className="text-[8px] sm:text-[9px] font-black leading-none truncate w-full text-center">
+                              {pk.name.split(' ')[0]}
+                            </span>
+                          </button>
                         );
                       })}
                     </div>
@@ -1445,32 +1366,32 @@ export const RaceHudOverlay: React.FC<RaceHudOverlayProps> = ({
             </div>
 
             {/* Compact Visual Loadout Strip + Big GO Button */}
-            <div className="mt-3.5 pt-3 border-t-3 border-[#EDE3D2] flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-2.5 bg-[#F8F2E8] px-3 py-1.5 rounded-2xl border-2 border-[#D9C8B0]">
+            <div className="pt-1.5 sm:pt-2 border-t-2 border-[#EDE3D2] flex items-center justify-between gap-2 shrink-0">
+              <div className="hidden sm:flex items-center gap-2 bg-[#F8F2E8] px-2.5 py-1 rounded-xl border border-[#D9C8B0]">
                 <CharacterAvatarEmblem
                   characterId={selectedCharacter.id}
                   primaryHex={selectedCharacter.primaryHex}
                   secondaryHex={selectedCharacter.secondaryHex}
                   accentHex={selectedCharacter.accentHex}
-                  size={28}
+                  size={24}
                 />
-                <span className="text-sm font-black text-[#2B2118]">
+                <span className="text-xs font-black text-[#2B2118]">
                   {selectedCharacter.name}
                 </span>
                 <span className="text-[#C8B69E]">+</span>
-                <ActiveSkillEmblem skillId={selectedActiveSkillId} size={30} />
+                <ActiveSkillEmblem skillId={selectedActiveSkillId} size={24} />
                 <span className="text-[#C8B69E]">+</span>
-                <PassiveSkillEmblem passiveId={selectedPassiveSkillId} size={30} />
+                <PassiveSkillEmblem passiveId={selectedPassiveSkillId} size={24} />
               </div>
 
-              <div className="flex flex-wrap items-center gap-2 ml-auto">
+              <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
                 {onGoHome && (
                   <button
                     type="button"
                     onClick={onGoHome}
-                    className="px-4 py-2.5 rounded-2xl bg-[#FFFDF9] hover:bg-[#FEF3C7] text-[#2B2118] border-3 border-[#2B2118] border-b-6 text-xs sm:text-sm font-black flex items-center gap-1.5"
+                    className="px-3 py-2 rounded-xl bg-[#FFFDF9] hover:bg-[#FEF3C7] text-[#2B2118] border-2 border-[#2B2118] text-xs font-black flex items-center gap-1"
                   >
-                    <MenuIconEmblem icon="home" size={18} />
+                    <MenuIconEmblem icon="home" size={16} />
                     <span>HOME</span>
                   </button>
                 )}
@@ -1478,18 +1399,18 @@ export const RaceHudOverlay: React.FC<RaceHudOverlayProps> = ({
                   <button
                     type="button"
                     onClick={onCloseLobby}
-                    className="px-4 py-2.5 rounded-2xl bg-[#2B2118] hover:bg-[#EF4444] text-white border-3 border-[#1A130D] border-b-6 text-xs sm:text-sm font-black flex items-center gap-1.5 transition-colors"
+                    className="px-3 py-2 rounded-xl bg-[#2B2118] hover:bg-[#EF4444] text-white border-2 border-[#1A130D] text-xs font-black flex items-center gap-1 transition-colors"
                   >
-                    <X className="w-4 h-4" />
+                    <X className="w-3.5 h-3.5" />
                     <span>CLOSE</span>
                   </button>
                 )}
                 <button
                   type="button"
                   onClick={onStartRace}
-                  className="px-6 py-2.5 sm:px-7 sm:py-3 rounded-2xl bg-[#84CC16] hover:bg-[#A3E635] text-[#2B2118] border-3 border-[#2B2118] border-b-6 active:translate-y-0.5 text-sm sm:text-base font-black flex items-center gap-2 shadow-xl"
+                  className="flex-1 sm:flex-initial px-5 py-2 sm:px-7 sm:py-2.5 rounded-xl sm:rounded-2xl bg-[#84CC16] hover:bg-[#A3E635] text-[#2B2118] border-2 border-[#2B2118] active:scale-95 transition-transform text-xs sm:text-sm font-black flex items-center justify-center gap-1.5 shadow-xl"
                 >
-                  <Play className="w-5 h-5 fill-current" />
+                  <Play className="w-4 h-4 fill-current" />
                   <span>START RACE!</span>
                 </button>
               </div>
@@ -1498,47 +1419,34 @@ export const RaceHudOverlay: React.FC<RaceHudOverlayProps> = ({
         </div>
       )}
 
-      {/* POST-RACE PODIUM MODAL (COLLAPSIBLE) + LIVE SPECTATOR CAMERA SWITCHER */}
+      {/* ==================== POST-RACE PODIUM MODAL (SINGLE SCREEN, COLLAPSIBLE) ==================== */}
       {hud.phase === 'finished' && !isLobbyOpen && (
         <>
           {isResultsCollapsed ? (
-            /* COLLAPSED MODE: Floating Spectator & Podium Control Bar (Unobstructed 3D View!) */
-            <div className="pointer-events-auto fixed inset-x-0 top-16 sm:top-18 z-30 flex justify-center px-2.5">
-              <div className="bg-[#2B2118]/95 text-[#FFFDF9] border-3 border-[#F59E0B] border-b-6 rounded-3xl px-3 py-2 sm:px-4 sm:py-2.5 shadow-2xl max-w-2xl w-full flex flex-col gap-2">
+            <div className="pointer-events-auto fixed inset-x-0 top-14 sm:top-16 z-30 flex justify-center px-2.5">
+              <div className="bg-[#2B2118]/95 text-[#FFFDF9] border-2 border-[#F59E0B] rounded-2xl px-3 py-2 shadow-2xl max-w-2xl w-full flex flex-col gap-1.5">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  {/* Left: Prev / Next Spectator Switcher + Current Watched Racer */}
-                  <div className="flex items-center gap-1.5 sm:gap-2">
+                  <div className="flex items-center gap-1.5">
                     <button
                       type="button"
                       onClick={() => handleCycleSpectatedRacer(-1)}
                       aria-label="Watch Previous Racer"
-                      className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-[#FFFDF9] hover:bg-[#FEF3C7] text-[#2B2118] border-2 border-[#1A130D] border-b-4 active:translate-y-0.5 flex items-center justify-center shadow"
+                      className="w-8 h-8 rounded-xl bg-[#FFFDF9] hover:bg-[#FEF3C7] text-[#2B2118] border border-[#1A130D] flex items-center justify-center shadow"
                     >
-                      <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.8]" />
+                      <ChevronLeft className="w-4 h-4 stroke-[2.8]" />
                     </button>
 
-                    <div className="flex items-center gap-2 bg-[#1A130D]/80 px-2.5 py-1 rounded-2xl border border-[#FFFDF9]/20">
-                      <Eye className="w-4 h-4 text-[#38BDF8] shrink-0" />
+                    <div className="flex items-center gap-1.5 bg-[#1A130D]/80 px-2.5 py-1 rounded-xl border border-[#FFFDF9]/20">
+                      <Eye className="w-3.5 h-3.5 text-[#38BDF8] shrink-0" />
                       {spectatedEntry && (
                         <>
                           <CharacterAvatarEmblem
                             characterId={spectatedEntry.id}
                             primaryHex={spectatedEntry.primaryHex}
-                            size={24}
+                            size={20}
                           />
-                          <span className="text-xs sm:text-sm font-black text-[#FDE047]">
+                          <span className="text-xs font-black text-[#FDE047] tabular-nums">
                             #{spectatedEntry.rank} {spectatedEntry.shortName}
-                          </span>
-                          <span
-                            className={`px-1.5 py-0.2 rounded-full text-[10px] font-black uppercase ${
-                              spectatedEntry.finished
-                                ? 'bg-[#84CC16] text-[#2B2118]'
-                                : 'bg-[#38BDF8] text-[#2B2118] animate-pulse'
-                            }`}
-                          >
-                            {spectatedEntry.finished
-                              ? 'FINISHED'
-                              : `RUNNING ${spectatedEntry.progressPercent}%`}
                           </span>
                         </>
                       )}
@@ -1548,113 +1456,83 @@ export const RaceHudOverlay: React.FC<RaceHudOverlayProps> = ({
                       type="button"
                       onClick={() => handleCycleSpectatedRacer(1)}
                       aria-label="Watch Next Racer"
-                      className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-[#FFFDF9] hover:bg-[#FEF3C7] text-[#2B2118] border-2 border-[#1A130D] border-b-4 active:translate-y-0.5 flex items-center justify-center shadow"
+                      className="w-8 h-8 rounded-xl bg-[#FFFDF9] hover:bg-[#FEF3C7] text-[#2B2118] border border-[#1A130D] flex items-center justify-center shadow"
                     >
-                      <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.8]" />
+                      <ChevronRight className="w-4 h-4 stroke-[2.8]" />
                     </button>
                   </div>
 
-                  {/* Right: Expand Results Window + Play Again */}
-                  <div className="flex items-center gap-1.5 sm:gap-2">
+                  <div className="flex items-center gap-1.5">
                     <button
                       type="button"
                       onClick={() => setIsResultsCollapsed(false)}
-                      className="px-3 py-1.5 rounded-xl bg-[#F59E0B] hover:bg-[#FBBF24] text-[#2B2118] border-2 border-[#1A130D] border-b-4 text-xs font-black flex items-center gap-1 shadow"
+                      className="px-2.5 py-1 rounded-xl bg-[#F59E0B] hover:bg-[#FBBF24] text-[#2B2118] border border-[#1A130D] text-xs font-black flex items-center gap-1 shadow"
                     >
-                      <ChevronUp className="w-4 h-4 stroke-[2.5]" />
+                      <ChevronUp className="w-3.5 h-3.5 stroke-[2.5]" />
                       <span>RESULTS ({formatOrdinal(hud.playerRank)})</span>
                     </button>
                     <button
                       type="button"
                       onClick={onRestartRace}
-                      className="px-3 py-1.5 rounded-xl bg-[#84CC16] hover:bg-[#A3E635] text-[#2B2118] border-2 border-[#1A130D] border-b-4 text-xs font-black shadow"
+                      className="px-2.5 py-1 rounded-xl bg-[#84CC16] hover:bg-[#A3E635] text-[#2B2118] border border-[#1A130D] text-xs font-black shadow"
                     >
                       PLAY AGAIN!
                     </button>
                   </div>
                 </div>
-
-                {/* Quick-Select Racer Pills (Tap any racer to watch them live!) */}
-                <div className="flex items-center gap-1 overflow-x-auto pb-0.5">
-                  {hud.standings.map((r) => {
-                    const isWatched = r.id === spectatedEntry?.id;
-                    return (
-                      <button
-                        key={r.id}
-                        type="button"
-                        onClick={() => onSelectSpectatedRacer?.(r.id)}
-                        className={`px-2 py-1 rounded-xl border text-[10px] sm:text-[11px] font-black flex items-center gap-1 shrink-0 transition-all ${
-                          isWatched
-                            ? 'bg-[#FDE047] text-[#2B2118] border-[#1A130D] scale-105 shadow'
-                            : 'bg-[#1A130D]/70 text-[#F3E8D6] border-[#FFFDF9]/15 hover:bg-[#3D3024]'
-                        }`}
-                      >
-                        <CharacterAvatarEmblem
-                          characterId={r.id}
-                          primaryHex={r.primaryHex}
-                          size={20}
-                        />
-                        <span>
-                          {r.rank}. {r.shortName}
-                        </span>
-                        {!r.finished && (
-                          <span className="w-1.5 h-1.5 rounded-full bg-[#38BDF8] animate-ping" />
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
               </div>
             </div>
           ) : (
-            /* EXPANDED MODE: Full Podium Results Modal with Collapse & Watch Buttons */
             <div
-              className="pointer-events-auto fixed inset-0 z-30 flex items-center justify-center bg-black/65 p-3 sm:p-4"
+              className="pointer-events-auto fixed inset-0 z-30 flex items-center justify-center bg-black/65 p-2.5 sm:p-4"
               role="dialog"
               aria-modal="true"
               aria-label="Race Results"
             >
-              <div className="relative bg-[#FFFDF9] border-4 border-[#2B2118] border-b-10 rounded-4xl max-w-md w-full p-4 sm:p-6 shadow-2xl text-center max-h-[92dvh] overflow-y-auto">
-                {/* Top-Right Minimize / Watch & Close Buttons */}
-                <div className="absolute top-3.5 right-3.5 flex items-center gap-1.5">
-                  <button
-                    type="button"
-                    onClick={handleCollapseAndWatchRunners}
-                    aria-label="Minimize Results and Watch Racers"
-                    className="px-2.5 py-1.5 rounded-2xl bg-[#2B2118] hover:bg-[#423326] text-[#38BDF8] border-2 border-[#1A130D] border-b-4 text-[11px] font-black flex items-center gap-1 shadow-md"
-                  >
-                    <Eye className="w-3.5 h-3.5" />
-                    <span>WATCH</span>
-                    <ChevronDown className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleCollapseAndWatchRunners}
-                    aria-label="Close Podium Modal"
-                    className="px-2.5 py-1.5 rounded-2xl bg-[#EF4444] hover:bg-[#DC2626] text-white border-2 border-[#1A130D] border-b-4 text-[11px] font-black flex items-center gap-1 shadow-md"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                    <span>CLOSE</span>
-                  </button>
+              <div className="relative bg-[#FFFDF9] border-3 border-[#2B2118] rounded-3xl max-w-md w-full max-h-[94dvh] p-3.5 sm:p-5 shadow-2xl text-center overflow-hidden flex flex-col justify-between gap-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-left">
+                    <PendingBannerSlot
+                      src={GAME_BANNER_ASSETS.victoryTrophyEmblem}
+                      alt="Champion Trophy Emblem"
+                      fileName="victory_trophy_emblem.png"
+                      className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl object-cover border-2 border-[#2B2118] shadow shrink-0"
+                    />
+                    <div>
+                      <h2 className="text-lg sm:text-2xl font-black text-[#2B2118] leading-tight">
+                        {hud.playerRank === 1
+                          ? 'CHAMPION!'
+                          : `${formatOrdinal(hud.playerRank)} PLACE!`}
+                      </h2>
+                      <p className="text-xs font-bold text-[#6E5A47] tabular-nums">
+                        {formatRaceTime(hud.elapsedRaceSec)} · {hud.slapsLanded} Slaps
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={handleCollapseAndWatchRunners}
+                      aria-label="Minimize Results and Watch Racers"
+                      className="px-2 py-1.5 rounded-xl bg-[#2B2118] text-[#38BDF8] text-[10px] font-black flex items-center gap-1"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                      <span>WATCH</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleCollapseAndWatchRunners}
+                      aria-label="Close Podium Modal"
+                      className="px-2 py-1.5 rounded-xl bg-[#EF4444] text-white text-[10px] font-black flex items-center gap-1"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
 
-                <PendingBannerSlot
-                  src={GAME_BANNER_ASSETS.victoryTrophyEmblem}
-                  alt="Champion Trophy Emblem"
-                  fileName="victory_trophy_emblem.png"
-                  className="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl mx-auto object-cover border-3 border-[#2B2118] shadow-lg"
-                />
-                <h2 className="mt-2 text-2xl sm:text-3xl font-black text-[#2B2118]">
-                  {hud.playerRank === 1
-                    ? 'CHAMPION!'
-                    : `${formatOrdinal(hud.playerRank)} PLACE!`}
-                </h2>
-                <p className="mt-0.5 text-xs sm:text-sm font-bold text-[#6E5A47]">
-                  {formatRaceTime(hud.elapsedRaceSec)} · {hud.slapsLanded} Slaps
-                </p>
-
-                {/* Standings List (All 8 Racers — Click any row to Watch them live!) */}
-                <div className="mt-3 bg-[#F8F2E8] border-3 border-[#E5D9C5] rounded-3xl p-2.5 text-left space-y-1 max-h-52 overflow-y-auto">
+                {/* All 8 Racers in a compact 2-column grid so zero scrolling needed */}
+                <div className="bg-[#F8F2E8] border-2 border-[#E5D9C5] rounded-2xl p-2 text-left grid grid-cols-1 sm:grid-cols-2 gap-1">
                   {hud.standings.map((r) => (
                     <div
                       key={r.id}
@@ -1662,10 +1540,10 @@ export const RaceHudOverlay: React.FC<RaceHudOverlayProps> = ({
                         onSelectSpectatedRacer?.(r.id);
                         setIsResultsCollapsed(true);
                       }}
-                      className={`cursor-pointer flex items-center justify-between text-xs font-bold px-2.5 py-1.5 rounded-xl transition-colors ${
+                      className={`cursor-pointer flex items-center justify-between text-[11px] font-bold px-2 py-1 rounded-xl transition-colors tabular-nums ${
                         r.isPlayer
                           ? 'bg-[#2B2118] text-[#FDE047]'
-                          : 'text-[#2B2118] hover:bg-[#EFE5D5]'
+                          : 'bg-[#FFFDF9] text-[#2B2118] hover:bg-[#EFE5D5]'
                       }`}
                     >
                       <div className="flex items-center gap-1.5 truncate">
@@ -1673,63 +1551,43 @@ export const RaceHudOverlay: React.FC<RaceHudOverlayProps> = ({
                         <CharacterAvatarEmblem
                           characterId={r.id}
                           primaryHex={r.primaryHex}
-                          size={26}
+                          size={20}
                         />
                         <span className="truncate">
                           {r.shortName} {r.isPlayer ? '(YOU)' : ''}
                         </span>
                       </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span>
-                          {r.finishTimeSec
-                            ? formatRaceTime(r.finishTimeSec)
-                            : `${r.progressPercent}%`}
-                        </span>
-                        <span
-                          className={`px-1.5 py-0.5 rounded-lg text-[10px] font-black uppercase flex items-center gap-1 ${
-                            r.finished
-                              ? 'bg-black/10 text-[#6E5A47]'
-                              : 'bg-[#38BDF8] text-[#2B2118]'
-                          }`}
-                        >
-                          <Eye className="w-3 h-3" />
-                          {r.finished ? 'VIEW' : 'LIVE'}
-                        </span>
-                      </div>
+                      <span className="text-[10px] shrink-0">
+                        {r.finishTimeSec
+                          ? formatRaceTime(r.finishTimeSec)
+                          : `${r.progressPercent}%`}
+                      </span>
                     </div>
                   ))}
                 </div>
 
-                <div className="mt-4 flex flex-wrap items-center justify-center gap-2 sm:gap-2.5">
+                <div className="flex items-center justify-between gap-2">
                   {onGoHome && (
                     <button
                       type="button"
                       onClick={onGoHome}
-                      className="px-3.5 py-2.5 rounded-2xl border-3 border-[#2B2118] border-b-6 bg-[#FDE047] hover:bg-[#FACC15] text-xs sm:text-sm font-black text-[#2B2118] flex items-center gap-1.5"
+                      className="px-3 py-2 rounded-xl border-2 border-[#2B2118] bg-[#FDE047] hover:bg-[#FACC15] text-xs font-black text-[#2B2118] flex items-center gap-1"
                     >
-                      <MenuIconEmblem icon="home" size={18} />
+                      <MenuIconEmblem icon="home" size={16} />
                       <span>HOME</span>
                     </button>
                   )}
                   <button
                     type="button"
-                    onClick={handleCollapseAndWatchRunners}
-                    className="px-3.5 py-2.5 rounded-2xl border-3 border-[#2B2118] border-b-6 bg-[#38BDF8] hover:bg-[#7DD3FC] text-xs sm:text-sm font-black text-[#2B2118] flex items-center gap-1.5"
-                  >
-                    <Eye className="w-4 h-4 stroke-[2.5]" />
-                    <span>WATCH OTHERS</span>
-                  </button>
-                  <button
-                    type="button"
                     onClick={onOpenLobby}
-                    className="px-3.5 py-2.5 rounded-2xl border-3 border-[#2B2118] border-b-6 bg-[#F8F2E8] hover:bg-[#EFE5D5] text-xs sm:text-sm font-black text-[#2B2118]"
+                    className="px-3 py-2 rounded-xl border-2 border-[#2B2118] bg-[#F8F2E8] hover:bg-[#EFE5D5] text-xs font-black text-[#2B2118]"
                   >
                     HEROES
                   </button>
                   <button
                     type="button"
                     onClick={onRestartRace}
-                    className="px-5 py-2.5 rounded-2xl border-3 border-[#2B2118] border-b-6 bg-[#84CC16] hover:bg-[#A3E635] text-xs sm:text-sm font-black text-[#2B2118]"
+                    className="flex-1 py-2 px-4 rounded-xl border-2 border-[#2B2118] bg-[#84CC16] hover:bg-[#A3E635] text-xs font-black text-[#2B2118]"
                   >
                     PLAY AGAIN!
                   </button>

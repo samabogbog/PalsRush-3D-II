@@ -1,15 +1,27 @@
 @import "tailwindcss";
 
 @layer base {
+  html,
+  body,
+  #root {
+    width: 100vw;
+    height: 100dvh;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    overscroll-behavior: none;
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
   body {
     font-family: 'Fredoka', 'Nunito', -apple-system, BlinkMacSystemFont, sans-serif;
     font-weight: 600;
     letter-spacing: 0.01em;
-    background-color: #faf3e8;
+    background-color: #2b2118;
     color: #2b2118;
-    margin: 0;
-    padding: 0;
-    overflow: hidden;
     -webkit-font-smoothing: antialiased;
   }
 
@@ -26,4 +38,12 @@
 
 .game-text-shadow {
   text-shadow: 0 2px 0 #2b2118, 0 -1px 0 #2b2118, 1.5px 0 0 #2b2118, -1.5px 0 0 #2b2118;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }

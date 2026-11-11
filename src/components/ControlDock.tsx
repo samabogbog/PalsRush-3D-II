@@ -80,14 +80,14 @@ export const ControlDock: React.FC<ControlDockProps> = ({
 
   return (
     <div
-      className="fixed bottom-4 left-1/2 -translate-x-1/2 z-20 w-[min(960px,95vw)] pointer-events-none flex flex-col items-center"
+      className="fixed bottom-2 sm:bottom-4 left-1/2 -translate-x-1/2 z-20 w-[min(960px,96vw)] pointer-events-none flex flex-col items-center"
       aria-label="Character and Pose Controls"
     >
       {/* Collapse / Expand Handle */}
       <button
         type="button"
         onClick={onToggleCollapse}
-        className="pointer-events-auto mb-2 px-3.5 py-1.5 rounded-t-lg bg-[#FFFDF9] border border-[#E6DAC8] text-[#5C4938] hover:text-[#2B2118] text-xs font-medium flex items-center gap-1.5 shadow-sm transition-transform duration-150 whitespace-nowrap shrink-0"
+        className="pointer-events-auto mb-1.5 px-3 py-1 rounded-t-lg bg-[#FFFDF9] border border-[#E6DAC8] text-[#5C4938] hover:text-[#2B2118] text-[11px] sm:text-xs font-medium flex items-center gap-1.5 shadow-xs transition-transform duration-150 whitespace-nowrap shrink-0"
         aria-expanded={!isCollapsed}
         aria-label={isCollapsed ? 'Show Controls' : 'Hide Controls'}
       >
@@ -106,13 +106,13 @@ export const ControlDock: React.FC<ControlDockProps> = ({
 
       {/* Main Unified Bottom Control Dock */}
       <div
-        className={`w-full rounded-2xl bg-[#FFFDF9] border border-[#E5D9C5] shadow-lg px-5 py-4 transition-all duration-200 pointer-events-auto ${
+        className={`w-full rounded-2xl bg-[#FFFDF9] border border-[#E5D9C5] shadow-lg px-3 py-2.5 sm:px-5 sm:py-3.5 transition-all duration-200 pointer-events-auto ${
           isCollapsed
             ? 'opacity-0 translate-y-8 pointer-events-none h-0 py-0 overflow-hidden border-0'
             : 'opacity-100 translate-y-0'
         }`}
       >
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-2.5 sm:gap-5 items-center">
           {/* LEFT ZONE (5 cols): 16-Character Slider & Row Selector */}
           <div className="lg:col-span-5 flex flex-col gap-2.5 lg:border-r lg:border-[#EDE3D2] lg:pr-5">
             <div className="flex items-center justify-between gap-2">

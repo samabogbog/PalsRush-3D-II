@@ -26,6 +26,13 @@ import {
 } from '../models/equipmentTypes';
 import { LobbyCharacterPreview } from './LobbyCharacterPreview';
 import { MenuIconEmblem } from './GameAssetIcons';
+import {
+  auth,
+  loadUserProfileFromFirestore,
+  signInWithGooglePopup,
+  signOutFirebaseUser,
+  syncUserProfileToFirestore,
+} from '../lib/firebase';
 
 export interface LeaderboardEntry {
   userId: number;
@@ -223,6 +230,7 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
   const handleFreshGuest = async () => {
     setIsSubmitting(true);
     try {
+      await signOutFirebaseUser();
       const res = await fetch('/api/auth/guest', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -236,6 +244,68 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
           text: `Quick Play profile (${data.user.displayName}) created!`,
         });
       }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setAuthMessage(null);
+    setIsSubmitting(true);
+    try {
+      const fbUser = await signInWithGooglePopup();
+      const cloudProfile = await loadUserProfileFromFirestore(fbUser.uid);
+      const res = await fetch('/api/auth/firebase-sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          firebaseUid: fbUser.uid,
+          email: fbUser.email || '',
+          displayName:
+            cloudProfile?.displayName || fbUser.displayName || 'GooglePal',
+          guestToken: userProfile?.isGuest
+            ? userProfile.sessionToken
+            : undefined,
+          cloudProfile,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setAuthMessage({
+          type: 'error',
+          text: data.error || 'Google Sign-In sync failed.',
+        });
+      } else if (data.user) {
+        onAuthSuccess(data.user);
+        await syncUserProfileToFirestore(data.user);
+        setAuthMessage({
+          type: 'success',
+          text: `Signed in with Google (${fbUser.email || data.user.displayName}) · Cloud Firestore Synced!`,
+        });
+      }
+    } catch (err) {
+      const msg =
+        err instanceof Error ? err.message : 'Google Sign-In cancelled.';
+      setAuthMessage({
+        type: 'error',
+        text: msg.includes('popup-closed')
+          ? 'Google Sign-In popup closed.'
+          : 'Google Sign-In unavailable or cancelled.',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCloudSyncNow = async () => {
+    if (!userProfile || !auth.currentUser) return;
+    setIsSubmitting(true);
+    try {
+      await syncUserProfileToFirestore(userProfile);
+      setAuthMessage({
+        type: 'success',
+        text: 'Cloud Firestore profile & inventory synced!',
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -282,22 +352,22 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="bg-[#FFFDF9] border-4 border-[#2B2118] rounded-[28px] max-w-5xl w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden text-[#2B2118]"
+        className="bg-[#FFFDF9] border-3 sm:border-4 border-[#2B2118] rounded-3xl sm:rounded-[28px] max-w-5xl w-full h-[min(660px,95dvh)] flex flex-col justify-between shadow-2xl overflow-hidden text-[#2B2118]"
       >
         {/* ==================== HEADER & TOP 3 ICON TABS ==================== */}
-        <div className="bg-[#2B2118] text-[#FFFDF9] px-4 py-3 flex flex-wrap items-center justify-between gap-2 border-b-4 border-[#1A130D]">
-          <div className="flex flex-wrap items-center gap-2">
+        <div className="bg-[#2B2118] text-[#FFFDF9] px-2.5 py-2 sm:px-4 sm:py-2.5 flex items-center justify-between gap-2 border-b-3 border-[#1A130D] shrink-0">
+          <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto no-scrollbar">
             <button
               type="button"
               onClick={() => setActiveTab('auth')}
               data-testid="modal-tab-auth"
-              className={`h-10 px-3.5 rounded-2xl border-2 text-xs font-black flex items-center gap-2 transition-all whitespace-nowrap shrink-0 ${
+              className={`h-8 sm:h-9 px-2.5 sm:px-3.5 rounded-xl sm:rounded-2xl border-2 text-[11px] sm:text-xs font-black flex items-center gap-1.5 transition-colors whitespace-nowrap shrink-0 ${
                 activeTab === 'auth'
                   ? 'bg-[#FDE047] text-[#2B2118] border-[#1A130D]'
                   : 'bg-[#3A2C20] text-[#F3E8D6] border-white/15 hover:bg-[#4E3B2B]'
               }`}
             >
-              <MenuIconEmblem icon="account" className="w-5 h-5" />
+              <MenuIconEmblem icon="account" className="w-4 h-4 sm:w-5 sm:h-5" />
               <span>ACCOUNT</span>
             </button>
 
@@ -305,13 +375,13 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
               type="button"
               onClick={() => setActiveTab('armory')}
               data-testid="modal-tab-armory"
-              className={`h-10 px-3.5 rounded-2xl border-2 text-xs font-black flex items-center gap-2 transition-all whitespace-nowrap shrink-0 ${
+              className={`h-8 sm:h-9 px-2.5 sm:px-3.5 rounded-xl sm:rounded-2xl border-2 text-[11px] sm:text-xs font-black flex items-center gap-1.5 transition-colors whitespace-nowrap shrink-0 ${
                 activeTab === 'armory'
                   ? 'bg-[#A855F7] text-white border-[#1A130D]'
                   : 'bg-[#3A2C20] text-[#F3E8D6] border-white/15 hover:bg-[#4E3B2B]'
               }`}
             >
-              <MenuIconEmblem icon="gear" className="w-5 h-5" />
+              <MenuIconEmblem icon="gear" className="w-4 h-4 sm:w-5 sm:h-5" />
               <span>4-SLOT GEAR</span>
             </button>
 
@@ -319,18 +389,18 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
               type="button"
               onClick={() => setActiveTab('leaderboard')}
               data-testid="modal-tab-leaderboard"
-              className={`h-10 px-3.5 rounded-2xl border-2 text-xs font-black flex items-center gap-2 transition-all whitespace-nowrap shrink-0 ${
+              className={`h-8 sm:h-9 px-2.5 sm:px-3.5 rounded-xl sm:rounded-2xl border-2 text-[11px] sm:text-xs font-black flex items-center gap-1.5 transition-colors whitespace-nowrap shrink-0 ${
                 activeTab === 'leaderboard'
                   ? 'bg-[#F59E0B] text-[#2B2118] border-[#1A130D]'
                   : 'bg-[#3A2C20] text-[#F3E8D6] border-white/15 hover:bg-[#4E3B2B]'
               }`}
             >
-              <MenuIconEmblem icon="ranks" className="w-5 h-5" />
-              <span>LEADERBOARDS</span>
+              <MenuIconEmblem icon="ranks" className="w-4 h-4 sm:w-5 sm:h-5" />
+              <span>RANKS</span>
             </button>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
             {onGoHome && (
               <button
                 type="button"
@@ -339,10 +409,10 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
                   onGoHome();
                 }}
                 data-testid="modal-go-home-btn"
-                className="h-10 px-3.5 rounded-2xl bg-[#FDE047] hover:bg-[#FACC15] text-[#2B2118] border-2 border-[#1A130D] text-xs font-black flex items-center gap-1.5 shadow whitespace-nowrap shrink-0"
+                className="h-8 sm:h-9 px-2.5 sm:px-3 rounded-xl sm:rounded-2xl bg-[#FDE047] hover:bg-[#FACC15] text-[#2B2118] border-2 border-[#1A130D] text-[11px] sm:text-xs font-black flex items-center gap-1 shadow whitespace-nowrap shrink-0"
               >
-                <MenuIconEmblem icon="home" className="w-5 h-5" />
-                <span>HOME</span>
+                <MenuIconEmblem icon="home" className="w-4 h-4" />
+                <span className="hidden sm:inline">HOME</span>
               </button>
             )}
 
@@ -353,9 +423,9 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
                 onLaunchCombatMode('dungeon');
               }}
               data-testid="modal-launch-dungeon-btn"
-              className="h-10 px-3.5 rounded-2xl bg-[#84CC16] hover:bg-[#A3E635] text-[#2B2118] border-2 border-[#1A130D] text-xs font-black flex items-center gap-1.5 shadow whitespace-nowrap shrink-0"
+              className="hidden sm:flex h-9 px-3 rounded-2xl bg-[#84CC16] hover:bg-[#A3E635] text-[#2B2118] border-2 border-[#1A130D] text-xs font-black items-center gap-1 shadow whitespace-nowrap shrink-0"
             >
-              <Flame className="w-4 h-4" />
+              <Flame className="w-3.5 h-3.5" />
               <span>DUNGEON</span>
             </button>
 
@@ -364,25 +434,25 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
               onClick={onClose}
               data-testid="modal-close-btn"
               aria-label="Close Modal"
-              className="h-10 px-3.5 rounded-2xl bg-[#EF4444] hover:bg-[#DC2626] text-white border-2 border-[#1A130D] text-xs font-black flex items-center gap-1.5 shadow transition-colors whitespace-nowrap shrink-0"
+              className="h-8 sm:h-9 px-2.5 sm:px-3 rounded-xl sm:rounded-2xl bg-[#EF4444] hover:bg-[#DC2626] text-white border-2 border-[#1A130D] text-[11px] sm:text-xs font-black flex items-center gap-1 shadow transition-colors whitespace-nowrap shrink-0"
             >
-              <X className="w-4 h-4 stroke-[2.8]" />
+              <X className="w-3.5 h-3.5 stroke-[2.8]" />
               <span>CLOSE</span>
             </button>
           </div>
         </div>
 
-        {/* ==================== BODY CONTENT ==================== */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-5 bg-[#FAF3E8]">
-          {/* -------------------- TAB 1: ACCOUNT & SQLITE AUTH -------------------- */}
+        {/* ==================== BODY CONTENT (SINGLE-SCREEN LOCKED, ZERO PAGE SCROLL) ==================== */}
+        <div className="flex-1 min-h-0 overflow-hidden p-2.5 sm:p-4 bg-[#FAF3E8] flex flex-col">
+          {/* -------------------- TAB 1: ACCOUNT & CLOUD AUTH -------------------- */}
           {activeTab === 'auth' && (
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+            <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-2.5 sm:gap-4 items-stretch overflow-hidden">
               {/* Left Column: Current Player Profile Card */}
-              <div className="lg:col-span-6 bg-[#FFFDF9] border-3 border-[#2B2118] rounded-3xl p-4 flex flex-col justify-between gap-4 shadow">
+              <div className="lg:col-span-6 min-h-0 bg-[#FFFDF9] border-2 sm:border-3 border-[#2B2118] rounded-2xl sm:rounded-3xl p-2.5 sm:p-4 flex flex-col justify-between gap-2 shadow overflow-hidden">
                 <div>
                   <div className="flex items-center justify-between gap-2">
                     <span
-                      className={`px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase ${
+                      className={`px-2 py-0.5 rounded-md text-[9px] sm:text-[10px] font-black uppercase ${
                         userProfile?.isGuest
                           ? 'bg-[#F59E0B] text-[#2B2118]'
                           : 'bg-[#84CC16] text-[#2B2118]'
@@ -390,29 +460,29 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
                     >
                       {userProfile?.isGuest ? 'GUEST ACCOUNT' : 'MEMBER ACCOUNT'}
                     </span>
-                    <span className="text-xs font-black text-[#D97706] tabular-nums">
+                    <span className="text-[11px] sm:text-xs font-black text-[#D97706] tabular-nums">
                       🪙 {userProfile?.coins ?? 250} COINS
                     </span>
                   </div>
 
-                  <div className="mt-3 flex items-center gap-3">
+                  <div className="mt-2 flex items-center gap-2.5">
                     <img
                       src={`/assets/game/avatars/avatar_${selectedCharacter.id}.png`}
                       alt={selectedCharacter.name}
-                      className="w-16 h-16 rounded-2xl border-3 border-[#2B2118] bg-[#FAF3E8] object-cover"
+                      className="w-12 h-12 sm:w-15 sm:h-15 rounded-2xl border-2 border-[#2B2118] bg-[#FAF3E8] object-cover shrink-0"
                     />
-                    <div className="flex-1">
-                      <h3 className="text-lg font-black text-[#2B2118]">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-sm sm:text-lg font-black text-[#2B2118] truncate">
                         {userProfile?.displayName || 'PalGuest'}
                       </h3>
-                      <p className="text-xs font-bold text-[#7D6854]">
+                      <p className="text-[10px] sm:text-xs font-bold text-[#7D6854] truncate">
                         @{userProfile?.username || 'guest'} · {selectedCharacter.name}
                       </p>
-                      <div className="mt-1.5 flex items-center gap-2">
-                        <span className="px-2 py-0.5 rounded-lg bg-[#2B2118] text-[#FDE047] text-xs font-black tabular-nums">
+                      <div className="mt-1 flex items-center gap-1.5">
+                        <span className="px-1.5 py-0.2 rounded bg-[#2B2118] text-[#FDE047] text-[10px] sm:text-xs font-black tabular-nums">
                           Lv.{userProfile?.level ?? 1}
                         </span>
-                        <div className="flex-1 h-3 bg-[#E5D9C5] rounded-full overflow-hidden p-0.5">
+                        <div className="flex-1 h-2.5 bg-[#E5D9C5] rounded-full overflow-hidden p-0.5">
                           <div
                             className="h-full bg-[#84CC16] rounded-full"
                             style={{
@@ -427,51 +497,51 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
                             }}
                           />
                         </div>
-                        <span className="text-[10px] font-bold text-[#5C4938] tabular-nums">
-                          {userProfile?.exp ?? 0}/{userProfile?.nextLevelExp ?? 120} EXP
+                        <span className="text-[9px] sm:text-[10px] font-bold text-[#5C4938] tabular-nums">
+                          {userProfile?.exp ?? 0}/{userProfile?.nextLevelExp ?? 120}
                         </span>
                       </div>
                     </div>
                   </div>
 
                   {/* Current Season 3-Mode Ranks Summary */}
-                  <div className="mt-4">
-                    <div className="text-xs font-black text-[#2B2118] mb-2 uppercase">
+                  <div className="mt-2.5">
+                    <div className="text-[10px] sm:text-xs font-black text-[#2B2118] mb-1.5 uppercase">
                       {userProfile?.rankings.seasonName || 'Season 1: Frost & Fury'}
                     </div>
-                    <div className="grid grid-cols-3 gap-2">
-                      <div className="bg-[#FAF3E8] border-2 border-[#E5D9C5] rounded-2xl p-2.5">
-                        <div className="text-[10px] font-black text-[#7D6854]">
-                          🏁 PARTY RACE
+                    <div className="grid grid-cols-3 gap-1.5 sm:gap-2 tabular-nums">
+                      <div className="bg-[#FAF3E8] border border-[#E5D9C5] rounded-xl p-1.5 sm:p-2">
+                        <div className="text-[9px] sm:text-[10px] font-black text-[#7D6854]">
+                          🏁 RACE
                         </div>
-                        <div className="text-sm font-black text-[#2B2118] tabular-nums mt-0.5">
+                        <div className="text-xs sm:text-sm font-black text-[#2B2118]">
                           {userProfile?.rankings.raceRp ?? 1000} RP
                         </div>
-                        <div className="text-[10px] font-bold text-[#16A34A]">
+                        <div className="text-[9px] font-bold text-[#16A34A]">
                           {userProfile?.rankings.raceWins ?? 0} Wins
                         </div>
                       </div>
 
-                      <div className="bg-[#FAF3E8] border-2 border-[#E5D9C5] rounded-2xl p-2.5">
-                        <div className="text-[10px] font-black text-[#7D6854]">
+                      <div className="bg-[#FAF3E8] border border-[#E5D9C5] rounded-xl p-1.5 sm:p-2">
+                        <div className="text-[9px] sm:text-[10px] font-black text-[#7D6854]">
                           🏰 DUNGEON
                         </div>
-                        <div className="text-sm font-black text-[#2B2118] tabular-nums mt-0.5">
+                        <div className="text-xs sm:text-sm font-black text-[#2B2118]">
                           {userProfile?.rankings.dungeonRp ?? 1000} RP
                         </div>
-                        <div className="text-[10px] font-bold text-[#0284C7]">
+                        <div className="text-[9px] font-bold text-[#0284C7]">
                           Stage {userProfile?.rankings.highestStage ?? 1}
                         </div>
                       </div>
 
-                      <div className="bg-[#FAF3E8] border-2 border-[#E5D9C5] rounded-2xl p-2.5">
-                        <div className="text-[10px] font-black text-[#7D6854]">
-                          ⚔️ BRAWLER PvP
+                      <div className="bg-[#FAF3E8] border border-[#E5D9C5] rounded-xl p-1.5 sm:p-2">
+                        <div className="text-[9px] sm:text-[10px] font-black text-[#7D6854]">
+                          ⚔️ PvP
                         </div>
-                        <div className="text-sm font-black text-[#2B2118] tabular-nums mt-0.5">
+                        <div className="text-xs sm:text-sm font-black text-[#2B2118]">
                           {userProfile?.rankings.pvpRp ?? 1000} RP
                         </div>
-                        <div className="text-[10px] font-bold text-[#7E22CE]">
+                        <div className="text-[9px] font-bold text-[#7E22CE]">
                           {userProfile?.rankings.pvpWins ?? 0} Wins
                         </div>
                       </div>
@@ -480,20 +550,61 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
                 </div>
 
                 {/* Compact Fair-Play Badge */}
-                <div className="bg-[#2B2118] text-[#FFFDF9] rounded-2xl p-3 flex items-center justify-between gap-2 text-xs">
-                  <span className="font-black text-[#FDE047]">
-                    RACE: 100% EQUAL SPEED (COSMETIC GEAR)
+                <div className="bg-[#2B2118] text-[#FFFDF9] rounded-xl sm:rounded-2xl px-3 py-2 flex items-center justify-between gap-2 text-[10px] sm:text-xs">
+                  <span className="font-black text-[#FDE047] truncate">
+                    RACE: EQUAL SPEED (COSMETIC GEAR)
                   </span>
-                  <span className="px-2.5 py-0.5 rounded-lg bg-[#84CC16] text-[#2B2118] font-black tabular-nums">
-                    COMBAT CP {combatStats.combatPower}
+                  <span className="px-2 py-0.5 rounded bg-[#84CC16] text-[#2B2118] font-black tabular-nums shrink-0">
+                    CP {combatStats.combatPower}
                   </span>
                 </div>
               </div>
 
-              {/* Right Column: SQLite Register / Login / Guest Upgrade Form */}
-              <div className="lg:col-span-6 bg-[#FFFDF9] border-3 border-[#2B2118] rounded-3xl p-4 flex flex-col justify-between shadow">
+              {/* Right Column: Google Cloud Auth + Register / Login / Guest Upgrade Form */}
+              <div className="lg:col-span-6 min-h-0 bg-[#FFFDF9] border-2 sm:border-3 border-[#2B2118] rounded-2xl sm:rounded-3xl p-2.5 sm:p-4 flex flex-col justify-between gap-2 shadow overflow-hidden">
                 <div>
-                  <div className="flex items-center gap-2 mb-3">
+                  {/* Firebase Google Sign-In & Cloud Firestore Sync Banner */}
+                  <div className="mb-2 p-2 sm:p-2.5 rounded-xl sm:rounded-2xl bg-[#FAF3E8] border-2 border-[#2B2118] flex items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="text-[9px] sm:text-[10px] font-black uppercase text-[#16A34A]">
+                        {auth.currentUser
+                          ? '☁️ FIREBASE CLOUD CONNECTED'
+                          : '☁️ CLOUD ACCOUNT SYNC'}
+                      </div>
+                      <div className="text-[11px] sm:text-xs font-black text-[#2B2118] truncate">
+                        {auth.currentUser
+                          ? auth.currentUser.email ||
+                            auth.currentUser.displayName ||
+                            'Google Account'
+                          : 'Google Sign-In · Cloud Firestore'}
+                      </div>
+                    </div>
+
+                    {auth.currentUser ? (
+                      <button
+                        type="button"
+                        onClick={handleCloudSyncNow}
+                        disabled={isSubmitting}
+                        data-testid="cloud-sync-btn"
+                        className="px-2.5 py-1.5 rounded-xl bg-[#84CC16] hover:bg-[#A3E635] text-[#2B2118] border-2 border-[#2B2118] text-[10px] sm:text-xs font-black shadow shrink-0"
+                      >
+                        SYNC CLOUD
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={handleGoogleSignIn}
+                        disabled={isSubmitting}
+                        data-testid="google-signin-btn"
+                        className="px-3 py-1.5 rounded-xl bg-[#2B2118] hover:bg-[#423326] text-[#FDE047] border-2 border-[#1A130D] text-[10px] sm:text-xs font-black flex items-center gap-1.5 shadow shrink-0 whitespace-nowrap"
+                      >
+                        <span>G</span>
+                        <span>SIGN IN WITH GOOGLE</span>
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-1.5 mb-2">
                     <button
                       type="button"
                       onClick={() => {
@@ -501,13 +612,13 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
                         setAuthMessage(null);
                       }}
                       data-testid="auth-switch-register"
-                      className={`flex-1 py-2 rounded-2xl border-2 text-xs font-black flex items-center justify-center gap-1.5 ${
+                      className={`flex-1 py-1.5 rounded-xl border-2 text-[11px] sm:text-xs font-black flex items-center justify-center gap-1 ${
                         authMode === 'register'
                           ? 'bg-[#84CC16] text-[#2B2118] border-[#2B2118]'
                           : 'bg-[#FAF3E8] text-[#5C4938] border-[#E5D9C5]'
                       }`}
                     >
-                      <UserPlus className="w-4 h-4" />
+                      <UserPlus className="w-3.5 h-3.5" />
                       <span>
                         {userProfile?.isGuest ? 'BIND ACCOUNT' : 'REGISTER'}
                       </span>
@@ -520,67 +631,86 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
                         setAuthMessage(null);
                       }}
                       data-testid="auth-switch-login"
-                      className={`flex-1 py-2 rounded-2xl border-2 text-xs font-black flex items-center justify-center gap-1.5 ${
+                      className={`flex-1 py-1.5 rounded-xl border-2 text-[11px] sm:text-xs font-black flex items-center justify-center gap-1 ${
                         authMode === 'login'
                           ? 'bg-[#F59E0B] text-[#2B2118] border-[#2B2118]'
                           : 'bg-[#FAF3E8] text-[#5C4938] border-[#E5D9C5]'
                       }`}
                     >
-                      <LogIn className="w-4 h-4" />
+                      <LogIn className="w-3.5 h-3.5" />
                       <span>SIGN IN</span>
                     </button>
                   </div>
 
-                  <form onSubmit={handleAuthSubmit} className="space-y-3">
-                    <div>
-                      <label className="block text-xs font-black text-[#2B2118] mb-1">
-                        USERNAME
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                        placeholder="e.g. bramble_king"
-                        data-testid="auth-input-username"
-                        className="w-full px-3.5 py-2 rounded-2xl border-2 border-[#2B2118] bg-[#FAF3E8] text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#F59E0B]"
-                      />
+                  <form onSubmit={handleAuthSubmit} className="space-y-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-[10px] font-black text-[#2B2118] mb-0.5">
+                          USERNAME
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={username}
+                          onChange={(e) => setUsername(e.target.value)}
+                          placeholder="e.g. bramble_king"
+                          data-testid="auth-input-username"
+                          className="w-full px-3 py-1.5 rounded-xl border-2 border-[#2B2118] bg-[#FAF3E8] text-xs font-bold focus:outline-none focus:ring-2 focus:ring-[#F59E0B]"
+                        />
+                      </div>
+
+                      {authMode === 'register' ? (
+                        <div>
+                          <label className="block text-[10px] font-black text-[#2B2118] mb-0.5">
+                            DISPLAY NAME
+                          </label>
+                          <input
+                            type="text"
+                            value={displayName}
+                            onChange={(e) => setDisplayName(e.target.value)}
+                            placeholder="e.g. King Bramble"
+                            data-testid="auth-input-displayname"
+                            className="w-full px-3 py-1.5 rounded-xl border-2 border-[#2B2118] bg-[#FAF3E8] text-xs font-bold focus:outline-none focus:ring-2 focus:ring-[#F59E0B]"
+                          />
+                        </div>
+                      ) : (
+                        <div>
+                          <label className="block text-[10px] font-black text-[#2B2118] mb-0.5">
+                            PASSWORD
+                          </label>
+                          <input
+                            type="password"
+                            required
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            placeholder="••••••"
+                            data-testid="auth-input-password"
+                            className="w-full px-3 py-1.5 rounded-xl border-2 border-[#2B2118] bg-[#FAF3E8] text-xs font-bold focus:outline-none focus:ring-2 focus:ring-[#F59E0B]"
+                          />
+                        </div>
+                      )}
                     </div>
 
                     {authMode === 'register' && (
                       <div>
-                        <label className="block text-xs font-black text-[#2B2118] mb-1">
-                          DISPLAY NAME
+                        <label className="block text-[10px] font-black text-[#2B2118] mb-0.5">
+                          PASSWORD
                         </label>
                         <input
-                          type="text"
-                          value={displayName}
-                          onChange={(e) => setDisplayName(e.target.value)}
-                          placeholder="e.g. King Bramble"
-                          data-testid="auth-input-displayname"
-                          className="w-full px-3.5 py-2 rounded-2xl border-2 border-[#2B2118] bg-[#FAF3E8] text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#F59E0B]"
+                          type="password"
+                          required
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          placeholder="••••••"
+                          data-testid="auth-input-password"
+                          className="w-full px-3 py-1.5 rounded-xl border-2 border-[#2B2118] bg-[#FAF3E8] text-xs font-bold focus:outline-none focus:ring-2 focus:ring-[#F59E0B]"
                         />
                       </div>
                     )}
 
-                    <div>
-                      <label className="block text-xs font-black text-[#2B2118] mb-1">
-                        PASSWORD
-                      </label>
-                      <input
-                        type="password"
-                        required
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="••••••"
-                        data-testid="auth-input-password"
-                        className="w-full px-3.5 py-2 rounded-2xl border-2 border-[#2B2118] bg-[#FAF3E8] text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#F59E0B]"
-                      />
-                    </div>
-
                     {authMessage && (
                       <div
-                        className={`p-2.5 rounded-2xl text-xs font-bold border-2 ${
+                        className={`px-2.5 py-1.5 rounded-xl text-[11px] font-bold border truncate ${
                           authMessage.type === 'success'
                             ? 'bg-[#ECFCCB] text-[#166534] border-[#84CC16]'
                             : 'bg-[#FEE2E2] text-[#991B1B] border-[#EF4444]'
@@ -594,7 +724,7 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
                       type="submit"
                       disabled={isSubmitting}
                       data-testid="auth-submit-btn"
-                      className="w-full py-2.5 rounded-2xl bg-[#2B2118] hover:bg-[#423326] text-[#FDE047] border-3 border-[#1A130D] border-b-6 text-sm font-black shadow transition-all"
+                      className="w-full py-2 rounded-xl bg-[#2B2118] hover:bg-[#423326] text-[#FDE047] border-2 border-[#1A130D] text-xs sm:text-sm font-black shadow transition-colors"
                     >
                       {isSubmitting
                         ? 'SAVING...'
@@ -607,14 +737,14 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
                   </form>
                 </div>
 
-                <div className="pt-3 border-t border-[#E5D9C5] flex items-center justify-between gap-2">
-                  <span className="text-[11px] font-bold text-[#7D6854]">
+                <div className="pt-2 border-t border-[#E5D9C5] flex items-center justify-between gap-2">
+                  <span className="text-[10px] font-bold text-[#7D6854]">
                     Quick Play Guest Session
                   </span>
                   <button
                     type="button"
                     onClick={handleFreshGuest}
-                    className="px-3 py-1.5 rounded-xl bg-[#FAF3E8] hover:bg-[#EFE5D5] text-[#2B2118] border-2 border-[#2B2118] text-xs font-black"
+                    className="px-2.5 py-1 rounded-lg bg-[#FAF3E8] hover:bg-[#EFE5D5] text-[#2B2118] border border-[#2B2118] text-[10px] font-black"
                   >
                     NEW GUEST
                   </button>
@@ -625,69 +755,58 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
 
           {/* -------------------- TAB 2: 4-SLOT SHARED GEAR ARMORY -------------------- */}
           {activeTab === 'armory' && (
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
-              {/* Left: Live 3D Stage Showing Equipped 4-Slot Gear + Combat Stats */}
-              <div className="lg:col-span-5 flex flex-col gap-3">
+            <div className="flex-1 min-h-0 grid grid-cols-1 grid-rows-[minmax(0,0.85fr)_minmax(0,1.25fr)] lg:grid-rows-1 lg:grid-cols-12 gap-2.5 sm:gap-4 items-stretch overflow-hidden">
+              {/* Left / Top: Live 3D Stage Showing Equipped 4-Slot Gear + Combat Stats */}
+              <div className="lg:col-span-5 min-h-0 flex flex-col gap-2">
                 <LobbyCharacterPreview
                   character={selectedCharacter}
                   loadout={currentLoadout}
                 />
 
                 {/* Total Combat Stats Card */}
-                <div className="bg-[#2B2118] text-[#FFFDF9] border-3 border-[#1A130D] rounded-3xl p-3.5 shadow">
+                <div className="bg-[#2B2118] text-[#FFFDF9] border-2 border-[#1A130D] rounded-2xl p-2 sm:p-3 shadow shrink-0">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-black text-[#FDE047]">
+                    <span className="text-[10px] sm:text-xs font-black text-[#FDE047]">
                       COMBAT STATS (DUNGEON &amp; PvP)
                     </span>
-                    <span className="px-2.5 py-0.5 rounded-lg bg-[#F59E0B] text-[#2B2118] text-xs font-black tabular-nums">
+                    <span className="px-2 py-0.5 rounded bg-[#F59E0B] text-[#2B2118] text-[10px] sm:text-xs font-black tabular-nums">
                       CP {combatStats.combatPower}
                     </span>
                   </div>
-                  <div className="mt-2 grid grid-cols-4 gap-1.5 text-center">
-                    <div className="bg-[#3A2C20] rounded-xl p-1.5">
-                      <div className="text-[9px] text-[#E5D9C5] font-bold">
-                        ATK
-                      </div>
-                      <div className="text-xs font-black text-[#F87171] tabular-nums">
+                  <div className="mt-1.5 grid grid-cols-4 gap-1 text-center tabular-nums">
+                    <div className="bg-[#3A2C20] rounded-lg p-1">
+                      <div className="text-[8px] text-[#E5D9C5] font-bold">ATK</div>
+                      <div className="text-xs font-black text-[#F87171]">
                         {combatStats.atk}
                       </div>
                     </div>
-                    <div className="bg-[#3A2C20] rounded-xl p-1.5">
-                      <div className="text-[9px] text-[#E5D9C5] font-bold">
-                        MAX HP
-                      </div>
-                      <div className="text-xs font-black text-[#4ADE80] tabular-nums">
+                    <div className="bg-[#3A2C20] rounded-lg p-1">
+                      <div className="text-[8px] text-[#E5D9C5] font-bold">HP</div>
+                      <div className="text-xs font-black text-[#4ADE80]">
                         {combatStats.maxHp}
                       </div>
                     </div>
-                    <div className="bg-[#3A2C20] rounded-xl p-1.5">
-                      <div className="text-[9px] text-[#E5D9C5] font-bold">
-                        DEF
-                      </div>
-                      <div className="text-xs font-black text-[#38BDF8] tabular-nums">
+                    <div className="bg-[#3A2C20] rounded-lg p-1">
+                      <div className="text-[8px] text-[#E5D9C5] font-bold">DEF</div>
+                      <div className="text-xs font-black text-[#38BDF8]">
                         {combatStats.def}
                       </div>
                     </div>
-                    <div className="bg-[#3A2C20] rounded-xl p-1.5">
-                      <div className="text-[9px] text-[#E5D9C5] font-bold">
-                        CRIT
-                      </div>
-                      <div className="text-xs font-black text-[#FACC15] tabular-nums">
+                    <div className="bg-[#3A2C20] rounded-lg p-1">
+                      <div className="text-[8px] text-[#E5D9C5] font-bold">CRIT</div>
+                      <div className="text-xs font-black text-[#FACC15]">
                         {combatStats.critPct}%
                       </div>
                     </div>
                   </div>
-                  <div className="mt-2 text-[10px] font-bold text-[#A3E635]">
-                    ✓ PARTY RACE: 3D Cosmetic Visuals Only (100% Equal Speed)
-                  </div>
                 </div>
               </div>
 
-              {/* Right: 4-Slot Selector & Item Cards */}
-              <div className="lg:col-span-7 bg-[#FFFDF9] border-3 border-[#2B2118] rounded-3xl p-4 flex flex-col justify-between shadow">
-                <div>
-                  {/* 4 Equipment Slot Tabs with Icon Emblems */}
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
+              {/* Right / Bottom: 4-Slot Selector & 3 Item Cards (Fits 100% with zero scroll!) */}
+              <div className="lg:col-span-7 min-h-0 bg-[#FFFDF9] border-2 sm:border-3 border-[#2B2118] rounded-2xl sm:rounded-3xl p-2.5 sm:p-4 flex flex-col justify-between gap-2 shadow overflow-hidden">
+                <div className="flex-1 min-h-0 flex flex-col justify-between gap-2">
+                  {/* 4 Equipment Slot Tabs with Icon Emblems (4 Columns on all viewports) */}
+                  <div className="grid grid-cols-4 gap-1.5 sm:gap-2 shrink-0">
                     {(
                       ['weapon', 'headgear', 'cape', 'aura'] as EquipmentSlot[]
                     ).map((slot) => {
@@ -702,21 +821,21 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
                           type="button"
                           onClick={() => setSelectedSlot(slot)}
                           data-testid={`armory-slot-${slot}`}
-                          className={`p-2.5 rounded-2xl border-2 text-left transition-all flex items-center gap-2 ${
+                          className={`p-1.5 sm:p-2 rounded-xl sm:rounded-2xl border-2 text-left transition-colors flex items-center gap-1.5 ${
                             isSelected
-                              ? 'bg-[#2B2118] text-[#FFFDF9] border-[#1A130D] shadow-md'
+                              ? 'bg-[#2B2118] text-[#FFFDF9] border-[#1A130D] shadow'
                               : 'bg-[#FAF3E8] text-[#2B2118] border-[#E5D9C5] hover:bg-[#EFE5D5]'
                           }`}
                         >
                           <MenuIconEmblem
                             icon={slot}
-                            className="w-7 h-7 shrink-0"
+                            className="w-5 h-5 sm:w-6 sm:h-6 shrink-0"
                           />
                           <div className="min-w-0">
-                            <div className="text-[10px] font-black uppercase text-[#F59E0B] truncate">
+                            <div className="text-[8px] sm:text-[9px] font-black uppercase text-[#F59E0B] truncate">
                               {SLOT_META[slot].label}
                             </div>
-                            <div className="text-xs font-black truncate mt-0.5">
+                            <div className="text-[10px] sm:text-xs font-black truncate">
                               {equippedSpec ? equippedSpec.name : 'Empty'}
                             </div>
                           </div>
@@ -725,8 +844,8 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
                     })}
                   </div>
 
-                  {/* Items List for Selected Slot */}
-                  <div className="space-y-2 max-h-[340px] overflow-y-auto pr-1">
+                  {/* 3 Items for Selected Slot (Flex-distributed so all 3 items fit without scroll!) */}
+                  <div className="flex-1 min-h-0 flex flex-col justify-between gap-1.5">
                     {slotItems.map((item) => {
                       const isOwned = ownedSet.has(item.id);
                       const isEquipped = currentLoadout[selectedSlot] === item.id;
@@ -734,7 +853,7 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
                       return (
                         <div
                           key={item.id}
-                          className="p-3 rounded-2xl border-2 flex items-center justify-between gap-3 transition-all"
+                          className="flex-1 min-h-0 px-2.5 py-1.5 sm:p-2.5 rounded-xl sm:rounded-2xl border-2 flex items-center justify-between gap-2 transition-colors"
                           style={{
                             backgroundColor: isEquipped
                               ? rMeta.bgHex
@@ -744,17 +863,17 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
                               : rMeta.borderHex,
                           }}
                         >
-                          <div className="flex items-center gap-3 min-w-0">
+                          <div className="flex items-center gap-2 min-w-0">
                             <div
-                              className="w-11 h-11 rounded-2xl border-2 border-[#2B2118] flex items-center justify-center shrink-0 shadow-inner"
+                              className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl border-2 border-[#2B2118] flex items-center justify-center shrink-0 shadow-inner"
                               style={{ backgroundColor: item.primaryHex }}
                             >
-                              <Sparkles className="w-5 h-5 text-white drop-shadow" />
+                              <Sparkles className="w-4 h-4 text-white drop-shadow" />
                             </div>
                             <div className="min-w-0">
-                              <div className="flex items-center gap-1.5 flex-wrap">
+                              <div className="flex items-center gap-1.5">
                                 <span
-                                  className="text-[10px] font-black uppercase px-1.5 py-0.5 rounded-md border"
+                                  className="text-[8px] sm:text-[9px] font-black uppercase px-1.5 py-0.2 rounded border shrink-0"
                                   style={{
                                     backgroundColor: rMeta.bgHex,
                                     color: rMeta.colorHex,
@@ -763,11 +882,11 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
                                 >
                                   {rMeta.label}
                                 </span>
-                                <span className="text-sm font-black text-[#2B2118] truncate">
+                                <span className="text-xs sm:text-sm font-black text-[#2B2118] truncate">
                                   {item.name}
                                 </span>
                               </div>
-                              <div className="text-[11px] font-black text-[#5C4938] tabular-nums mt-1">
+                              <div className="text-[9px] sm:text-[11px] font-black text-[#5C4938] tabular-nums truncate">
                                 ATK +{item.bonusAtk} · HP +{item.bonusHp} · DEF +
                                 {item.bonusDef} · CRIT +{item.bonusCritPct}%
                               </div>
@@ -776,8 +895,8 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
 
                           <div className="shrink-0">
                             {isEquipped ? (
-                              <span className="px-3 py-1.5 rounded-xl bg-[#84CC16] text-[#2B2118] border-2 border-[#2B2118] text-xs font-black flex items-center gap-1">
-                                <Check className="w-3.5 h-3.5" />
+                              <span className="px-2.5 py-1 rounded-xl bg-[#84CC16] text-[#2B2118] border-2 border-[#2B2118] text-[10px] sm:text-xs font-black flex items-center gap-1">
+                                <Check className="w-3 h-3" />
                                 <span>EQUIPPED</span>
                               </span>
                             ) : isOwned ? (
@@ -787,7 +906,7 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
                                   onUpdateLoadout({ [selectedSlot]: item.id })
                                 }
                                 data-testid={`equip-item-${item.id}`}
-                                className="px-3.5 py-1.5 rounded-xl bg-[#2B2118] hover:bg-[#423326] text-[#FDE047] text-xs font-black shadow"
+                                className="px-3 py-1 rounded-xl bg-[#2B2118] hover:bg-[#423326] text-[#FDE047] text-[10px] sm:text-xs font-black shadow"
                               >
                                 EQUIP
                               </button>
@@ -799,10 +918,10 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
                                 }
                                 data-testid={`preview-equip-item-${item.id}`}
                                 title="Try 3D model or farm in Dungeon Stage"
-                                className="px-3 py-1.5 rounded-xl bg-[#FFFDF9] hover:bg-[#FEF3C7] text-[#2B2118] border-2 border-[#2B2118] text-[11px] font-black flex items-center gap-1"
+                                className="px-2.5 py-1 rounded-xl bg-[#FFFDF9] hover:bg-[#FEF3C7] text-[#2B2118] border-2 border-[#2B2118] text-[10px] font-black flex items-center gap-1"
                               >
                                 <Lock className="w-3 h-3 text-[#D97706]" />
-                                <span>TRY / STAGE {item.dropStageMin}</span>
+                                <span>TRY / ST.{item.dropStageMin}</span>
                               </button>
                             )}
                           </div>
@@ -813,18 +932,18 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
                 </div>
 
                 {/* Bottom Action Strip */}
-                <div className="mt-3 pt-3 border-t border-[#E5D9C5] flex flex-wrap items-center justify-between gap-2">
-                  <span className="text-xs font-bold text-[#5C4938]">
+                <div className="pt-2 border-t border-[#E5D9C5] flex items-center justify-between gap-2 shrink-0">
+                  <span className="text-[10px] sm:text-xs font-bold text-[#5C4938] truncate">
                     Shared 3D Loadout across Race, Dungeon &amp; PvP
                   </span>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 shrink-0">
                     <button
                       type="button"
                       onClick={() => {
                         onClose();
                         onLaunchCombatMode('dungeon');
                       }}
-                      className="px-3.5 py-2 rounded-2xl bg-[#F59E0B] hover:bg-[#FBBF24] text-[#2B2118] border-2 border-[#2B2118] text-xs font-black"
+                      className="px-3 py-1.5 rounded-xl bg-[#F59E0B] hover:bg-[#FBBF24] text-[#2B2118] border-2 border-[#2B2118] text-[10px] sm:text-xs font-black whitespace-nowrap"
                     >
                       DUNGEON RAID
                     </button>
@@ -834,7 +953,7 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
                         onClose();
                         onLaunchCombatMode('pvp');
                       }}
-                      className="px-3.5 py-2 rounded-2xl bg-[#EC4899] hover:bg-[#F472B6] text-white border-2 border-[#2B2118] text-xs font-black"
+                      className="px-3 py-1.5 rounded-xl bg-[#EC4899] hover:bg-[#F472B6] text-white border-2 border-[#2B2118] text-[10px] sm:text-xs font-black whitespace-nowrap"
                     >
                       BRAWLER PvP
                     </button>
@@ -846,19 +965,19 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
 
           {/* -------------------- TAB 3: SEASONAL LEADERBOARDS & RESET -------------------- */}
           {activeTab === 'leaderboard' && (
-            <div className="flex flex-col gap-3">
+            <div className="flex-1 min-h-0 flex flex-col justify-between gap-2 overflow-hidden">
               {/* Season Banner & Season Reset Trigger */}
-              <div className="bg-[#2B2118] text-[#FFFDF9] border-3 border-[#1A130D] rounded-3xl p-4 flex flex-wrap items-center justify-between gap-3 shadow">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="px-2.5 py-0.5 rounded-lg bg-[#F59E0B] text-[#2B2118] text-[10px] font-black uppercase">
+              <div className="bg-[#2B2118] text-[#FFFDF9] border-2 border-[#1A130D] rounded-2xl p-2.5 sm:p-3.5 flex items-center justify-between gap-2 shadow shrink-0">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className="px-2 py-0.5 rounded bg-[#F59E0B] text-[#2B2118] text-[9px] font-black uppercase">
                       ACTIVE SEASON
                     </span>
-                    <span className="text-xs font-bold text-[#38BDF8]">
+                    <span className="hidden sm:inline text-xs font-bold text-[#38BDF8]">
                       3 Mode Ladders · Hall of Fame Archive
                     </span>
                   </div>
-                  <h3 className="text-lg font-black text-[#FDE047] mt-1">
+                  <h3 className="text-sm sm:text-base font-black text-[#FDE047] mt-0.5 truncate">
                     {leaderboardData?.season.name ||
                       userProfile?.rankings.seasonName ||
                       'Season 1: Frost & Fury'}
@@ -870,103 +989,103 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
                   onClick={handleSeasonReset}
                   disabled={isLoadingRanks}
                   data-testid="season-reset-btn"
-                  className="px-4 py-2.5 rounded-2xl bg-[#EF4444] hover:bg-[#F87171] text-white border-3 border-[#1A130D] border-b-6 text-xs font-black flex items-center gap-1.5 shadow-lg whitespace-nowrap shrink-0"
+                  className="px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-[#EF4444] hover:bg-[#F87171] text-white border-2 border-[#1A130D] text-[10px] sm:text-xs font-black flex items-center gap-1 shadow whitespace-nowrap shrink-0"
                 >
-                  <RotateCcw className="w-4 h-4" />
+                  <RotateCcw className="w-3.5 h-3.5" />
                   <span>NEW SEASON RESET</span>
                 </button>
               </div>
 
               {/* 4 Sub-Tabs: Dungeon / PvP / Race / Hall of Fame */}
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="grid grid-cols-4 gap-1.5 shrink-0">
                 <button
                   type="button"
                   onClick={() => setRankTab('dungeon')}
                   data-testid="leaderboard-subtab-dungeon"
-                  className={`px-3.5 py-2 rounded-2xl border-2 text-xs font-black flex items-center gap-1.5 ${
+                  className={`py-1.5 px-2 rounded-xl border-2 text-[10px] sm:text-xs font-black flex items-center justify-center gap-1 truncate ${
                     rankTab === 'dungeon'
                       ? 'bg-[#2B2118] text-[#FDE047] border-[#1A130D]'
                       : 'bg-[#FFFDF9] text-[#2B2118] border-[#E5D9C5]'
                   }`}
                 >
-                  <Flame className="w-4 h-4 text-[#F97316]" />
-                  <span>DUNGEON RAID</span>
+                  <Flame className="w-3.5 h-3.5 text-[#F97316] shrink-0" />
+                  <span className="truncate">DUNGEON</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setRankTab('pvp')}
                   data-testid="leaderboard-subtab-pvp"
-                  className={`px-3.5 py-2 rounded-2xl border-2 text-xs font-black flex items-center gap-1.5 ${
+                  className={`py-1.5 px-2 rounded-xl border-2 text-[10px] sm:text-xs font-black flex items-center justify-center gap-1 truncate ${
                     rankTab === 'pvp'
                       ? 'bg-[#2B2118] text-[#FDE047] border-[#1A130D]'
                       : 'bg-[#FFFDF9] text-[#2B2118] border-[#E5D9C5]'
                   }`}
                 >
-                  <Swords className="w-4 h-4 text-[#EC4899]" />
-                  <span>BRAWLER PvP</span>
+                  <Swords className="w-3.5 h-3.5 text-[#EC4899] shrink-0" />
+                  <span className="truncate">PvP</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setRankTab('race')}
                   data-testid="leaderboard-subtab-race"
-                  className={`px-3.5 py-2 rounded-2xl border-2 text-xs font-black flex items-center gap-1.5 ${
+                  className={`py-1.5 px-2 rounded-xl border-2 text-[10px] sm:text-xs font-black flex items-center justify-center gap-1 truncate ${
                     rankTab === 'race'
                       ? 'bg-[#2B2118] text-[#FDE047] border-[#1A130D]'
                       : 'bg-[#FFFDF9] text-[#2B2118] border-[#E5D9C5]'
                   }`}
                 >
-                  <Flag className="w-4 h-4 text-[#84CC16]" />
-                  <span>PARTY RACE</span>
+                  <Flag className="w-3.5 h-3.5 text-[#84CC16] shrink-0" />
+                  <span className="truncate">RACE</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setRankTab('archives')}
                   data-testid="leaderboard-subtab-archives"
-                  className={`px-3.5 py-2 rounded-2xl border-2 text-xs font-black flex items-center gap-1.5 ${
+                  className={`py-1.5 px-2 rounded-xl border-2 text-[10px] sm:text-xs font-black flex items-center justify-center gap-1 truncate ${
                     rankTab === 'archives'
                       ? 'bg-[#2B2118] text-[#FDE047] border-[#1A130D]'
                       : 'bg-[#FFFDF9] text-[#2B2118] border-[#E5D9C5]'
                   }`}
                 >
-                  <Trophy className="w-4 h-4 text-[#F59E0B]" />
-                  <span>HALL OF FAME</span>
+                  <Trophy className="w-3.5 h-3.5 text-[#F59E0B] shrink-0" />
+                  <span className="truncate">CHAMPS</span>
                 </button>
               </div>
 
-              {/* Leaderboard Table or Archives */}
+              {/* Leaderboard Table or Archives (Top 6 fit in single screen without page scroll) */}
               {rankTab === 'archives' ? (
-                <div className="bg-[#FFFDF9] border-3 border-[#2B2118] rounded-3xl p-4 shadow">
-                  <h4 className="text-sm font-black text-[#2B2118] mb-2">
+                <div className="flex-1 min-h-0 bg-[#FFFDF9] border-2 border-[#2B2118] rounded-2xl p-3 shadow flex flex-col justify-center">
+                  <h4 className="text-xs sm:text-sm font-black text-[#2B2118] mb-2">
                     PAST SEASON CHAMPIONS
                   </h4>
                   {!leaderboardData?.archives ||
                   leaderboardData.archives.length === 0 ? (
-                    <div className="p-6 text-center text-xs font-bold text-[#7D6854]">
+                    <div className="p-4 text-center text-xs font-bold text-[#7D6854]">
                       No past seasons archived yet. Click &ldquo;NEW SEASON RESET&rdquo; to crown champions and start the next season!
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                      {leaderboardData.archives.map((arc) => (
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      {leaderboardData.archives.slice(0, 6).map((arc) => (
                         <div
                           key={arc.id}
-                          className="p-3 rounded-2xl bg-[#FAF3E8] border-2 border-[#E5D9C5] flex items-center gap-3"
+                          className="p-2.5 rounded-xl bg-[#FAF3E8] border border-[#E5D9C5] flex items-center gap-2.5"
                         >
                           <img
                             src={`/assets/game/avatars/avatar_${arc.champion_character_id}.png`}
                             alt={arc.champion_name}
-                            className="w-11 h-11 rounded-2xl border-2 border-[#2B2118] bg-white object-cover"
+                            className="w-10 h-10 rounded-xl border-2 border-[#2B2118] bg-white object-cover shrink-0"
                           />
-                          <div>
-                            <div className="text-[10px] font-black uppercase text-[#D97706]">
+                          <div className="min-w-0">
+                            <div className="text-[9px] font-black uppercase text-[#D97706] truncate">
                               {arc.season_name} · {arc.mode.toUpperCase()}
                             </div>
-                            <div className="text-sm font-black text-[#2B2118]">
+                            <div className="text-xs font-black text-[#2B2118] truncate">
                               👑 {arc.champion_name}
                             </div>
-                            <div className="text-xs font-bold text-[#5C4938] tabular-nums">
+                            <div className="text-[11px] font-bold text-[#5C4938] tabular-nums">
                               {arc.final_rp} RP
                             </div>
                           </div>
@@ -976,96 +1095,91 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
                   )}
                 </div>
               ) : (
-                <div className="bg-[#FFFDF9] border-3 border-[#2B2118] rounded-3xl overflow-hidden shadow">
-                  <div className="max-h-[340px] overflow-y-auto divide-y divide-[#E5D9C5]">
-                    {activeLeaderboardRows.map((row, idx) => {
-                      const rp =
-                        rankTab === 'race'
-                          ? row.raceRp
-                          : rankTab === 'pvp'
-                            ? row.pvpRp
-                            : row.dungeonRp;
-                      const tier = getRankTierByRp(rp);
-                      const isCurrentUser = row.userId === userProfile?.id;
-                      const weaponSpec =
-                        EQUIPMENT_CATALOG[row.loadout.weapon || 'w_squeaky_duck'];
-                      const auraSpec =
-                        EQUIPMENT_CATALOG[row.loadout.aura || 'a_soap_bubbles'];
+                <div className="flex-1 min-h-0 bg-[#FFFDF9] border-2 border-[#2B2118] rounded-2xl overflow-hidden shadow flex flex-col justify-between divide-y divide-[#E5D9C5]">
+                  {activeLeaderboardRows.slice(0, 6).map((row, idx) => {
+                    const rp =
+                      rankTab === 'race'
+                        ? row.raceRp
+                        : rankTab === 'pvp'
+                          ? row.pvpRp
+                          : row.dungeonRp;
+                    const tier = getRankTierByRp(rp);
+                    const isCurrentUser = row.userId === userProfile?.id;
+                    const weaponSpec =
+                      EQUIPMENT_CATALOG[row.loadout.weapon || 'w_squeaky_duck'];
 
-                      return (
-                        <div
-                          key={row.userId}
-                          className={`px-4 py-2.5 flex items-center justify-between gap-3 ${
-                            isCurrentUser ? 'bg-[#FEF3C7]' : 'hover:bg-[#FAF3E8]'
-                          }`}
-                        >
-                          <div className="flex items-center gap-3 min-w-0">
-                            <span
-                              className={`w-7 h-7 rounded-xl font-black text-xs flex items-center justify-center shrink-0 tabular-nums ${
-                                idx === 0
-                                  ? 'bg-[#FACC15] text-[#2B2118] border-2 border-[#2B2118]'
-                                  : idx === 1
-                                    ? 'bg-[#E2E8F0] text-[#2B2118] border-2 border-[#2B2118]'
-                                    : idx === 2
-                                      ? 'bg-[#FDBA74] text-[#2B2118] border-2 border-[#2B2118]'
-                                      : 'bg-[#FAF3E8] text-[#5C4938]'
-                              }`}
-                            >
-                              #{idx + 1}
-                            </span>
+                    return (
+                      <div
+                        key={row.userId}
+                        className={`flex-1 min-h-0 px-3 py-1.5 flex items-center justify-between gap-2 ${
+                          isCurrentUser ? 'bg-[#FEF3C7]' : 'hover:bg-[#FAF3E8]'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <span
+                            className={`w-6 h-6 rounded-lg font-black text-[11px] flex items-center justify-center shrink-0 tabular-nums ${
+                              idx === 0
+                                ? 'bg-[#FACC15] text-[#2B2118] border border-[#2B2118]'
+                                : idx === 1
+                                  ? 'bg-[#E2E8F0] text-[#2B2118] border border-[#2B2118]'
+                                  : idx === 2
+                                    ? 'bg-[#FDBA74] text-[#2B2118] border border-[#2B2118]'
+                                    : 'bg-[#FAF3E8] text-[#5C4938]'
+                            }`}
+                          >
+                            #{idx + 1}
+                          </span>
 
-                            <img
-                              src={`/assets/game/avatars/avatar_${
-                                CHARACTERS.some((c) => c.id === row.characterId)
-                                  ? row.characterId
-                                  : 'bear'
-                              }.png`}
-                              alt={row.displayName}
-                              className="w-10 h-10 rounded-2xl border-2 border-[#2B2118] bg-[#FAF3E8] object-cover shrink-0"
-                            />
+                          <img
+                            src={`/assets/game/avatars/avatar_${
+                              CHARACTERS.some((c) => c.id === row.characterId)
+                                ? row.characterId
+                                : 'bear'
+                            }.png`}
+                            alt={row.displayName}
+                            className="w-8 h-8 rounded-xl border border-[#2B2118] bg-[#FAF3E8] object-cover shrink-0"
+                          />
 
-                            <div className="min-w-0">
-                              <div className="flex items-center gap-1.5 flex-wrap">
-                                <span className="text-sm font-black text-[#2B2118] truncate">
-                                  {row.displayName}
-                                  {isCurrentUser ? ' (YOU)' : ''}
-                                </span>
-                                <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-[#2B2118] text-[#FDE047] tabular-nums">
-                                  Lv.{row.level}
-                                </span>
-                                <span
-                                  className="text-[10px] font-black px-2 py-0.5 rounded-md"
-                                  style={{
-                                    backgroundColor: tier.bgHex,
-                                    color: tier.colorHex,
-                                  }}
-                                >
-                                  {tier.tierName}
-                                </span>
-                              </div>
-                              <div className="text-[11px] font-bold text-[#7D6854] truncate">
-                                {weaponSpec?.name || 'Squeaky Duck'} ·{' '}
-                                {auraSpec?.name || 'Soap Bubbles'} · CP {row.combatPower}
-                              </div>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-xs sm:text-sm font-black text-[#2B2118] truncate">
+                                {row.displayName}
+                                {isCurrentUser ? ' (YOU)' : ''}
+                              </span>
+                              <span className="text-[9px] font-black px-1.5 py-0.2 rounded bg-[#2B2118] text-[#FDE047] tabular-nums shrink-0">
+                                Lv.{row.level}
+                              </span>
+                              <span
+                                className="hidden sm:inline text-[9px] font-black px-1.5 py-0.2 rounded"
+                                style={{
+                                  backgroundColor: tier.bgHex,
+                                  color: tier.colorHex,
+                                }}
+                              >
+                                {tier.tierName}
+                              </span>
                             </div>
-                          </div>
-
-                          <div className="text-right shrink-0 tabular-nums">
-                            <div className="text-sm font-black text-[#2B2118]">
-                              {rp} RP
-                            </div>
-                            <div className="text-[10px] font-bold text-[#5C4938]">
-                              {rankTab === 'race'
-                                ? `${row.raceWins}/${row.raceMatches} Wins`
-                                : rankTab === 'pvp'
-                                  ? `${row.pvpWins}/${row.pvpMatches} Wins`
-                                  : `Stage ${row.highestStage} · ${row.bossesDefeated} Bosses`}
+                            <div className="text-[10px] font-bold text-[#7D6854] truncate tabular-nums">
+                              {weaponSpec?.name || 'Squeaky Duck'} · CP {row.combatPower}
                             </div>
                           </div>
                         </div>
-                      );
-                    })}
-                  </div>
+
+                        <div className="text-right shrink-0 tabular-nums">
+                          <div className="text-xs sm:text-sm font-black text-[#2B2118]">
+                            {rp} RP
+                          </div>
+                          <div className="text-[9px] sm:text-[10px] font-bold text-[#5C4938]">
+                            {rankTab === 'race'
+                              ? `${row.raceWins}/${row.raceMatches} Wins`
+                              : rankTab === 'pvp'
+                                ? `${row.pvpWins}/${row.pvpMatches} Wins`
+                                : `Stage ${row.highestStage}`}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -1073,11 +1187,11 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
         </div>
 
         {/* ==================== COMPACT FOOTER ==================== */}
-        <div className="bg-[#F3E8D6] border-t-3 border-[#2B2118] px-4 py-2.5 flex items-center justify-between gap-2">
-          <span className="text-xs font-bold text-[#5C4938]">
-            Press <strong className="text-[#2B2118]">ESC</strong> or click outside to close
+        <div className="bg-[#F3E8D6] border-t-2 border-[#2B2118] px-3 py-1.5 sm:px-4 sm:py-2 flex items-center justify-between gap-2 shrink-0">
+          <span className="text-[10px] sm:text-xs font-bold text-[#5C4938] truncate">
+            Press <strong className="text-[#2B2118]">ESC</strong> or tap outside to close
           </span>
-          <div className="flex items-center gap-2 ml-auto">
+          <div className="flex items-center gap-1.5 shrink-0">
             {onGoHome && (
               <button
                 type="button"
@@ -1085,9 +1199,9 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
                   onClose();
                   onGoHome();
                 }}
-                className="px-3.5 py-1.5 rounded-xl bg-[#FFFDF9] hover:bg-[#FEF3C7] text-[#2B2118] border-2 border-[#2B2118] border-b-4 text-xs font-black flex items-center gap-1.5"
+                className="px-3 py-1 rounded-xl bg-[#FFFDF9] hover:bg-[#FEF3C7] text-[#2B2118] border border-[#2B2118] text-[11px] font-black flex items-center gap-1"
               >
-                <MenuIconEmblem icon="home" className="w-4 h-4" />
+                <MenuIconEmblem icon="home" className="w-3.5 h-3.5" />
                 <span>HOME</span>
               </button>
             )}
@@ -1095,9 +1209,9 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
               type="button"
               onClick={onClose}
               data-testid="modal-footer-close-btn"
-              className="px-4 py-1.5 rounded-xl bg-[#2B2118] hover:bg-[#EF4444] text-white border-2 border-[#1A130D] border-b-4 text-xs font-black flex items-center gap-1.5 transition-colors"
+              className="px-3.5 py-1 rounded-xl bg-[#2B2118] hover:bg-[#EF4444] text-white border border-[#1A130D] text-[11px] font-black flex items-center gap-1 transition-colors"
             >
-              <X className="w-4 h-4" />
+              <X className="w-3.5 h-3.5" />
               <span>CLOSE</span>
             </button>
           </div>

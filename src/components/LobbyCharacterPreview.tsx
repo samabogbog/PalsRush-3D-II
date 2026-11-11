@@ -250,8 +250,8 @@ export const LobbyCharacterPreview: React.FC<LobbyCharacterPreviewProps> = ({
 
     const handleResize = () => {
       if (!container) return;
-      const w = Math.max(200, container.clientWidth);
-      const h = Math.max(200, container.clientHeight);
+      const w = Math.max(120, container.clientWidth);
+      const h = Math.max(90, container.clientHeight);
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
       renderer.setSize(w, h);
@@ -335,7 +335,7 @@ export const LobbyCharacterPreview: React.FC<LobbyCharacterPreviewProps> = ({
   }, []);
 
   return (
-    <div className="relative bg-gradient-to-b from-[#2B2118] via-[#3A2C20] to-[#2B2118] border-3 border-[#2B2118] rounded-3xl p-3 flex flex-col justify-between shadow-inner overflow-hidden min-h-[260px] sm:min-h-[320px]">
+    <div className="relative w-full h-full min-h-[120px] flex-1 bg-gradient-to-b from-[#2B2118] via-[#3A2C20] to-[#2B2118] border-2 sm:border-3 border-[#2B2118] rounded-2xl sm:rounded-3xl p-2 sm:p-3 flex flex-col justify-between shadow-inner overflow-hidden">
       {/* Subtle Radial Spotlight Behind the 3D Model */}
       <div
         className="pointer-events-none absolute inset-0 opacity-35 transition-colors duration-300"
@@ -345,16 +345,16 @@ export const LobbyCharacterPreview: React.FC<LobbyCharacterPreviewProps> = ({
       />
 
       {/* Top Overlay: Character Number, Name & Accessory Badge */}
-      <div className="relative z-10 flex items-start justify-between gap-2">
-        <div>
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#F59E0B] text-[#2B2118] text-[10px] font-black uppercase tracking-wider border border-[#1A130D]">
-            <Sparkles className="w-3 h-3" />
+      <div className="relative z-10 flex items-start justify-between gap-2 shrink-0">
+        <div className="min-w-0">
+          <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#F59E0B] text-[#2B2118] text-[9px] sm:text-[10px] font-black uppercase tracking-wider border border-[#1A130D]">
+            <Sparkles className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
             <span>#{character.index + 1} · 3D LIVE STAGE</span>
           </div>
-          <h3 className="mt-1 text-base sm:text-lg font-black text-[#FFFDF9] leading-tight drop-shadow">
+          <h3 className="mt-0.5 text-sm sm:text-lg font-black text-[#FFFDF9] leading-tight drop-shadow truncate">
             {character.name}
           </h3>
-          <p className="text-[11px] font-bold text-[#FDE047] leading-snug">
+          <p className="hidden sm:block text-[11px] font-bold text-[#FDE047] leading-snug truncate">
             {character.accessory}
           </p>
         </div>
@@ -364,13 +364,13 @@ export const LobbyCharacterPreview: React.FC<LobbyCharacterPreviewProps> = ({
           type="button"
           onClick={() => setAutoRotate((prev) => !prev)}
           title="Toggle Auto-Sway / Drag 3D Model to Rotate"
-          className={`p-1.5 rounded-xl border-2 text-[10px] font-black flex items-center gap-1 transition-all ${
+          className={`p-1 sm:p-1.5 rounded-xl border-2 text-[10px] font-black flex items-center gap-1 transition-colors shrink-0 ${
             autoRotate
               ? 'bg-[#84CC16] text-[#2B2118] border-[#1A130D]'
               : 'bg-[#1A130D]/80 text-[#F3E8D6] border-white/20 hover:bg-[#423326]'
           }`}
         >
-          <RotateCw className="w-3.5 h-3.5" />
+          <RotateCw className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
           <span className="hidden sm:inline">360°</span>
         </button>
       </div>
@@ -380,12 +380,12 @@ export const LobbyCharacterPreview: React.FC<LobbyCharacterPreviewProps> = ({
         ref={mountRef}
         onClick={() => setCheerCount((c) => c + 1)}
         title="Drag to rotate 3D model · Click to cheer!"
-        className="relative z-10 flex-1 w-full min-h-[175px] sm:min-h-[210px]"
+        className="relative z-10 flex-1 w-full min-h-[75px]"
       />
 
       {/* Bottom Overlay: Pose Switcher Pills (Default: Cool Hero Pose!) */}
-      <div className="relative z-10 flex items-center justify-between gap-1.5 pt-1 border-t border-white/15">
-        <span className="text-[10px] font-extrabold text-[#E5D9C5] uppercase tracking-wider">
+      <div className="relative z-10 flex items-center justify-between gap-1.5 pt-1 border-t border-white/15 shrink-0">
+        <span className="text-[9px] sm:text-[10px] font-extrabold text-[#E5D9C5] uppercase tracking-wider">
           Pose:
         </span>
         <div className="flex items-center gap-1">
@@ -403,9 +403,9 @@ export const LobbyCharacterPreview: React.FC<LobbyCharacterPreviewProps> = ({
                   setPreviewPose(p.id);
                   setCheerCount((c) => c + 1);
                 }}
-                className={`px-2 py-1 rounded-xl text-[10px] font-black border transition-all ${
+                className={`px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-lg sm:rounded-xl text-[9px] sm:text-[10px] font-black border transition-colors ${
                   active
-                    ? 'bg-[#FDE047] text-[#2B2118] border-[#1A130D] scale-105 shadow'
+                    ? 'bg-[#FDE047] text-[#2B2118] border-[#1A130D] shadow'
                     : 'bg-[#1A130D]/75 text-[#F3E8D6] border-white/15 hover:bg-[#3A2C20]'
                 }`}
               >

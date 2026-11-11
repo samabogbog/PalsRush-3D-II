@@ -1561,7 +1561,11 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
 
   const keysDownRef = useRef<Set<string>>(new Set());
   const cameraYawRef = useRef<number>(0);
+  const targetCameraYawRef = useRef<number>(0);
+  const cameraYawVelRef = useRef<number>(0);
   const cameraPitchRef = useRef<number>(0.42);
+  const targetCameraPitchRef = useRef<number>(0.42);
+  const cameraPitchVelRef = useRef<number>(0);
   const pendingActionsRef = useRef({
     jump: false,
     q: false,
@@ -1587,7 +1591,7 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
         (r) => r.id === spectatedRacerId
       );
       if (target) {
-        cameraYawRef.current = target.yaw;
+        targetCameraYawRef.current = target.yaw;
       }
     }
   }, [spectatedRacerId]);
@@ -1623,7 +1627,13 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
       playerPassiveSkillId
     );
     const startSeg = TRACK_SEGMENTS[0];
-    cameraYawRef.current = Math.atan2(-startSeg.dirX, -startSeg.dirZ);
+    const initialYaw = Math.atan2(-startSeg.dirX, -startSeg.dirZ);
+    cameraYawRef.current = initialYaw;
+    targetCameraYawRef.current = initialYaw;
+    cameraYawVelRef.current = 0;
+    cameraPitchRef.current = 0.42;
+    targetCameraPitchRef.current = 0.42;
+    cameraPitchVelRef.current = 0;
     simStateRef.current = fresh;
     reportedFinishSessionRef.current = 0;
   }, [
@@ -2362,19 +2372,19 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
     const onPointerMove = (e: PointerEvent) => {
       if (isLobbyOpenRef.current) return;
 
-      // Mode 1: Pointer Lock is active -> Unlimited 360° hardware mouse deltas!
+      // Mode 1: Pointer Lock is active -> Unlimited 360° hardware mouse deltas (80% speed, ease-in-out damped)
       if (document.pointerLockElement === domElem) {
         const dx = e.movementX || 0;
         const dy = e.movementY || 0;
-        cameraYawRef.current -= dx * 0.0032;
-        cameraPitchRef.current = Math.max(
+        targetCameraYawRef.current -= dx * 0.00256;
+        targetCameraPitchRef.current = Math.max(
           0.16,
-          Math.min(0.85, cameraPitchRef.current + dy * 0.0026)
+          Math.min(0.85, targetCameraPitchRef.current + dy * 0.00208)
         );
         return;
       }
 
-      // Mode 2: Active Mouse Drag or Mobile Touch-Swipe on Canvas
+      // Mode 2: Active Mouse Drag or Mobile Touch-Swipe on Canvas (80% speed, ease-in-out damped)
       // (Moving an unlocked mouse without holding the button NEVER rotates the camera back!)
       const tracked = activeDragPointers.get(e.pointerId);
       if (!tracked) return;
@@ -2384,11 +2394,11 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
       tracked.lastX = e.clientX;
       tracked.lastY = e.clientY;
 
-      const sensitivity = e.pointerType === 'touch' ? 0.0065 : 0.0052;
-      cameraYawRef.current -= dx * sensitivity;
-      cameraPitchRef.current = Math.max(
+      const sensitivity = e.pointerType === 'touch' ? 0.0052 : 0.00416;
+      targetCameraYawRef.current -= dx * sensitivity;
+      targetCameraPitchRef.current = Math.max(
         0.16,
-        Math.min(0.85, cameraPitchRef.current + dy * 0.004)
+        Math.min(0.85, targetCameraPitchRef.current + dy * 0.0032)
       );
     };
 
@@ -2414,6 +2424,26 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
 
     const camPos = new THREE.Vector3(0, 6, 12);
     const camLook = new THREE.Vector3(0, 1.2, 0);
+    const desiredCamPosVec = new THREE.Vector3();
+    const desiredCamLookVec = new THREE.Vector3();
+
+    // 2nd-order critically-damped spring filter (SmoothDamp) for natural ease-in & ease-out camera rotation
+    const smoothDampScalar = (
+      current: number,
+      target: number,
+      velRef: { current: number },
+      smoothTime: number,
+      dt: number
+    ): number => {
+      const tau = Math.max(0.0001, smoothTime);
+      const omega = 2.0 / tau;
+      const x = omega * dt;
+      const exp = 1.0 / (1.0 + x + 0.48 * x * x + 0.235 * x * x * x);
+      const change = current - target;
+      const temp = (velRef.current + omega * change) * dt;
+      velRef.current = (velRef.current - omega * temp) * exp;
+      return target + (change + temp) * exp;
+    };
 
     const animate = (now: number) => {
       const dt = Math.min(0.05, Math.max(0.001, (now - lastTime) / 1000));
@@ -2465,12 +2495,28 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
       const moveForward = Math.max(-1, Math.min(1, kbForward + joyY));
       const moveRight = Math.max(-1, Math.min(1, kbRight + joyX));
 
-      // Smoothly steer camera into turns when turning with A/D or Virtual Thumbstick
+      // Smoothly steer camera into turns when turning with A/D or Virtual Thumbstick (80% speed)
       const isActivelyAiming =
         document.pointerLockElement === domElem || activeDragPointers.size > 0;
       if (Math.abs(moveRight) > 0.05 && !isActivelyAiming) {
-        cameraYawRef.current -= moveRight * dt * 1.55;
+        targetCameraYawRef.current -= moveRight * dt * 1.24;
       }
+
+      // Apply 2nd-order ease-in-out damping to camera yaw & pitch
+      cameraYawRef.current = smoothDampScalar(
+        cameraYawRef.current,
+        targetCameraYawRef.current,
+        cameraYawVelRef,
+        0.095,
+        dt
+      );
+      cameraPitchRef.current = smoothDampScalar(
+        cameraPitchRef.current,
+        targetCameraPitchRef.current,
+        cameraPitchVelRef,
+        0.095,
+        dt
+      );
 
       const input: PlayerControlInput = {
         moveForward,
@@ -2758,10 +2804,10 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
           activeDragPointers.size === 0 &&
           document.pointerLockElement !== domElem
         ) {
-          let yawDiff = camTarget.yaw - cameraYawRef.current;
+          let yawDiff = camTarget.yaw - targetCameraYawRef.current;
           while (yawDiff > Math.PI) yawDiff -= Math.PI * 2;
           while (yawDiff < -Math.PI) yawDiff += Math.PI * 2;
-          cameraYawRef.current += yawDiff * Math.min(1, dt * 4.5);
+          targetCameraYawRef.current += yawDiff * Math.min(1, dt * 3.6);
         }
 
         const camDist = 8.4;
@@ -2772,18 +2818,17 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
           camTarget.z + Math.cos(cameraYawRef.current) * camDist;
         const desiredCamY = camTarget.y + camHeight;
 
-        camPos.lerp(
-          new THREE.Vector3(desiredCamX, desiredCamY, desiredCamZ),
-          Math.min(1, dt * 10.5)
-        );
+        const posAlpha = 1 - Math.exp(-9.0 * dt);
+        desiredCamPosVec.set(desiredCamX, desiredCamY, desiredCamZ);
+        camPos.lerp(desiredCamPosVec, posAlpha);
+
         const lookAheadX =
           camTarget.x - Math.sin(cameraYawRef.current) * 3.0;
         const lookAheadZ =
           camTarget.z - Math.cos(cameraYawRef.current) * 3.0;
-        camLook.lerp(
-          new THREE.Vector3(lookAheadX, camTarget.y + 1.25, lookAheadZ),
-          Math.min(1, dt * 12.5)
-        );
+        const lookAlpha = 1 - Math.exp(-11.0 * dt);
+        desiredCamLookVec.set(lookAheadX, camTarget.y + 1.25, lookAheadZ);
+        camLook.lerp(desiredCamLookVec, lookAlpha);
 
         camera.position.copy(camPos);
         camera.lookAt(camLook);

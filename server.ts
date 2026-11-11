@@ -530,12 +530,12 @@ async function startServer() {
 
     if (rawUsername.length < 3 || rawUsername.length > 24) {
       return res.status(400).json({
-        error: 'ชื่อผู้ใช้ (Username) ต้องมีความยาว 3–24 ตัวอักษร',
+        error: 'Username must be 3–24 characters.',
       });
     }
     if (password.length < 4) {
       return res.status(400).json({
-        error: 'รหัสผ่านต้องมีความยาวอย่างน้อย 4 ตัวอักษร',
+        error: 'Password must be at least 4 characters.',
       });
     }
 
@@ -544,7 +544,7 @@ async function startServer() {
       .get(rawUsername) as { id: number } | undefined;
     if (taken) {
       return res.status(409).json({
-        error: 'ชื่อผู้ใช้นี้มีคนใช้แล้ว กรุณาตั้งชื่ออื่นครับ',
+        error: 'Username is already taken. Please choose another.',
       });
     }
 
@@ -606,7 +606,7 @@ async function startServer() {
 
     if (!userRow || userRow.password_hash !== hashPassword(password)) {
       return res.status(401).json({
-        error: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง',
+        error: 'Invalid username or password.',
       });
     }
 
@@ -616,6 +616,168 @@ async function startServer() {
       userRow.id
     );
     return res.json({ user: buildUserProfilePayload(userRow.id) });
+  });
+
+  // 4.3b Firebase Auth & Cloud Firestore Sync (Google Sign-In / Cloud Profile Sync)
+  app.post('/api/auth/firebase-sync', (req, res) => {
+    const uid = String(req.body?.uid || '')
+      .trim()
+      .replace(/[^a-zA-Z0-9_-]/g, '')
+      .slice(0, 64);
+    if (!uid) {
+      return res.status(400).json({ error: 'Missing Firebase UID.' });
+    }
+
+    const fbUsername = `fb_${uid.slice(0, 20).toLowerCase()}`;
+    const displayName =
+      String(req.body?.displayName || 'PalHero')
+        .trim()
+        .slice(0, 40) || 'PalHero';
+    const guestToken = String(req.body?.guestToken || '').trim();
+    const cloudDoc = req.body?.cloudProfile as
+      | {
+          characterId?: string;
+          level?: number;
+          exp?: number;
+          coins?: number;
+          weapon?: string;
+          headgear?: string;
+          cape?: string;
+          aura?: string;
+          inventory?: string[];
+          raceRp?: number;
+          raceWins?: number;
+          raceMatches?: number;
+          dungeonRp?: number;
+          highestStage?: number;
+          bossesDefeated?: number;
+          pvpRp?: number;
+          pvpWins?: number;
+          pvpMatches?: number;
+        }
+      | undefined;
+
+    const existingFbUser = db
+      .prepare('SELECT id FROM users WHERE username = ?')
+      .get(fbUsername) as { id: number } | undefined;
+
+    let userId: number;
+    let upgradedFromGuest = false;
+
+    if (existingFbUser) {
+      userId = existingFbUser.id;
+      const newToken = generateToken();
+      db.prepare(
+        'UPDATE users SET display_name = ?, is_guest = 0, session_token = ? WHERE id = ?'
+      ).run(displayName, newToken, userId);
+    } else if (guestToken) {
+      const guestRow = db
+        .prepare(
+          'SELECT id FROM users WHERE session_token = ? AND is_guest = 1'
+        )
+        .get(guestToken) as { id: number } | undefined;
+      if (guestRow) {
+        userId = guestRow.id;
+        upgradedFromGuest = true;
+        const newToken = generateToken();
+        db.prepare(
+          `UPDATE users
+           SET username = ?, password_hash = ?, display_name = ?, is_guest = 0, session_token = ?
+           WHERE id = ?`
+        ).run(fbUsername, hashPassword(uid), displayName, newToken, userId);
+      } else {
+        const newToken = generateToken();
+        const info = db
+          .prepare(
+            `INSERT INTO users (username, password_hash, display_name, is_guest, session_token)
+             VALUES (?, ?, ?, 0, ?)`
+          )
+          .run(fbUsername, hashPassword(uid), displayName, newToken);
+        userId = Number(info.lastInsertRowid);
+      }
+    } else {
+      const newToken = generateToken();
+      const info = db
+        .prepare(
+          `INSERT INTO users (username, password_hash, display_name, is_guest, session_token)
+           VALUES (?, ?, ?, 0, ?)`
+        )
+        .run(fbUsername, hashPassword(uid), displayName, newToken);
+      userId = Number(info.lastInsertRowid);
+    }
+
+    grantStarterItemsAndRanking(userId);
+
+    // If Cloud Firestore already has higher progression or gear, merge it into SQLite leaderboard state
+    if (cloudDoc) {
+      const activeSeason = ensureActiveSeason();
+      if (cloudDoc.level && cloudDoc.level > 1) {
+        db.prepare(
+          'UPDATE users SET level = MAX(level, ?), exp = MAX(exp, ?), coins = MAX(coins, ?) WHERE id = ?'
+        ).run(
+          Number(cloudDoc.level || 1),
+          Number(cloudDoc.exp || 0),
+          Number(cloudDoc.coins || 250),
+          userId
+        );
+      }
+      if (cloudDoc.weapon || cloudDoc.headgear || cloudDoc.cape || cloudDoc.aura) {
+        db.prepare(
+          `UPDATE user_loadouts
+           SET weapon_id = COALESCE(?, weapon_id),
+               headgear_id = COALESCE(?, headgear_id),
+               cape_id = COALESCE(?, cape_id),
+               aura_id = COALESCE(?, aura_id)
+           WHERE user_id = ?`
+        ).run(
+          cloudDoc.weapon || null,
+          cloudDoc.headgear || null,
+          cloudDoc.cape || null,
+          cloudDoc.aura || null,
+          userId
+        );
+      }
+      if (Array.isArray(cloudDoc.inventory)) {
+        const insertInv = db.prepare(
+          'INSERT OR IGNORE INTO user_inventory (user_id, item_id) VALUES (?, ?)'
+        );
+        for (const itemId of cloudDoc.inventory.slice(0, 30)) {
+          if (typeof itemId === 'string' && EQUIPMENT_CATALOG[itemId]) {
+            insertInv.run(userId, itemId);
+          }
+        }
+      }
+      db.prepare(
+        `UPDATE season_rankings
+         SET race_rp = MAX(race_rp, ?),
+             race_wins = MAX(race_wins, ?),
+             race_matches = MAX(race_matches, ?),
+             dungeon_rp = MAX(dungeon_rp, ?),
+             highest_stage = MAX(highest_stage, ?),
+             bosses_defeated = MAX(bosses_defeated, ?),
+             pvp_rp = MAX(pvp_rp, ?),
+             pvp_wins = MAX(pvp_wins, ?),
+             pvp_matches = MAX(pvp_matches, ?)
+         WHERE season_id = ? AND user_id = ?`
+      ).run(
+        Number(cloudDoc.raceRp ?? 1000),
+        Number(cloudDoc.raceWins ?? 0),
+        Number(cloudDoc.raceMatches ?? 0),
+        Number(cloudDoc.dungeonRp ?? 1000),
+        Number(cloudDoc.highestStage ?? 1),
+        Number(cloudDoc.bossesDefeated ?? 0),
+        Number(cloudDoc.pvpRp ?? 1000),
+        Number(cloudDoc.pvpWins ?? 0),
+        Number(cloudDoc.pvpMatches ?? 0),
+        activeSeason.id,
+        userId
+      );
+    }
+
+    return res.json({
+      user: buildUserProfilePayload(userId),
+      upgradedFromGuest,
+    });
   });
 
   // 4.4 Get Profile by Bearer Token

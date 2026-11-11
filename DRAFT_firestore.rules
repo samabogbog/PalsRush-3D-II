@@ -1,0 +1,366 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Global Safety Net (Default Deny Catch-All)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // ==================== PRIMITIVE HELPERS ====================
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isOwner(userId) {
+      return isVerifiedUser() && request.auth.uid == userId;
+    }
+
+    function parentUserExists(userId) {
+      return exists(/databases/$(database)/documents/users/$(userId)) &&
+        get(/databases/$(database)/documents/users/$(userId)).data.ownerId == request.auth.uid;
+    }
+
+    function parentUserExistsOrBatchCreated(userId) {
+      return parentUserExists(userId) ||
+        (existsAfter(/databases/$(database)/documents/users/$(userId)) &&
+          getAfter(/databases/$(database)/documents/users/$(userId)).data.ownerId == request.auth.uid);
+    }
+
+    // ==================== VALIDATION BLUEPRINTS ====================
+    function isValidPublicPlayerProfile(data) {
+      return data.keys().hasAll([
+          'ownerId',
+          'username',
+          'displayName',
+          'characterId',
+          'level',
+          'exp',
+          'nextLevelExp',
+          'coins',
+          'weapon',
+          'headgear',
+          'cape',
+          'aura',
+          'inventory',
+          'combatPower',
+          'seasonNumber',
+          'seasonName',
+          'raceRp',
+          'raceWins',
+          'raceMatches',
+          'dungeonRp',
+          'highestStage',
+          'bossesDefeated',
+          'pvpRp',
+          'pvpWins',
+          'pvpMatches',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'ownerId',
+          'username',
+          'displayName',
+          'characterId',
+          'level',
+          'exp',
+          'nextLevelExp',
+          'coins',
+          'weapon',
+          'headgear',
+          'cape',
+          'aura',
+          'inventory',
+          'combatPower',
+          'seasonNumber',
+          'seasonName',
+          'raceRp',
+          'raceWins',
+          'raceMatches',
+          'dungeonRp',
+          'highestStage',
+          'bossesDefeated',
+          'pvpRp',
+          'pvpWins',
+          'pvpMatches',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.ownerId is string &&
+        data.ownerId.size() >= 1 &&
+        data.ownerId.size() <= 128 &&
+        data.ownerId.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.ownerId == request.auth.uid &&
+        data.username is string &&
+        data.username.size() >= 2 &&
+        data.username.size() <= 40 &&
+        data.username.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.displayName is string &&
+        data.displayName.size() >= 1 &&
+        data.displayName.size() <= 50 &&
+        data.characterId is string &&
+        data.characterId.size() >= 2 &&
+        data.characterId.size() <= 32 &&
+        data.characterId.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.level is int &&
+        data.level >= 1 &&
+        data.level <= 999 &&
+        data.exp is int &&
+        data.exp >= 0 &&
+        data.exp <= 1000000 &&
+        data.nextLevelExp is int &&
+        data.nextLevelExp >= 1 &&
+        data.nextLevelExp <= 1000000 &&
+        data.coins is int &&
+        data.coins >= 0 &&
+        data.coins <= 10000000 &&
+        data.weapon is string &&
+        data.weapon.size() >= 1 &&
+        data.weapon.size() <= 64 &&
+        data.weapon.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.headgear is string &&
+        data.headgear.size() >= 1 &&
+        data.headgear.size() <= 64 &&
+        data.headgear.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.cape is string &&
+        data.cape.size() >= 1 &&
+        data.cape.size() <= 64 &&
+        data.cape.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.aura is string &&
+        data.aura.size() >= 1 &&
+        data.aura.size() <= 64 &&
+        data.aura.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.inventory is list &&
+        data.inventory.size() >= 1 &&
+        data.inventory.size() <= 30 &&
+        data.inventory[0] is string &&
+        data.inventory[0].size() <= 64 &&
+        data.combatPower is int &&
+        data.combatPower >= 0 &&
+        data.combatPower <= 1000000 &&
+        data.seasonNumber is int &&
+        data.seasonNumber >= 1 &&
+        data.seasonNumber <= 1000 &&
+        data.seasonName is string &&
+        data.seasonName.size() >= 1 &&
+        data.seasonName.size() <= 80 &&
+        data.raceRp is int &&
+        data.raceRp >= 0 &&
+        data.raceRp <= 1000000 &&
+        data.raceWins is int &&
+        data.raceWins >= 0 &&
+        data.raceWins <= 1000000 &&
+        data.raceMatches is int &&
+        data.raceMatches >= 0 &&
+        data.raceMatches <= 1000000 &&
+        data.dungeonRp is int &&
+        data.dungeonRp >= 0 &&
+        data.dungeonRp <= 1000000 &&
+        data.highestStage is int &&
+        data.highestStage >= 1 &&
+        data.highestStage <= 100 &&
+        data.bossesDefeated is int &&
+        data.bossesDefeated >= 0 &&
+        data.bossesDefeated <= 1000000 &&
+        data.pvpRp is int &&
+        data.pvpRp >= 0 &&
+        data.pvpRp <= 1000000 &&
+        data.pvpWins is int &&
+        data.pvpWins >= 0 &&
+        data.pvpWins <= 1000000 &&
+        data.pvpMatches is int &&
+        data.pvpMatches >= 0 &&
+        data.pvpMatches <= 1000000 &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidPrivateUserInfo(data) {
+      return data.keys().hasAll(['ownerId', 'email', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['ownerId', 'email', 'createdAt', 'updatedAt']) &&
+        data.ownerId is string &&
+        data.ownerId.size() >= 1 &&
+        data.ownerId.size() <= 128 &&
+        data.ownerId.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.ownerId == request.auth.uid &&
+        data.email is string &&
+        data.email.size() >= 3 &&
+        data.email.size() <= 120 &&
+        data.email == request.auth.token.email &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidMatchRecord(data) {
+      return data.keys().hasAll(['ownerId', 'mode', 'status', 'rpDelta', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['ownerId', 'mode', 'status', 'rpDelta', 'createdAt', 'updatedAt']) &&
+        data.ownerId is string &&
+        data.ownerId.size() >= 1 &&
+        data.ownerId.size() <= 128 &&
+        data.ownerId.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.ownerId == request.auth.uid &&
+        data.mode is string &&
+        data.mode.size() >= 3 &&
+        data.mode.size() <= 16 &&
+        (data.mode == 'race' || data.mode == 'dungeon' || data.mode == 'pvp') &&
+        data.status is string &&
+        data.status.size() >= 6 &&
+        data.status.size() <= 16 &&
+        (data.status == 'active' || data.status == 'completed') &&
+        data.rpDelta is int &&
+        data.rpDelta >= -500 &&
+        data.rpDelta <= 500 &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    // ==================== COLLECTION 1: /users/{userId} ====================
+    match /users/{userId} {
+      allow get: if isSignedIn() &&
+        isValidId(userId) &&
+        existing().ownerId == request.auth.uid;
+
+      allow list: if isSignedIn() &&
+        existing().ownerId == request.auth.uid;
+
+      allow create: if isOwner(userId) &&
+        isValidId(userId) &&
+        isValidPublicPlayerProfile(incoming()) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+
+      allow update: if isOwner(userId) &&
+        isValidId(userId) &&
+        isValidPublicPlayerProfile(incoming()) &&
+        incoming().ownerId == existing().ownerId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time && (
+          // Action 1: Update Profile / Loadout / Character
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'displayName',
+            'characterId',
+            'weapon',
+            'headgear',
+            'cape',
+            'aura',
+            'inventory',
+            'combatPower',
+            'updatedAt'
+          ]) ||
+          // Action 2: Sync Match Progression, Level & Seasonal Rankings
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'displayName',
+            'characterId',
+            'level',
+            'exp',
+            'nextLevelExp',
+            'coins',
+            'weapon',
+            'headgear',
+            'cape',
+            'aura',
+            'inventory',
+            'combatPower',
+            'seasonNumber',
+            'seasonName',
+            'raceRp',
+            'raceWins',
+            'raceMatches',
+            'dungeonRp',
+            'highestStage',
+            'bossesDefeated',
+            'pvpRp',
+            'pvpWins',
+            'pvpMatches',
+            'updatedAt'
+          ])
+        );
+
+      allow delete: if false;
+
+      // ==================== SUBCOLLECTION 2: /users/{userId}/private/{docId} ====================
+      match /private/{docId} {
+        allow get: if isOwner(userId) &&
+          isValidId(userId) &&
+          isValidId(docId) &&
+          existing().ownerId == request.auth.uid &&
+          parentUserExists(userId);
+
+        allow list: if false;
+
+        allow create: if isOwner(userId) &&
+          isValidId(userId) &&
+          isValidId(docId) &&
+          docId == 'info' &&
+          isValidPrivateUserInfo(incoming()) &&
+          incoming().createdAt == request.time &&
+          incoming().updatedAt == request.time &&
+          parentUserExistsOrBatchCreated(userId);
+
+        allow update: if isOwner(userId) &&
+          isValidId(userId) &&
+          isValidId(docId) &&
+          docId == 'info' &&
+          isValidPrivateUserInfo(incoming()) &&
+          incoming().ownerId == existing().ownerId &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time &&
+          incoming().diff(existing()).affectedKeys().hasOnly(['email', 'updatedAt']) &&
+          parentUserExists(userId);
+
+        allow delete: if false;
+      }
+
+      // ==================== SUBCOLLECTION 3: /users/{userId}/matches/{matchId} ====================
+      match /matches/{matchId} {
+        allow get: if isOwner(userId) &&
+          isValidId(userId) &&
+          isValidId(matchId) &&
+          existing().ownerId == request.auth.uid &&
+          parentUserExists(userId);
+
+        allow list: if isOwner(userId) &&
+          existing().ownerId == request.auth.uid;
+
+        allow create: if isOwner(userId) &&
+          isValidId(userId) &&
+          isValidId(matchId) &&
+          isValidMatchRecord(incoming()) &&
+          incoming().createdAt == request.time &&
+          incoming().updatedAt == request.time &&
+          parentUserExistsOrBatchCreated(userId);
+
+        allow update: if isOwner(userId) &&
+          isValidId(userId) &&
+          isValidId(matchId) &&
+          isValidMatchRecord(incoming()) &&
+          existing().status != 'completed' &&
+          incoming().ownerId == existing().ownerId &&
+          incoming().mode == existing().mode &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time &&
+          incoming().diff(existing()).affectedKeys().hasOnly(['status', 'rpDelta', 'updatedAt']) &&
+          parentUserExists(userId);
+
+        allow delete: if false;
+      }
+    }
+  }
+}

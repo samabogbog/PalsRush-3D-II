@@ -34,6 +34,13 @@ import { AuthAndRankModal } from './components/AuthAndRankModal';
 import { GitAgentHubModal } from './components/GitAgentHubModal';
 import { HomeHubScreen } from './components/HomeHubScreen';
 import { TrackId } from './game/raceEngine';
+import {
+  auth,
+  loadUserProfileFromFirestore,
+  onAuthStateChanged,
+  recordMatchToFirestore,
+  syncUserProfileToFirestore,
+} from './lib/firebase';
 
 const ROW_GROUPS = [
   { row: 1 as const, label: 'Row 01: Woodland', startIndex: 0 },
@@ -156,6 +163,51 @@ export default function App() {
     };
   }, [applyProfileState]);
 
+  // Listen for Firebase Google Sign-In state and sync with Cloud Firestore + Leaderboard API
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
+      if (!fbUser) return;
+      try {
+        let savedToken = '';
+        try {
+          savedToken = localStorage.getItem(SESSION_STORAGE_KEY) || '';
+        } catch {
+          // ignore
+        }
+        let cloudProfile = null;
+        try {
+          cloudProfile = await loadUserProfileFromFirestore(fbUser.uid);
+        } catch {
+          // ignore initial Firestore read error before first write
+        }
+        const res = await fetch('/api/auth/firebase-sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            uid: fbUser.uid,
+            displayName:
+              cloudProfile?.displayName ||
+              fbUser.displayName ||
+              fbUser.email?.split('@')[0] ||
+              'PalHero',
+            guestToken: savedToken || undefined,
+            cloudProfile,
+          }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.user) {
+            applyProfileState(data.user);
+            await syncUserProfileToFirestore(data.user).catch(() => {});
+          }
+        }
+      } catch {
+        // ignore network error
+      }
+    });
+    return () => unsubscribe();
+  }, [applyProfileState]);
+
   const syncLoadoutToServer = useCallback(
     async (payload: {
       selectedCharacterId?: CharacterId;
@@ -181,6 +233,7 @@ export default function App() {
           if (data.user) {
             setUserProfile(data.user);
             setPlayerLoadout(data.user.loadout);
+            await syncUserProfileToFirestore(data.user).catch(() => {});
           }
         }
       } catch {
@@ -213,9 +266,14 @@ export default function App() {
           const data = await res.json();
           if (data.user) {
             setUserProfile(data.user);
+            await syncUserProfileToFirestore(data.user).catch(() => {});
           }
           if (data.reward) {
             setLastCombatReward(data.reward);
+            await recordMatchToFirestore(
+              payload.mode,
+              Number(data.reward.rpDelta || 0)
+            ).catch(() => {});
           }
         }
       } catch {
@@ -417,7 +475,7 @@ export default function App() {
 
   return (
     <div
-      className="relative w-screen h-screen overflow-hidden bg-[#FAF3E8] text-[#2B2118] flex flex-col select-none"
+      className="relative w-screen h-dvh overflow-hidden bg-[#FAF3E8] text-[#2B2118] flex flex-col select-none"
       data-mode={appMode}
       data-track={selectedTrackId}
       data-character={selectedCharacter.id}
