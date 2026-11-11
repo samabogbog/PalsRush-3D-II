@@ -1,0 +1,122 @@
+{
+  "taskId": "TASK-003",
+  "format": "png",
+  "generation": {
+    "tool": "built-in ImageGen",
+    "promptSet": "TASK-003 section 4, one asset per prompt. Tactile rounded vinyl/clay toy dioramas with warm key lighting, espresso edges, no lettering. Opaque full-bleed landscape cards and isolated transparent square icons. Brawler PvP received a targeted edit to make the slipper recognizable."
+  },
+  "assets": [
+    {
+      "id": "mode_party_race",
+      "path": "/assets/game/modes/mode_party_race.png",
+      "width": 1280,
+      "height": 720,
+      "sha256": "97c89717c7f02114b0b380f9d87e66c9dc1de4b99cfa2113ba2234c2072b6a20"
+    },
+    {
+      "id": "mode_dungeon_raid",
+      "path": "/assets/game/modes/mode_dungeon_raid.png",
+      "width": 1280,
+      "height": 720,
+      "sha256": "4566809276abbd3e268b2c7741612ae901f4dc0e5b3f0a415d49391dbd8b7814"
+    },
+    {
+      "id": "mode_brawler_pvp",
+      "path": "/assets/game/modes/mode_brawler_pvp.png",
+      "width": 1280,
+      "height": 720,
+      "sha256": "89297544627654b8881501e09155c75da5238d4309ce0c185e65992a975df24e"
+    },
+    {
+      "id": "map_woodland_circuit",
+      "path": "/assets/game/maps/map_woodland_circuit.png",
+      "width": 1280,
+      "height": 720,
+      "sha256": "4780d1a52f196718b91b3387cc90babb93d31652d1d08a079e0a4ba054fcdd20"
+    },
+    {
+      "id": "map_glacier_peak",
+      "path": "/assets/game/maps/map_glacier_peak.png",
+      "width": 1280,
+      "height": 720,
+      "sha256": "d8ac3c0f61b631404dfaeddb3c3ed95fd0d0d0b55beef3d70c7cbca1e33915c8"
+    },
+    {
+      "id": "stage_1_slime_ruins",
+      "path": "/assets/game/dungeons/stage_1_slime_ruins.png",
+      "width": 1280,
+      "height": 720,
+      "sha256": "e88f7c1db2cf23db84e8971d90c6f45511b28353c7620faecf10712b463e2fd0"
+    },
+    {
+      "id": "stage_2_lava_kitchen",
+      "path": "/assets/game/dungeons/stage_2_lava_kitchen.png",
+      "width": 1280,
+      "height": 720,
+      "sha256": "276b85fe6efb8665570d8fea2d6eff12c55e95c2ccf5e5b6708e0d12934b5acc"
+    },
+    {
+      "id": "stage_3_frost_citadel",
+      "path": "/assets/game/dungeons/stage_3_frost_citadel.png",
+      "width": 1280,
+      "height": 720,
+      "sha256": "19bf53ebac5923b23908056db7209710d02a03843c4185d83c0ae1088d93ab07"
+    },
+    {
+      "id": "menu_home",
+      "path": "/assets/game/icons/menu_home.png",
+      "width": 512,
+      "height": 512,
+      "sha256": "402db34c178ba03ad96ccf2dfce85bf34fde5ed664d0211039c61a0797706aba"
+    },
+    {
+      "id": "menu_heroes",
+      "path": "/assets/game/icons/menu_heroes.png",
+      "width": 512,
+      "height": 512,
+      "sha256": "85d0e90033dc8c1a02bdde00a13d604a8d40bd9accfe870fa462cefc10edab58"
+    },
+    {
+      "id": "menu_gear",
+      "path": "/assets/game/icons/menu_gear.png",
+      "width": 512,
+      "height": 512,
+      "sha256": "539282230fe847013e2fd5b548c48e07a98af6b57fafc722c9bd4221dbdc265f"
+    },
+    {
+      "id": "menu_ranks",
+      "path": "/assets/game/icons/menu_ranks.png",
+      "width": 512,
+      "height": 512,
+      "sha256": "5e5efd88163b476304e3aa3ab955d2233fddf4809a9232fd6b001f67dc2910fe"
+    },
+    {
+      "id": "menu_account",
+      "path": "/assets/game/icons/menu_account.png",
+      "width": 512,
+      "height": 512,
+      "sha256": "d9c661a068a47b6d3517d30a7636bb42315ba05ced56b51297bbd5f16004e551"
+    },
+    {
+      "id": "slot_weapon",
+      "path": "/assets/game/icons/slot_weapon.png",
+      "width": 512,
+      "height": 512,
+      "sha256": "2909ba397f9ff52b3aa120a39170b8867de38955dd6643f6b04e1e95f5bb9363"
+    },
+    {
+      "id": "slot_headgear",
+      "path": "/assets/game/icons/slot_headgear.png",
+      "width": 512,
+      "height": 512,
+      "sha256": "e44339d71bdb12e5effdf9d467a8be342b906c62c56dc6c037694110eb1fb5e0"
+    },
+    {
+      "id": "slot_cape_aura",
+      "path": "/assets/game/icons/slot_cape_aura.png",
+      "width": 512,
+      "height": 512,
+      "sha256": "0bbedc52ffd65c2cb88bcb1d4155cbb2c12519455e24cd5fe3539a805d777046"
+    }
+  ]
+}

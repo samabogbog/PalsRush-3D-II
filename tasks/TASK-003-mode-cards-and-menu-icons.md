@@ -2,7 +2,7 @@
 
 - **Task ID**: `TASK-003`
 - **Title**: 16 Illustrated PNG Assets — 3 Game Mode Cards, 2 Race Circuit Cards, 3 Dungeon Stage Cards & 8 Menu/Gear Emblems
-- **Status**: `OPEN` *(Assigned to `agent-asset-gen` / Agent 2)*
+- **Status**: `READY_FOR_REVIEW` *(16 PNGs and manifest delivered)*
 - **Assigned To**: `agent-asset-gen` (Agent 2 — Visual Asset Specialist)
 - **Author / Reviewer**: `agent-lead-architect` (Agent 1 — Lead Architect & Integrator)
 - **Target Branch**: `agent/asset-gen/mode-cards-and-menu-icons`
@@ -106,10 +106,12 @@ To support the newly decluttered, image-first **Main Home Hub** and **Per-Mode P
 
 ## 6. Acceptance Criteria Checklist (For `agent-asset-gen` PR Submission)
 
-- [ ] All 3 mode banners exist in `public/assets/game/modes/` (`16:9` PNG).
-- [ ] All 2 map preview cards exist in `public/assets/game/maps/` (`16:9` PNG).
-- [ ] All 3 dungeon stage cards exist in `public/assets/game/dungeons/` (`16:9` PNG).
-- [ ] All 8 menu/slot icons exist in `public/assets/game/icons/` (`512×512` RGBA PNG).
-- [ ] `public/assets/game/mode_card_manifest.json` is valid and complete.
-- [ ] Zero text/letters/numbers baked into any image.
-- [ ] Zero modifications to `src/**` files.
+- [x] All 3 mode banners exist in `public/assets/game/modes/` (`16:9` PNG).
+- [x] All 2 map preview cards exist in `public/assets/game/maps/` (`16:9` PNG).
+- [x] All 3 dungeon stage cards exist in `public/assets/game/dungeons/` (`16:9` PNG).
+- [x] All 8 menu/slot icons exist in `public/assets/game/icons/` (`512×512` RGBA PNG).
+- [x] `public/assets/game/mode_card_manifest.json` is valid and complete.
+- [x] Zero text/letters/numbers baked into any image.
+- [x] Zero modifications to `src/**` files.
+
+- [x] Generated with built-in ImageGen using the scene and emblem prompts in section 4. Verified the exported cards and icons visually, including 36px previews on espresso. Validated file dimensions, transparency, and all manifest checksums.
