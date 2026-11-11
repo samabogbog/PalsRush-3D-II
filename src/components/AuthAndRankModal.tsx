@@ -1,10 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
   X,
-  Home,
-  UserCheck,
-  Shield,
-  Trophy,
   Sparkles,
   Swords,
   Flame,
@@ -14,6 +10,7 @@ import {
   Check,
   LogIn,
   UserPlus,
+  Trophy,
 } from 'lucide-react';
 import { CharacterId, CHARACTERS, CharacterSpec } from '../models/characterTypes';
 import {
@@ -28,6 +25,7 @@ import {
   UserProfileData,
 } from '../models/equipmentTypes';
 import { LobbyCharacterPreview } from './LobbyCharacterPreview';
+import { MenuIconEmblem } from './GameAssetIcons';
 
 export interface LeaderboardEntry {
   userId: number;
@@ -196,7 +194,7 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
       if (!res.ok) {
         setAuthMessage({
           type: 'error',
-          text: data.error || 'เกิดข้อผิดพลาด กรุณาลองอีกครั้ง',
+          text: data.error || 'Authentication failed. Please try again.',
         });
       } else if (data.user) {
         onAuthSuccess(data.user);
@@ -206,16 +204,16 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
         setAuthMessage({
           type: 'success',
           text: data.upgradedFromGuest
-            ? 'ผูกบัญชีถาวรสำเร็จ! ข้อมูลเลเวล ไอเท็ม และแต้ม Rank ทั้งหมดถูกย้ายเข้าบัญชีของคุณแล้ว'
+            ? 'Account bound! All level, gear, and rank progress saved.'
             : authMode === 'register'
-              ? 'สมัครสมาชิกสำเร็จ! บันทึกลงฐานข้อมูล SQLite เรียบร้อยแล้ว'
-              : 'เข้าสู่ระบบสำเร็จ! ยินดีต้อนรับกลับมาครับ',
+              ? 'Account registered to SQLite!'
+              : 'Signed in successfully!',
         });
       }
     } catch {
       setAuthMessage({
         type: 'error',
-        text: 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ SQLite ได้',
+        text: 'Could not connect to server.',
       });
     } finally {
       setIsSubmitting(false);
@@ -235,7 +233,7 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
         onAuthSuccess(data.user);
         setAuthMessage({
           type: 'success',
-          text: `สร้างบัญชีทดลองเล่นด่วน (${data.user.displayName}) สำเร็จ!`,
+          text: `Quick Play profile (${data.user.displayName}) created!`,
         });
       }
     } finally {
@@ -280,55 +278,55 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
       className="pointer-events-auto fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-2 sm:p-4 select-none"
       role="dialog"
       aria-modal="true"
-      aria-label="Member Account, 4-Slot Armory and Seasonal Leaderboards"
+      aria-label="Account, 4-Slot Gear and Seasonal Leaderboards"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="bg-[#FFFDF9] border-4 border-[#2B2118] rounded-[28px] max-w-5xl w-full max-h-[94vh] flex flex-col shadow-2xl overflow-hidden text-[#2B2118]"
+        className="bg-[#FFFDF9] border-4 border-[#2B2118] rounded-[28px] max-w-5xl w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden text-[#2B2118]"
       >
-        {/* ==================== HEADER & TOP 3 TABS ==================== */}
+        {/* ==================== HEADER & TOP 3 ICON TABS ==================== */}
         <div className="bg-[#2B2118] text-[#FFFDF9] px-4 py-3 flex flex-wrap items-center justify-between gap-2 border-b-4 border-[#1A130D]">
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={() => setActiveTab('auth')}
               data-testid="modal-tab-auth"
-              className={`h-9 px-3.5 rounded-2xl border-2 text-xs font-black flex items-center gap-1.5 transition-all whitespace-nowrap shrink-0 ${
+              className={`h-10 px-3.5 rounded-2xl border-2 text-xs font-black flex items-center gap-2 transition-all whitespace-nowrap shrink-0 ${
                 activeTab === 'auth'
                   ? 'bg-[#FDE047] text-[#2B2118] border-[#1A130D]'
                   : 'bg-[#3A2C20] text-[#F3E8D6] border-white/15 hover:bg-[#4E3B2B]'
               }`}
             >
-              <UserCheck className="w-4 h-4" />
-              <span>1. สมาชิก & ล็อกอิน (SQLite)</span>
+              <MenuIconEmblem icon="account" className="w-5 h-5" />
+              <span>ACCOUNT</span>
             </button>
 
             <button
               type="button"
               onClick={() => setActiveTab('armory')}
               data-testid="modal-tab-armory"
-              className={`h-9 px-3.5 rounded-2xl border-2 text-xs font-black flex items-center gap-1.5 transition-all whitespace-nowrap shrink-0 ${
+              className={`h-10 px-3.5 rounded-2xl border-2 text-xs font-black flex items-center gap-2 transition-all whitespace-nowrap shrink-0 ${
                 activeTab === 'armory'
                   ? 'bg-[#A855F7] text-white border-[#1A130D]'
                   : 'bg-[#3A2C20] text-[#F3E8D6] border-white/15 hover:bg-[#4E3B2B]'
               }`}
             >
-              <Shield className="w-4 h-4" />
-              <span>2. คลังอุปกรณ์ 4 ช่อง (Shared Gear)</span>
+              <MenuIconEmblem icon="gear" className="w-5 h-5" />
+              <span>4-SLOT GEAR</span>
             </button>
 
             <button
               type="button"
               onClick={() => setActiveTab('leaderboard')}
               data-testid="modal-tab-leaderboard"
-              className={`h-9 px-3.5 rounded-2xl border-2 text-xs font-black flex items-center gap-1.5 transition-all whitespace-nowrap shrink-0 ${
+              className={`h-10 px-3.5 rounded-2xl border-2 text-xs font-black flex items-center gap-2 transition-all whitespace-nowrap shrink-0 ${
                 activeTab === 'leaderboard'
                   ? 'bg-[#F59E0B] text-[#2B2118] border-[#1A130D]'
                   : 'bg-[#3A2C20] text-[#F3E8D6] border-white/15 hover:bg-[#4E3B2B]'
               }`}
             >
-              <Trophy className="w-4 h-4" />
-              <span>3. อันดับแรงค์ 3 โหมด & ซีซั่น</span>
+              <MenuIconEmblem icon="ranks" className="w-5 h-5" />
+              <span>LEADERBOARDS</span>
             </button>
           </div>
 
@@ -341,10 +339,10 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
                   onGoHome();
                 }}
                 data-testid="modal-go-home-btn"
-                className="h-9 px-3 rounded-2xl bg-[#FDE047] hover:bg-[#FACC15] text-[#2B2118] border-2 border-[#1A130D] text-xs font-black flex items-center gap-1.5 shadow whitespace-nowrap shrink-0"
+                className="h-10 px-3.5 rounded-2xl bg-[#FDE047] hover:bg-[#FACC15] text-[#2B2118] border-2 border-[#1A130D] text-xs font-black flex items-center gap-1.5 shadow whitespace-nowrap shrink-0"
               >
-                <Home className="w-4 h-4" />
-                <span>หน้าแรก</span>
+                <MenuIconEmblem icon="home" className="w-5 h-5" />
+                <span>HOME</span>
               </button>
             )}
 
@@ -355,10 +353,10 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
                 onLaunchCombatMode('dungeon');
               }}
               data-testid="modal-launch-dungeon-btn"
-              className="h-9 px-3.5 rounded-2xl bg-[#84CC16] hover:bg-[#A3E635] text-[#2B2118] border-2 border-[#1A130D] text-xs font-black flex items-center gap-1.5 shadow whitespace-nowrap shrink-0"
+              className="h-10 px-3.5 rounded-2xl bg-[#84CC16] hover:bg-[#A3E635] text-[#2B2118] border-2 border-[#1A130D] text-xs font-black flex items-center gap-1.5 shadow whitespace-nowrap shrink-0"
             >
               <Flame className="w-4 h-4" />
-              <span>ลุยดันเจี้ยน 3D!</span>
+              <span>DUNGEON</span>
             </button>
 
             <button
@@ -366,21 +364,21 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
               onClick={onClose}
               data-testid="modal-close-btn"
               aria-label="Close Modal"
-              className="h-9 px-3 rounded-2xl bg-[#EF4444] hover:bg-[#DC2626] text-white border-2 border-[#1A130D] text-xs font-black flex items-center gap-1.5 shadow transition-colors whitespace-nowrap shrink-0"
+              className="h-10 px-3.5 rounded-2xl bg-[#EF4444] hover:bg-[#DC2626] text-white border-2 border-[#1A130D] text-xs font-black flex items-center gap-1.5 shadow transition-colors whitespace-nowrap shrink-0"
             >
               <X className="w-4 h-4 stroke-[2.8]" />
-              <span>ปิดหน้าต่าง</span>
+              <span>CLOSE</span>
             </button>
           </div>
         </div>
 
         {/* ==================== BODY CONTENT ==================== */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-5 bg-[#FAF3E8]">
-          {/* -------------------- TAB 1: MEMBER & SQLITE AUTH -------------------- */}
+          {/* -------------------- TAB 1: ACCOUNT & SQLITE AUTH -------------------- */}
           {activeTab === 'auth' && (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
               {/* Left Column: Current Player Profile Card */}
-              <div className="lg:col-span-6 bg-[#FFFDF9] border-3 border-[#2B2118] rounded-3xl p-4 flex flex-col justify-between gap-3 shadow">
+              <div className="lg:col-span-6 bg-[#FFFDF9] border-3 border-[#2B2118] rounded-3xl p-4 flex flex-col justify-between gap-4 shadow">
                 <div>
                   <div className="flex items-center justify-between gap-2">
                     <span
@@ -390,12 +388,10 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
                           : 'bg-[#84CC16] text-[#2B2118]'
                       }`}
                     >
-                      {userProfile?.isGuest
-                        ? 'GUEST QUICK PLAY (ยังไม่ได้ผูกบัญชีถาวร)'
-                        : 'REGISTERED SQLITE MEMBER (สมาชิกถาวร)'}
+                      {userProfile?.isGuest ? 'GUEST ACCOUNT' : 'MEMBER ACCOUNT'}
                     </span>
                     <span className="text-xs font-black text-[#D97706] tabular-nums">
-                      🪙 {userProfile?.coins ?? 250} Coins
+                      🪙 {userProfile?.coins ?? 250} COINS
                     </span>
                   </div>
 
@@ -410,8 +406,7 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
                         {userProfile?.displayName || 'PalGuest'}
                       </h3>
                       <p className="text-xs font-bold text-[#7D6854]">
-                        Username: @{userProfile?.username || 'guest'} · ตัวละครหลัก:{' '}
-                        {selectedCharacter.name}
+                        @{userProfile?.username || 'guest'} · {selectedCharacter.name}
                       </p>
                       <div className="mt-1.5 flex items-center gap-2">
                         <span className="px-2 py-0.5 rounded-lg bg-[#2B2118] text-[#FDE047] text-xs font-black tabular-nums">
@@ -441,58 +436,57 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
 
                   {/* Current Season 3-Mode Ranks Summary */}
                   <div className="mt-4">
-                    <div className="text-xs font-black text-[#2B2118] mb-2">
-                      คะแนนจัดอันดับประจำซีซั่น ({userProfile?.rankings.seasonName})
+                    <div className="text-xs font-black text-[#2B2118] mb-2 uppercase">
+                      {userProfile?.rankings.seasonName || 'Season 1: Frost & Fury'}
                     </div>
                     <div className="grid grid-cols-3 gap-2">
                       <div className="bg-[#FAF3E8] border-2 border-[#E5D9C5] rounded-2xl p-2.5">
-                        <div className="text-[10px] font-bold text-[#7D6854]">
-                          🏁 โหมดวิ่งสายฮา
+                        <div className="text-[10px] font-black text-[#7D6854]">
+                          🏁 PARTY RACE
                         </div>
                         <div className="text-sm font-black text-[#2B2118] tabular-nums mt-0.5">
                           {userProfile?.rankings.raceRp ?? 1000} RP
                         </div>
                         <div className="text-[10px] font-bold text-[#16A34A]">
-                          ชนะ {userProfile?.rankings.raceWins ?? 0} ครั้ง
+                          {userProfile?.rankings.raceWins ?? 0} Wins
                         </div>
                       </div>
 
                       <div className="bg-[#FAF3E8] border-2 border-[#E5D9C5] rounded-2xl p-2.5">
-                        <div className="text-[10px] font-bold text-[#7D6854]">
-                          🏰 ลุยดันเจี้ยน 3D
+                        <div className="text-[10px] font-black text-[#7D6854]">
+                          🏰 DUNGEON
                         </div>
                         <div className="text-sm font-black text-[#2B2118] tabular-nums mt-0.5">
                           {userProfile?.rankings.dungeonRp ?? 1000} RP
                         </div>
                         <div className="text-[10px] font-bold text-[#0284C7]">
-                          ด่านสูงสุด {userProfile?.rankings.highestStage ?? 1}
+                          Stage {userProfile?.rankings.highestStage ?? 1}
                         </div>
                       </div>
 
                       <div className="bg-[#FAF3E8] border-2 border-[#E5D9C5] rounded-2xl p-2.5">
-                        <div className="text-[10px] font-bold text-[#7D6854]">
-                          ⚔️ 3D Brawler PvP
+                        <div className="text-[10px] font-black text-[#7D6854]">
+                          ⚔️ BRAWLER PvP
                         </div>
                         <div className="text-sm font-black text-[#2B2118] tabular-nums mt-0.5">
                           {userProfile?.rankings.pvpRp ?? 1000} RP
                         </div>
                         <div className="text-[10px] font-bold text-[#7E22CE]">
-                          ชนะ {userProfile?.rankings.pvpWins ?? 0} แมตช์
+                          {userProfile?.rankings.pvpWins ?? 0} Wins
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Mode Balance Rule Notice */}
-                <div className="bg-[#2B2118] text-[#FFFDF9] rounded-2xl p-3 text-xs">
-                  <div className="font-black text-[#FDE047]">
-                    กฎเหล็กความสมดุล 2 โหมด (Shared Character & Fair Play)
-                  </div>
-                  <p className="text-[11px] text-[#E5D9C5] mt-1 leading-relaxed">
-                    • <b>โหมดวิ่ง (Party Race)</b>: ทุกคนวิ่งด้วยความเร็วและสกิลพื้นฐานเท่าเทียมกัน 100% อุปกรณ์ระดับเทพจะแสดงเป็น <b>สกิน 3D และออร่าแสงสุดอลังการ</b> เท่านั้น
-                    <br />• <b>โหมดลงดันเจี้ยน & PvP Brawler</b>: คำนวณค่าพลังจริงจากเลเวลและอุปกรณ์ทั้ง 4 ช่อง (CP ปัจจุบันของคุณ: <b>{combatStats.combatPower}</b>)
-                  </p>
+                {/* Compact Fair-Play Badge */}
+                <div className="bg-[#2B2118] text-[#FFFDF9] rounded-2xl p-3 flex items-center justify-between gap-2 text-xs">
+                  <span className="font-black text-[#FDE047]">
+                    RACE: 100% EQUAL SPEED (COSMETIC GEAR)
+                  </span>
+                  <span className="px-2.5 py-0.5 rounded-lg bg-[#84CC16] text-[#2B2118] font-black tabular-nums">
+                    COMBAT CP {combatStats.combatPower}
+                  </span>
                 </div>
               </div>
 
@@ -515,9 +509,7 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
                     >
                       <UserPlus className="w-4 h-4" />
                       <span>
-                        {userProfile?.isGuest
-                          ? 'สมัครสมาชิก / ผูกบัญชีถาวร'
-                          : 'สมัครบัญชีใหม่'}
+                        {userProfile?.isGuest ? 'BIND ACCOUNT' : 'REGISTER'}
                       </span>
                     </button>
 
@@ -535,21 +527,21 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
                       }`}
                     >
                       <LogIn className="w-4 h-4" />
-                      <span>เข้าสู่ระบบ (Login)</span>
+                      <span>SIGN IN</span>
                     </button>
                   </div>
 
                   <form onSubmit={handleAuthSubmit} className="space-y-3">
                     <div>
                       <label className="block text-xs font-black text-[#2B2118] mb-1">
-                        ชื่อผู้ใช้ (Username สำหรับล็อกอิน)
+                        USERNAME
                       </label>
                       <input
                         type="text"
                         required
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
-                        placeholder="เช่น bramble_king"
+                        placeholder="e.g. bramble_king"
                         data-testid="auth-input-username"
                         className="w-full px-3.5 py-2 rounded-2xl border-2 border-[#2B2118] bg-[#FAF3E8] text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#F59E0B]"
                       />
@@ -558,13 +550,13 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
                     {authMode === 'register' && (
                       <div>
                         <label className="block text-xs font-black text-[#2B2118] mb-1">
-                          ชื่อที่แสดงในเกมและตารางอันดับ (Display Name)
+                          DISPLAY NAME
                         </label>
                         <input
                           type="text"
                           value={displayName}
                           onChange={(e) => setDisplayName(e.target.value)}
-                          placeholder="เช่น เทพหมีทุเรียนซิ่ง"
+                          placeholder="e.g. King Bramble"
                           data-testid="auth-input-displayname"
                           className="w-full px-3.5 py-2 rounded-2xl border-2 border-[#2B2118] bg-[#FAF3E8] text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#F59E0B]"
                         />
@@ -573,7 +565,7 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
 
                     <div>
                       <label className="block text-xs font-black text-[#2B2118] mb-1">
-                        รหัสผ่าน (Password อย่างน้อย 4 ตัวอักษร)
+                        PASSWORD
                       </label>
                       <input
                         type="password"
@@ -605,26 +597,26 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
                       className="w-full py-2.5 rounded-2xl bg-[#2B2118] hover:bg-[#423326] text-[#FDE047] border-3 border-[#1A130D] border-b-6 text-sm font-black shadow transition-all"
                     >
                       {isSubmitting
-                        ? 'กำลังบันทึกข้อมูลลง SQLite...'
+                        ? 'SAVING...'
                         : authMode === 'register'
                           ? userProfile?.isGuest
-                            ? 'ผูกบัญชีถาวรลง SQLite (เก็บของและแรงค์เดิมไว้ทั้งหมด!)'
-                            : 'สมัครสมาชิกใหม่ลง SQLite'
-                          : 'เข้าสู่ระบบด้วยบัญชี SQLite'}
+                            ? 'BIND GUEST TO ACCOUNT'
+                            : 'CREATE ACCOUNT'
+                          : 'SIGN IN'}
                     </button>
                   </form>
                 </div>
 
                 <div className="pt-3 border-t border-[#E5D9C5] flex items-center justify-between gap-2">
                   <span className="text-[11px] font-bold text-[#7D6854]">
-                    ต้องการเริ่มบัญชีทดลองเล่นด่วนใหม่?
+                    Quick Play Guest Session
                   </span>
                   <button
                     type="button"
                     onClick={handleFreshGuest}
                     className="px-3 py-1.5 rounded-xl bg-[#FAF3E8] hover:bg-[#EFE5D5] text-[#2B2118] border-2 border-[#2B2118] text-xs font-black"
                   >
-                    สร้าง Guest ใหม่
+                    NEW GUEST
                   </button>
                 </div>
               </div>
@@ -645,7 +637,7 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
                 <div className="bg-[#2B2118] text-[#FFFDF9] border-3 border-[#1A130D] rounded-3xl p-3.5 shadow">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-black text-[#FDE047]">
-                      ค่าพลังรวมโหมดลงดันเจี้ยน & PvP
+                      COMBAT STATS (DUNGEON &amp; PvP)
                     </span>
                     <span className="px-2.5 py-0.5 rounded-lg bg-[#F59E0B] text-[#2B2118] text-xs font-black tabular-nums">
                       CP {combatStats.combatPower}
@@ -686,7 +678,7 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
                     </div>
                   </div>
                   <div className="mt-2 text-[10px] font-bold text-[#A3E635]">
-                    ✓ ในโหมดวิ่ง (Party Race): แสดงโมเดล 3D และออร่าครบทุกชิ้น แต่ไม่บวกความเร็ว (Fair Play 100%)
+                    ✓ PARTY RACE: 3D Cosmetic Visuals Only (100% Equal Speed)
                   </div>
                 </div>
               </div>
@@ -694,7 +686,7 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
               {/* Right: 4-Slot Selector & Item Cards */}
               <div className="lg:col-span-7 bg-[#FFFDF9] border-3 border-[#2B2118] rounded-3xl p-4 flex flex-col justify-between shadow">
                 <div>
-                  {/* 4 Equipment Slot Tabs */}
+                  {/* 4 Equipment Slot Tabs with Icon Emblems */}
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
                     {(
                       ['weapon', 'headgear', 'cape', 'aura'] as EquipmentSlot[]
@@ -710,17 +702,23 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
                           type="button"
                           onClick={() => setSelectedSlot(slot)}
                           data-testid={`armory-slot-${slot}`}
-                          className={`p-2.5 rounded-2xl border-2 text-left transition-all ${
+                          className={`p-2.5 rounded-2xl border-2 text-left transition-all flex items-center gap-2 ${
                             isSelected
                               ? 'bg-[#2B2118] text-[#FFFDF9] border-[#1A130D] shadow-md'
                               : 'bg-[#FAF3E8] text-[#2B2118] border-[#E5D9C5] hover:bg-[#EFE5D5]'
                           }`}
                         >
-                          <div className="text-[10px] font-black uppercase text-[#F59E0B]">
-                            {SLOT_META[slot].thaiLabel}
-                          </div>
-                          <div className="text-xs font-black truncate mt-0.5">
-                            {equippedSpec ? equippedSpec.thaiName : 'ไม่ได้สวมใส่'}
+                          <MenuIconEmblem
+                            icon={slot}
+                            className="w-7 h-7 shrink-0"
+                          />
+                          <div className="min-w-0">
+                            <div className="text-[10px] font-black uppercase text-[#F59E0B] truncate">
+                              {SLOT_META[slot].label}
+                            </div>
+                            <div className="text-xs font-black truncate mt-0.5">
+                              {equippedSpec ? equippedSpec.name : 'Empty'}
+                            </div>
                           </div>
                         </button>
                       );
@@ -763,16 +761,13 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
                                     borderColor: rMeta.borderHex,
                                   }}
                                 >
-                                  {rMeta.label} ({rMeta.thaiLabel})
+                                  {rMeta.label}
                                 </span>
                                 <span className="text-sm font-black text-[#2B2118] truncate">
-                                  {item.thaiName}
+                                  {item.name}
                                 </span>
                               </div>
-                              <p className="text-[11px] font-bold text-[#5C4938] truncate">
-                                {item.tagline}
-                              </p>
-                              <div className="text-[10px] font-black text-[#2B2118] tabular-nums mt-0.5">
+                              <div className="text-[11px] font-black text-[#5C4938] tabular-nums mt-1">
                                 ATK +{item.bonusAtk} · HP +{item.bonusHp} · DEF +
                                 {item.bonusDef} · CRIT +{item.bonusCritPct}%
                               </div>
@@ -783,7 +778,7 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
                             {isEquipped ? (
                               <span className="px-3 py-1.5 rounded-xl bg-[#84CC16] text-[#2B2118] border-2 border-[#2B2118] text-xs font-black flex items-center gap-1">
                                 <Check className="w-3.5 h-3.5" />
-                                <span>สวมใส่อยู่</span>
+                                <span>EQUIPPED</span>
                               </span>
                             ) : isOwned ? (
                               <button
@@ -794,7 +789,7 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
                                 data-testid={`equip-item-${item.id}`}
                                 className="px-3.5 py-1.5 rounded-xl bg-[#2B2118] hover:bg-[#423326] text-[#FDE047] text-xs font-black shadow"
                               >
-                                สวมใส่ 3D
+                                EQUIP
                               </button>
                             ) : (
                               <button
@@ -803,11 +798,11 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
                                   onUpdateLoadout({ [selectedSlot]: item.id })
                                 }
                                 data-testid={`preview-equip-item-${item.id}`}
-                                title="ลองสวมใส่บนตัวละคร 3D หรือหาดรอปจากดันเจี้ยน"
+                                title="Try 3D model or farm in Dungeon Stage"
                                 className="px-3 py-1.5 rounded-xl bg-[#FFFDF9] hover:bg-[#FEF3C7] text-[#2B2118] border-2 border-[#2B2118] text-[11px] font-black flex items-center gap-1"
                               >
                                 <Lock className="w-3 h-3 text-[#D97706]" />
-                                <span>ลองใส่ / ด่าน {item.dropStageMin}</span>
+                                <span>TRY / STAGE {item.dropStageMin}</span>
                               </button>
                             )}
                           </div>
@@ -820,7 +815,7 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
                 {/* Bottom Action Strip */}
                 <div className="mt-3 pt-3 border-t border-[#E5D9C5] flex flex-wrap items-center justify-between gap-2">
                   <span className="text-xs font-bold text-[#5C4938]">
-                    สามารถกด &ldquo;ลองใส่&rdquo; เพื่อดูโมเดล 3D และนำไปลุยดันเจี้ยนหรือโหมดวิ่งได้ทันที!
+                    Shared 3D Loadout across Race, Dungeon &amp; PvP
                   </span>
                   <div className="flex items-center gap-2">
                     <button
@@ -831,7 +826,7 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
                       }}
                       className="px-3.5 py-2 rounded-2xl bg-[#F59E0B] hover:bg-[#FBBF24] text-[#2B2118] border-2 border-[#2B2118] text-xs font-black"
                     >
-                      ไปฟาร์มของในดันเจี้ยน 3D
+                      DUNGEON RAID
                     </button>
                     <button
                       type="button"
@@ -841,7 +836,7 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
                       }}
                       className="px-3.5 py-2 rounded-2xl bg-[#EC4899] hover:bg-[#F472B6] text-white border-2 border-[#2B2118] text-xs font-black"
                     >
-                      ประลอง 3D Brawler PvP
+                      BRAWLER PvP
                     </button>
                   </div>
                 </div>
@@ -857,10 +852,10 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="px-2.5 py-0.5 rounded-lg bg-[#F59E0B] text-[#2B2118] text-[10px] font-black uppercase">
-                      ACTIVE SQLITE SEASON
+                      ACTIVE SEASON
                     </span>
                     <span className="text-xs font-bold text-[#38BDF8]">
-                      รีเซ็ตแรงค์ทุกซีซั่น พร้อมบันทึกแชมป์ลง Hall of Fame
+                      3 Mode Ladders · Hall of Fame Archive
                     </span>
                   </div>
                   <h3 className="text-lg font-black text-[#FDE047] mt-1">
@@ -868,10 +863,6 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
                       userProfile?.rankings.seasonName ||
                       'Season 1: Frost & Fury'}
                   </h3>
-                  <p className="text-xs text-[#E5D9C5]">
-                    {leaderboardData?.season.theme ||
-                      'แยกตารางจัดอันดับอิสระ 3 โหมด: โหมดวิ่งสายฮา · โหมดลุยดันเจี้ยน · โหมด 3D Brawler PvP'}
-                  </p>
                 </div>
 
                 <button
@@ -882,11 +873,11 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
                   className="px-4 py-2.5 rounded-2xl bg-[#EF4444] hover:bg-[#F87171] text-white border-3 border-[#1A130D] border-b-6 text-xs font-black flex items-center gap-1.5 shadow-lg whitespace-nowrap shrink-0"
                 >
                   <RotateCcw className="w-4 h-4" />
-                  <span>จบซีซั่น & รีเซ็ตแรงค์เริ่มซีซั่นใหม่!</span>
+                  <span>NEW SEASON RESET</span>
                 </button>
               </div>
 
-              {/* 4 Sub-Tabs: Race / Dungeon / PvP / Hall of Fame Archives */}
+              {/* 4 Sub-Tabs: Dungeon / PvP / Race / Hall of Fame */}
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
@@ -899,7 +890,7 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
                   }`}
                 >
                   <Flame className="w-4 h-4 text-[#F97316]" />
-                  <span>Dungeon Raid Rank (ลงดันเจี้ยน)</span>
+                  <span>DUNGEON RAID</span>
                 </button>
 
                 <button
@@ -913,7 +904,7 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
                   }`}
                 >
                   <Swords className="w-4 h-4 text-[#EC4899]" />
-                  <span>3D Brawler PvP Rank (ประลองยุทธ์)</span>
+                  <span>BRAWLER PvP</span>
                 </button>
 
                 <button
@@ -927,7 +918,7 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
                   }`}
                 >
                   <Flag className="w-4 h-4 text-[#84CC16]" />
-                  <span>Party Race Rank (โหมดวิ่งสายฮา)</span>
+                  <span>PARTY RACE</span>
                 </button>
 
                 <button
@@ -941,7 +932,7 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
                   }`}
                 >
                   <Trophy className="w-4 h-4 text-[#F59E0B]" />
-                  <span>ทำเนียบแชมป์ซีซั่นเก่า (Hall of Fame)</span>
+                  <span>HALL OF FAME</span>
                 </button>
               </div>
 
@@ -949,12 +940,12 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
               {rankTab === 'archives' ? (
                 <div className="bg-[#FFFDF9] border-3 border-[#2B2118] rounded-3xl p-4 shadow">
                   <h4 className="text-sm font-black text-[#2B2118] mb-2">
-                    บันทึกแชมป์ประจำซีซั่นก่อนหน้า (Season Hall of Fame)
+                    PAST SEASON CHAMPIONS
                   </h4>
                   {!leaderboardData?.archives ||
                   leaderboardData.archives.length === 0 ? (
                     <div className="p-6 text-center text-xs font-bold text-[#7D6854]">
-                      ยังไม่มีประวัติซีซั่นเก่า กดปุ่ม &ldquo;จบซีซั่น & รีเซ็ตแรงค์เริ่มซีซั่นใหม่!&rdquo; ด้านบนเพื่อทดสอบระบบบันทึกแชมป์และรีเซ็ตแรงค์ได้เลย!
+                      No past seasons archived yet. Click &ldquo;NEW SEASON RESET&rdquo; to crown champions and start the next season!
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
@@ -976,7 +967,7 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
                               👑 {arc.champion_name}
                             </div>
                             <div className="text-xs font-bold text-[#5C4938] tabular-nums">
-                              Final Score: {arc.final_rp} RP
+                              {arc.final_rp} RP
                             </div>
                           </div>
                         </div>
@@ -1037,7 +1028,7 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
                               <div className="flex items-center gap-1.5 flex-wrap">
                                 <span className="text-sm font-black text-[#2B2118] truncate">
                                   {row.displayName}
-                                  {isCurrentUser ? ' (คุณ)' : ''}
+                                  {isCurrentUser ? ' (YOU)' : ''}
                                 </span>
                                 <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-[#2B2118] text-[#FDE047] tabular-nums">
                                   Lv.{row.level}
@@ -1053,8 +1044,8 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
                                 </span>
                               </div>
                               <div className="text-[11px] font-bold text-[#7D6854] truncate">
-                                อาวุธ: {weaponSpec?.thaiName || 'ค้อนเป็ดยาง'} · ออร่า:{' '}
-                                {auraSpec?.thaiName || 'ฟองสบู่'} · CP {row.combatPower}
+                                {weaponSpec?.name || 'Squeaky Duck'} ·{' '}
+                                {auraSpec?.name || 'Soap Bubbles'} · CP {row.combatPower}
                               </div>
                             </div>
                           </div>
@@ -1065,10 +1056,10 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
                             </div>
                             <div className="text-[10px] font-bold text-[#5C4938]">
                               {rankTab === 'race'
-                                ? `ชนะ ${row.raceWins} / ${row.raceMatches} สนาม`
+                                ? `${row.raceWins}/${row.raceMatches} Wins`
                                 : rankTab === 'pvp'
-                                  ? `ชนะ ${row.pvpWins} / ${row.pvpMatches} แมตช์`
-                                  : `ด่านสูงสุด ${row.highestStage} · ปราบบอส ${row.bossesDefeated}`}
+                                  ? `${row.pvpWins}/${row.pvpMatches} Wins`
+                                  : `Stage ${row.highestStage} · ${row.bossesDefeated} Bosses`}
                             </div>
                           </div>
                         </div>
@@ -1081,10 +1072,10 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
           )}
         </div>
 
-        {/* ==================== PERSISTENT FOOTER WITH EASY CLOSE & HOME BUTTONS ==================== */}
-        <div className="bg-[#F3E8D6] border-t-3 border-[#2B2118] px-4 py-2.5 flex flex-wrap items-center justify-between gap-2">
+        {/* ==================== COMPACT FOOTER ==================== */}
+        <div className="bg-[#F3E8D6] border-t-3 border-[#2B2118] px-4 py-2.5 flex items-center justify-between gap-2">
           <span className="text-xs font-bold text-[#5C4938]">
-            💡 กดปุ่ม <strong className="text-[#2B2118]">ปิดหน้าต่าง</strong> ด้านขวา หรือกดปุ่ม <strong className="text-[#2B2118]">ESC</strong> หรือคลิกพื้นที่ด้านนอกเพื่อปิดได้ทุกเมื่อ
+            Press <strong className="text-[#2B2118]">ESC</strong> or click outside to close
           </span>
           <div className="flex items-center gap-2 ml-auto">
             {onGoHome && (
@@ -1096,8 +1087,8 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
                 }}
                 className="px-3.5 py-1.5 rounded-xl bg-[#FFFDF9] hover:bg-[#FEF3C7] text-[#2B2118] border-2 border-[#2B2118] border-b-4 text-xs font-black flex items-center gap-1.5"
               >
-                <Home className="w-3.5 h-3.5" />
-                <span>กลับหน้าแรก (Home)</span>
+                <MenuIconEmblem icon="home" className="w-4 h-4" />
+                <span>HOME</span>
               </button>
             )}
             <button
@@ -1107,7 +1098,7 @@ export const AuthAndRankModal: React.FC<AuthAndRankModalProps> = ({
               className="px-4 py-1.5 rounded-xl bg-[#2B2118] hover:bg-[#EF4444] text-white border-2 border-[#1A130D] border-b-4 text-xs font-black flex items-center gap-1.5 transition-colors"
             >
               <X className="w-4 h-4" />
-              <span>ปิดหน้าต่าง (Close)</span>
+              <span>CLOSE</span>
             </button>
           </div>
         </div>

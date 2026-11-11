@@ -68,7 +68,7 @@ export const GitAgentHubModal: React.FC<GitAgentHubModalProps> = ({
                 Multi-Agent Git Message Bus &amp; PR Review Hub
               </h2>
               <p className="text-xs text-[#6E5A47]">
-                TASK-001 (HUD Art) &amp; TASK-002 (16 Character Avatars by Agent 2) Reviewed, Approved &amp; Merged into main
+                TASK-001 &amp; TASK-002 Merged · TASK-003 (16 Mode/Map/Dungeon Cards &amp; Menu Icons) Dispatched to Agent 2
               </p>
             </div>
           </div>
@@ -78,17 +78,17 @@ export const GitAgentHubModal: React.FC<GitAgentHubModalProps> = ({
             className="px-3.5 py-2 rounded-xl bg-[#EF4444] hover:bg-[#DC2626] text-white text-xs font-extrabold border-2 border-[#2B2118] border-b-4 active:translate-y-0.5 flex items-center gap-1.5 whitespace-nowrap shrink-0"
           >
             <X className="w-4 h-4 stroke-[2.8]" />
-            <span>ปิดหน้าต่าง (Close)</span>
+            <span>CLOSE</span>
           </button>
         </div>
 
         {/* Navigation Tabs for Repo Folders */}
         <div className="mt-3 flex flex-wrap items-center gap-1.5 bg-[#F3E8D6] p-1.5 rounded-2xl border border-[#DFC9AE]">
           {[
-            { id: 'topology' as const, label: 'Git Branch & PR #2 Merged' },
+            { id: 'topology' as const, label: 'Git Branch & Tasks' },
+            { id: 'tasks' as const, label: 'tasks/TASK-003 (OPEN)' },
+            { id: 'plans' as const, label: 'plans/PLAN-003 (ACTIVE)' },
             { id: 'reviews' as const, label: 'reviews/PR-002 (APPROVED)' },
-            { id: 'tasks' as const, label: 'tasks/TASK-002 (MERGED)' },
-            { id: 'plans' as const, label: 'plans/PLAN-002 (DONE)' },
             { id: 'memory' as const, label: 'memory/shared_context' },
             { id: 'agents_md' as const, label: 'agents.md' },
           ].map((tab) => (
@@ -111,48 +111,46 @@ export const GitAgentHubModal: React.FC<GitAgentHubModalProps> = ({
         <div className="mt-4 flex-1 overflow-y-auto pr-1 space-y-4">
           {activeTab === 'topology' && (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-              {/* Left: Real Git Branch Graph & Merged TASK-002 */}
+              {/* Left: Real Git Branch Graph & Dispatched TASK-003 */}
               <div className="lg:col-span-7 bg-[#2B2118] text-[#FFFDF9] rounded-2xl p-4 border-2 border-[#2B2118]">
                 <div className="flex items-center justify-between pb-2.5 border-b border-white/15">
                   <span className="text-xs font-extrabold text-[#F59E0B] flex items-center gap-1.5">
                     <GitBranch className="w-4 h-4" />
                     <span>GitHub PalsRush-3D-II · Multi-Agent Git Bus</span>
                   </span>
-                  <span className="text-[11px] font-mono text-[#A3E635] flex items-center gap-1">
+                  <span className="text-[11px] font-mono text-[#FDE047] flex items-center gap-1">
                     <GitMerge className="w-3.5 h-3.5" />
-                    <span>TASK-002 MERGED</span>
+                    <span>TASK-003 DISPATCHED TO AGENT 2</span>
                   </span>
                 </div>
 
                 <pre className="mt-3 text-xs font-mono leading-relaxed text-[#F3E8D6] overflow-x-auto">
 {`* commit (HEAD -> main) [agent-lead-architect]
+| feat(task-003): dispatch TASK-003 (16 Mode/Map/Dungeon cards & Menu icons) for Agent 2
+* commit [agent-lead-architect]
 | feat(ui): review PR-002 & wire 16 character avatars across Lobby, HUD & Podium
 *   Merge pull request #1 (TASK-002) from agent/asset-gen/character-avatars
 |\\  • Audited in: reviews/PR-002-character-avatars-review.md (0 src/ conflicts)
-| |
-| * 2e4f29b (origin/pr/1, origin/agent/asset-gen/character-avatars)
-|/  feat(assets): deliver TASK-002 character avatars and manifest
-|   • 16 RGBA PNGs (512x512) + avatar_manifest.json (SHA-256 verified)
-* 3580235 (origin/main) feat: implement character avatar and race spectating
-* ceb5016 feat: initialize project scaffolding and agent protocols`}
+| * 2e4f29b (origin/agent/asset-gen/character-avatars)
+|/  feat(assets): deliver TASK-002 character avatars and manifest`}
                 </pre>
 
                 <div className="mt-3 pt-3 border-t border-white/15 grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
                   <div className="bg-white/10 rounded-xl p-2">
                     <div className="text-[10px] text-[#D8C5AC]">tasks/</div>
-                    <div className="text-xs font-extrabold text-[#A3E635] mt-0.5">
-                      TASK-002 (MERGED)
+                    <div className="text-xs font-extrabold text-[#FDE047] mt-0.5">
+                      TASK-003 (OPEN)
                     </div>
                   </div>
                   <div className="bg-white/10 rounded-xl p-2">
                     <div className="text-[10px] text-[#D8C5AC]">plans/</div>
                     <div className="text-xs font-extrabold text-[#38BDF8] mt-0.5">
-                      PLAN-002 (DONE)
+                      PLAN-003 (ACTIVE)
                     </div>
                   </div>
                   <div className="bg-white/10 rounded-xl p-2">
                     <div className="text-[10px] text-[#D8C5AC]">memory/</div>
-                    <div className="text-xs font-extrabold text-[#FDE047] mt-0.5">
+                    <div className="text-xs font-extrabold text-[#A3E635] mt-0.5">
                       shared_context.md
                     </div>
                   </div>
@@ -290,6 +288,21 @@ export const GitAgentHubModal: React.FC<GitAgentHubModalProps> = ({
 
           {activeTab === 'tasks' && (
             <div className="space-y-3 text-xs">
+              <div className="bg-[#FEF3C7] border-2 border-[#D97706] rounded-2xl p-4 space-y-2">
+                <div className="flex items-center justify-between border-b border-[#FDE68A] pb-2">
+                  <span className="font-extrabold text-[#2B2118] flex items-center gap-1.5">
+                    <Sparkles className="w-4 h-4 text-[#D97706]" />
+                    <span>/tasks/TASK-003-mode-cards-and-menu-icons.md — Assigned to agent-asset-gen (Agent 2)</span>
+                  </span>
+                  <span className="font-mono text-[11px] bg-[#F59E0B] text-[#2B2118] px-2 py-0.5 rounded font-black">
+                    Status: OPEN (Branch: agent/asset-gen/mode-cards-and-menu-icons)
+                  </span>
+                </div>
+                <p className="text-[#5C4938]">
+                  <strong>16 Visual Assets Requested for Agent 2:</strong> 3 Game Mode Banner Cards (<code>modes/mode_party_race.png</code>, <code>mode_dungeon_raid.png</code>, <code>mode_brawler_pvp.png</code>), 2 Circuit Map Cards (<code>maps/map_woodland_circuit.png</code>, <code>map_glacier_peak.png</code>), 3 Dungeon Stage Cards (<code>dungeons/stage_1..3.png</code>), and 8 Menu &amp; Gear Slot Icons (<code>icons/menu_*.png</code>, <code>slot_*.png</code>) + <code>card_icon_manifest.json</code>.
+                </p>
+              </div>
+
               <div className="bg-[#F8F2E8] border-2 border-[#7E9B6B] rounded-2xl p-4 space-y-2">
                 <div className="flex items-center justify-between border-b border-[#E5D9C5] pb-2">
                   <span className="font-extrabold text-[#2B2118] flex items-center gap-1.5">
@@ -328,6 +341,22 @@ export const GitAgentHubModal: React.FC<GitAgentHubModalProps> = ({
 
           {activeTab === 'plans' && (
             <div className="space-y-3 text-xs">
+              <div className="bg-[#FEF3C7] border-2 border-[#D97706] rounded-2xl p-4 space-y-2">
+                <div className="flex items-center justify-between border-b border-[#FDE68A] pb-2">
+                  <span className="font-extrabold text-[#2B2118] flex items-center gap-1.5">
+                    <GitPullRequest className="w-4 h-4 text-[#D97706]" />
+                    <span>/plans/PLAN-003-mode-cards-and-menu-icons.md — Sprint 03 Blueprint</span>
+                  </span>
+                  <span className="font-mono text-[11px] text-[#D97706] font-bold">
+                    Track B Live · Track A Dispatched to Agent 2
+                  </span>
+                </div>
+                <p className="text-[#5C4938]">
+                  <strong>Track A (Agent 2):</strong> Generate 16 high-impact visual cards &amp; menu icons in <code>public/assets/game/{'{modes,maps,dungeons,icons}'}/</code>.<br />
+                  <strong>Track B (Lead Architect):</strong> Decluttered English Home Screen + Pre-Game Mode Setup Modals + <code>&lt;VisualImageCard /&gt;</code> &amp; <code>&lt;MenuIconEmblem /&gt;</code> pre-wired to auto-load Agent 2&apos;s PNGs.
+                </p>
+              </div>
+
               <div className="bg-[#F8F2E8] border-2 border-[#7E9B6B] rounded-2xl p-4 space-y-2">
                 <div className="flex items-center justify-between border-b border-[#E5D9C5] pb-2">
                   <span className="font-extrabold text-[#2B2118] flex items-center gap-1.5">

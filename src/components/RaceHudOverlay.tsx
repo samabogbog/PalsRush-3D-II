@@ -44,9 +44,11 @@ import {
   ArcadeRankShield,
   CharacterAvatarEmblem,
   GAME_BANNER_ASSETS,
+  MenuIconEmblem,
   PassiveSkillEmblem,
   PendingBannerSlot,
   PrankItemEmblem,
+  VisualImageCard,
 } from './GameAssetIcons';
 import { LobbyCharacterPreview } from './LobbyCharacterPreview';
 import { UserProfileData } from '../models/equipmentTypes';
@@ -731,11 +733,11 @@ export const RaceHudOverlay: React.FC<RaceHudOverlayProps> = ({
                   aria-label="Back to Main Home Screen"
                   className="h-10 sm:h-11 px-2.5 sm:px-3.5 rounded-2xl bg-[#FDE047] hover:bg-[#FACC15] text-[#2B2118] border-3 border-[#2B2118] border-b-5 active:translate-y-0.5 transition-all flex items-center gap-1.5 shadow-lg"
                 >
-                  <Home className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5]" />
-                  <span className="text-xs sm:text-sm font-black">หน้าแรก</span>
+                  <MenuIconEmblem icon="home" size={22} />
+                  <span className="text-xs sm:text-sm font-black">HOME</span>
                 </button>
                 <div className="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150 absolute right-0 top-full mt-2 z-30 whitespace-nowrap bg-[#2B2118] text-[#FFFDF9] border-2 border-[#FDE047] rounded-xl px-2.5 py-1.5 text-xs shadow-lg">
-                  กลับสู่หน้าแรก (Main Home Menu)
+                  Main Home Menu
                 </div>
               </div>
             )}
@@ -765,11 +767,6 @@ export const RaceHudOverlay: React.FC<RaceHudOverlayProps> = ({
                   {isFullscreen ? 'EXIT FULL' : 'FULLSCREEN'}
                 </span>
               </button>
-              <div className="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150 absolute right-0 top-full mt-2 z-30 whitespace-nowrap bg-[#2B2118] text-[#FFFDF9] border-2 border-[#84CC16] rounded-xl px-2.5 py-1.5 text-xs shadow-lg">
-                {isFullscreen
-                  ? 'Exit Fullscreen Mode'
-                  : 'Play Fullscreen & Lock Landscape'}
-              </div>
             </div>
 
             {/* 3D Dungeon Raid & PvP Mode Button */}
@@ -781,12 +778,9 @@ export const RaceHudOverlay: React.FC<RaceHudOverlayProps> = ({
                 aria-label="3D Dungeon Raid & Brawler PvP"
                 className="h-10 sm:h-11 px-2.5 sm:px-3.5 rounded-2xl bg-[#EF4444] hover:bg-[#F87171] text-white border-3 border-[#2B2118] border-b-5 active:translate-y-0.5 transition-all flex items-center gap-1.5 shadow-lg"
               >
-                <Swords className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5]" />
+                <MenuIconEmblem icon="weapon" size={22} />
                 <span className="text-xs sm:text-sm font-black">DUNGEON</span>
               </button>
-              <div className="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150 absolute right-0 top-full mt-2 z-30 whitespace-nowrap bg-[#2B2118] text-[#FFFDF9] border-2 border-[#EF4444] rounded-xl px-2.5 py-1.5 text-xs shadow-lg">
-                โหมดลงดันเจี้ยน 3D & ประลอง Brawler PvP
-              </div>
             </div>
 
             {/* 4-Slot Gear Armory & Seasonal Ranks Button */}
@@ -798,12 +792,9 @@ export const RaceHudOverlay: React.FC<RaceHudOverlayProps> = ({
                 aria-label="4-Slot Gear & Seasonal Ranks"
                 className="h-10 sm:h-11 px-2.5 sm:px-3 rounded-2xl bg-[#A855F7] hover:bg-[#9333EA] text-white border-3 border-[#2B2118] border-b-5 active:translate-y-0.5 transition-all flex items-center gap-1.5 shadow-lg"
               >
-                <Shield className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5]" />
+                <MenuIconEmblem icon="gear" size={22} />
                 <span className="text-xs sm:text-sm font-black">GEAR</span>
               </button>
-              <div className="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150 absolute right-0 top-full mt-2 z-30 whitespace-nowrap bg-[#2B2118] text-[#FFFDF9] border-2 border-[#A855F7] rounded-xl px-2.5 py-1.5 text-xs shadow-lg">
-                คลังอุปกรณ์ 4 ช่อง · ล็อกอิน SQLite · อันดับซีซั่น
-              </div>
             </div>
 
             {/* Loadout Locker Button */}
@@ -814,12 +805,9 @@ export const RaceHudOverlay: React.FC<RaceHudOverlayProps> = ({
                 aria-label="Hero & Skill Locker"
                 className="h-10 sm:h-11 px-2.5 sm:px-3.5 rounded-2xl bg-[#F59E0B] hover:bg-[#FBBF24] text-[#2B2118] border-3 border-[#2B2118] border-b-5 active:translate-y-0.5 transition-all flex items-center gap-1.5 shadow-lg"
               >
-                <Users className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5]" />
+                <MenuIconEmblem icon="heroes" size={22} />
                 <span className="text-xs sm:text-sm font-black">HEROES</span>
               </button>
-              <div className="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150 absolute right-0 top-full mt-2 z-30 whitespace-nowrap bg-[#2B2118] text-[#FFFDF9] border-2 border-[#F59E0B] rounded-xl px-2.5 py-1.5 text-xs shadow-lg">
-                Pick Racer & 2-Skill Deck
-              </div>
             </div>
 
             {/* 3D Studio Icon Button */}
@@ -1188,8 +1176,9 @@ export const RaceHudOverlay: React.FC<RaceHudOverlayProps> = ({
             {/* Top Navigation & Close Bar for Locker Modal */}
             <div className="flex flex-wrap items-center justify-between gap-2 pb-3 mb-3 border-b-2 border-[#EDE3D2]">
               <div className="flex items-center gap-2">
-                <span className="px-2.5 py-1 rounded-xl bg-[#2B2118] text-[#FDE047] text-xs font-black">
-                  เลือกตัวละคร 3D · สกิล [Q] / [Auto] · สนามแข่ง
+                <MenuIconEmblem icon="heroes" size={26} />
+                <span className="text-base sm:text-lg font-black text-[#2B2118]">
+                  PARTY RACE SETUP — MAP, PAL & SKILLS
                 </span>
               </div>
               <div className="flex items-center gap-2 ml-auto">
@@ -1200,8 +1189,8 @@ export const RaceHudOverlay: React.FC<RaceHudOverlayProps> = ({
                     data-testid="locker-go-home-btn"
                     className="h-9 px-3 rounded-2xl bg-[#FDE047] hover:bg-[#FACC15] text-[#2B2118] border-2 border-[#2B2118] border-b-4 text-xs font-black flex items-center gap-1.5 shadow whitespace-nowrap shrink-0"
                   >
-                    <Home className="w-4 h-4" />
-                    <span>กลับหน้าแรก (Home)</span>
+                    <MenuIconEmblem icon="home" size={18} />
+                    <span>HOME</span>
                   </button>
                 )}
                 {onCloseLobby && (
@@ -1213,174 +1202,72 @@ export const RaceHudOverlay: React.FC<RaceHudOverlayProps> = ({
                     className="h-9 px-3.5 rounded-2xl bg-[#EF4444] hover:bg-[#DC2626] text-white border-2 border-[#2B2118] border-b-4 text-xs font-black flex items-center gap-1.5 shadow whitespace-nowrap shrink-0"
                   >
                     <X className="w-4 h-4 stroke-[2.8]" />
-                    <span>ปิดหน้าต่าง (Close)</span>
+                    <span>CLOSE</span>
                   </button>
                 )}
               </div>
             </div>
 
-            {/* Visual Game Banner Header + 2-Circuit Map Selector */}
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-3 pb-3.5 border-b-3 border-[#EDE3D2] items-stretch">
-              <div className="md:col-span-7 relative rounded-3xl overflow-hidden border-3 border-[#2B2118] bg-[#2B2118] min-h-[120px] sm:min-h-[144px] flex flex-col justify-end p-3.5 sm:p-4 shadow-md">
-                <PendingBannerSlot
-                  src={GAME_BANNER_ASSETS.raceCrestBanner}
-                  alt="BlockyPals 3D Party Race Banner"
-                  fileName="race_crest_banner.png"
-                  className="absolute inset-0 w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                <div className="relative z-10 flex flex-wrap items-end justify-between gap-2.5">
-                  <div>
-                    <span className="inline-block px-2.5 py-0.5 rounded-full bg-[#F59E0B] text-[#2B2118] text-[10px] sm:text-[11px] font-black uppercase border border-[#2B2118]">
-                      PARTY RACE LOCKER
-                    </span>
-                    <h2 className="mt-1 text-xl sm:text-3xl font-black text-white tracking-wide game-text-shadow">
-                      PALS RUSH 3D!
-                    </h2>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={handleToggleFullscreenLandscape}
-                      className="px-3 py-2.5 rounded-2xl bg-[#2B2118]/90 hover:bg-[#423326] text-[#FDE047] border-2 border-[#FDE047] text-xs font-black flex items-center gap-1.5 shadow-lg"
-                    >
-                      {isFullscreen ? (
-                        <Minimize2 className="w-4 h-4" />
-                      ) : (
-                        <Maximize2 className="w-4 h-4" />
-                      )}
-                      <span>{isFullscreen ? 'WINDOW' : 'FULLSCREEN'}</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={onStartRace}
-                      className="px-5 py-2.5 sm:px-6 sm:py-3 rounded-2xl bg-[#84CC16] hover:bg-[#A3E635] text-[#2B2118] border-3 border-[#2B2118] border-b-6 active:translate-y-0.5 text-sm sm:text-base font-black flex items-center gap-2 whitespace-nowrap shrink-0 shadow-xl"
-                    >
-                      <Play className="w-4 h-4 sm:w-5 sm:h-5 fill-current" />
-                      <span>RACE!</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
+            {/* Visual Circuit Map Image Cards (Woodland Circuit vs Glacier Peak) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pb-3.5 border-b-3 border-[#EDE3D2]">
+              {(['woodland', 'snow_glacier'] as const).map((tId) => {
+                const meta = TRACK_CATALOG[tId];
+                const active = selectedTrackId === tId;
+                const isSnowMap = tId === 'snow_glacier';
+                return (
+                  <button
+                    key={tId}
+                    type="button"
+                    onClick={() => onSelectTrack(tId)}
+                    data-testid={`select-track-${tId}`}
+                    className={`relative h-28 sm:h-32 rounded-3xl overflow-hidden border-3 text-left p-3.5 flex flex-col justify-between transition-all ${
+                      active
+                        ? 'border-[#F59E0B] ring-4 ring-[#F59E0B]/40 scale-[1.01] shadow-xl'
+                        : 'border-[#2B2118] opacity-85 hover:opacity-100'
+                    }`}
+                  >
+                    <VisualImageCard
+                      variant={isSnowMap ? 'map_glacier' : 'map_woodland'}
+                      className="absolute inset-0 w-full h-full"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#1A130D]/95 via-[#1A130D]/35 to-transparent" />
 
-              {/* Interactive 2-Circuit Selector Card: Woodland Forest vs Glacier Peak (Snow & Ice) */}
-              <div className="md:col-span-5 rounded-3xl border-3 border-[#2B2118] bg-[#2B2118] p-3 flex flex-col justify-between shadow-md">
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-[11px] font-black text-[#FDE047] uppercase tracking-wider">
-                    SELECT CIRCUIT MAP (2 MAPS)
-                  </span>
-                  <span className="px-2 py-0.5 rounded-full bg-white/15 text-[#FFFDF9] text-[10px] font-black">
-                    {TRACK_CATALOG[selectedTrackId].lengthLabel} · 1 LAP
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  {(['woodland', 'snow_glacier'] as const).map((tId) => {
-                    const meta = TRACK_CATALOG[tId];
-                    const active = selectedTrackId === tId;
-                    const isSnowMap = tId === 'snow_glacier';
-                    return (
-                      <button
-                        key={tId}
-                        type="button"
-                        onClick={() => onSelectTrack(tId)}
-                        data-testid={`select-track-${tId}`}
-                        className={`relative rounded-2xl p-2.5 border-2 text-left transition-all flex flex-col justify-between min-h-[78px] ${
-                          active
-                            ? isSnowMap
-                              ? 'bg-gradient-to-br from-[#0284C7] via-[#0369A1] to-[#1E1B4B] border-[#38BDF8] text-white shadow-lg scale-[1.02]'
-                              : 'bg-gradient-to-br from-[#15803D] via-[#166534] to-[#1D2B19] border-[#A3E635] text-white shadow-lg scale-[1.02]'
-                            : 'bg-[#3A2C20] border-white/15 text-[#E5D9C5] hover:bg-[#4A3828]'
+                    <div className="relative z-10 flex items-center justify-between gap-2">
+                      <span
+                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-black uppercase ${
+                          isSnowMap
+                            ? 'bg-[#38BDF8] text-[#082F49]'
+                            : 'bg-[#A3E635] text-[#1A130D]'
                         }`}
                       >
-                        <div className="flex items-center justify-between gap-1">
-                          <span
-                            className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase ${
-                              isSnowMap
-                                ? 'bg-[#38BDF8] text-[#082F49]'
-                                : 'bg-[#A3E635] text-[#1A130D]'
-                            }`}
-                          >
-                            {isSnowMap ? (
-                              <Snowflake className="w-3 h-3" />
-                            ) : (
-                              <Trees className="w-3 h-3" />
-                            )}
-                            {meta.badgeText}
-                          </span>
-                          {active && (
-                            <span className="text-[9px] font-black text-[#FDE047] uppercase">
-                              ACTIVE
-                            </span>
-                          )}
+                        {isSnowMap ? (
+                          <Snowflake className="w-3 h-3" />
+                        ) : (
+                          <Trees className="w-3 h-3" />
+                        )}
+                        {meta.badgeText}
+                      </span>
+
+                      {active && (
+                        <span className="px-2 py-0.5 rounded-lg bg-[#FDE047] text-[#2B2118] text-[10px] font-black uppercase">
+                          SELECTED MAP
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="relative z-10 flex items-end justify-between gap-2">
+                      <div>
+                        <div className="text-base sm:text-lg font-black text-white leading-tight">
+                          {meta.name}
                         </div>
-                        <div className="mt-1.5">
-                          <div className="text-xs font-black leading-tight text-white">
-                            {meta.name}
-                          </div>
-                          <div className="text-[10px] font-bold opacity-85 truncate mt-0.5">
-                            {meta.features.join(' • ')}
-                          </div>
+                        <div className="text-[11px] font-bold text-[#E5D9C5]">
+                          {meta.lengthLabel} · {meta.features.slice(0, 2).join(' · ')}
                         </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-
-            {/* DUAL-PILLAR MODE BAR: Member Profile + Quick Switch to Dungeon/PvP + 4-Slot Gear + Seasonal Ranks */}
-            <div className="mt-2.5 bg-[#2B2118] text-[#FFFDF9] rounded-2xl px-3 py-2 border-2 border-[#1A130D] flex flex-wrap items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => onOpenArmoryModal?.('auth')}
-                  data-testid="locker-open-auth-btn"
-                  className="px-2.5 py-1 rounded-xl bg-[#FDE047] hover:bg-[#FACC15] text-[#2B2118] text-xs font-black flex items-center gap-1.5"
-                >
-                  <UserCheck className="w-3.5 h-3.5" />
-                  <span>
-                    Lv.{userProfile?.level ?? 1}{' '}
-                    {userProfile?.displayName || 'PalGuest'} (
-                    {userProfile?.isGuest ? 'Guest · ผูกบัญชีได้' : 'SQLite Member'})
-                  </span>
-                </button>
-                <span className="hidden sm:inline text-[11px] font-bold text-[#A3E635]">
-                  🏁 โหมดวิ่ง: Fair Play 100% (อุปกรณ์โชว์สกินและออร่า 3D เท่ๆ ไม่บวกสปีด)
-                </span>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => onOpenArmoryModal?.('armory')}
-                  data-testid="locker-open-armory-btn"
-                  className="px-3 py-1 rounded-xl bg-[#A855F7] hover:bg-[#9333EA] text-white text-xs font-black flex items-center gap-1 shadow"
-                >
-                  <Shield className="w-3.5 h-3.5" />
-                  <span>แต่งอุปกรณ์ 4 ช่อง</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => onOpenArmoryModal?.('leaderboard')}
-                  data-testid="locker-open-ranks-btn"
-                  className="px-3 py-1 rounded-xl bg-[#F59E0B] hover:bg-[#FBBF24] text-[#2B2118] text-xs font-black flex items-center gap-1 shadow"
-                >
-                  <Trophy className="w-3.5 h-3.5" />
-                  <span>อันดับ 3 โหมด ({userProfile?.rankings.raceRp ?? 1000} RP)</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => onLaunchCombatMode?.('dungeon')}
-                  data-testid="locker-launch-dungeon-btn"
-                  className="px-3 py-1 rounded-xl bg-[#EF4444] hover:bg-[#F87171] text-white text-xs font-black flex items-center gap-1 shadow"
-                >
-                  <Flame className="w-3.5 h-3.5" />
-                  <span>ลงดันเจี้ยน 3D & PvP!</span>
-                </button>
-              </div>
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
 
             {/* MAIN LOCKER STAGE: Live 3D Character Model Preview alongside 16-Character Grid & Skill Deck */}
@@ -1583,8 +1470,8 @@ export const RaceHudOverlay: React.FC<RaceHudOverlayProps> = ({
                     onClick={onGoHome}
                     className="px-4 py-2.5 rounded-2xl bg-[#FFFDF9] hover:bg-[#FEF3C7] text-[#2B2118] border-3 border-[#2B2118] border-b-6 text-xs sm:text-sm font-black flex items-center gap-1.5"
                   >
-                    <Home className="w-4 h-4" />
-                    <span>หน้าแรก</span>
+                    <MenuIconEmblem icon="home" size={18} />
+                    <span>HOME</span>
                   </button>
                 )}
                 {onCloseLobby && (
@@ -1594,16 +1481,16 @@ export const RaceHudOverlay: React.FC<RaceHudOverlayProps> = ({
                     className="px-4 py-2.5 rounded-2xl bg-[#2B2118] hover:bg-[#EF4444] text-white border-3 border-[#1A130D] border-b-6 text-xs sm:text-sm font-black flex items-center gap-1.5 transition-colors"
                   >
                     <X className="w-4 h-4" />
-                    <span>ปิดหน้าต่าง</span>
+                    <span>CLOSE</span>
                   </button>
                 )}
                 <button
                   type="button"
                   onClick={onStartRace}
-                  className="px-6 py-2.5 sm:px-7 sm:py-3 rounded-2xl bg-[#F59E0B] hover:bg-[#FBBF24] text-[#2B2118] border-3 border-[#2B2118] border-b-6 active:translate-y-0.5 text-sm sm:text-base font-black flex items-center gap-2 shadow-xl"
+                  className="px-6 py-2.5 sm:px-7 sm:py-3 rounded-2xl bg-[#84CC16] hover:bg-[#A3E635] text-[#2B2118] border-3 border-[#2B2118] border-b-6 active:translate-y-0.5 text-sm sm:text-base font-black flex items-center gap-2 shadow-xl"
                 >
-                  <Sparkles className="w-5 h-5" />
-                  <span>GO TO STARTING GRID!</span>
+                  <Play className="w-5 h-5 fill-current" />
+                  <span>START RACE!</span>
                 </button>
               </div>
             </div>
@@ -1747,7 +1634,7 @@ export const RaceHudOverlay: React.FC<RaceHudOverlayProps> = ({
                     className="px-2.5 py-1.5 rounded-2xl bg-[#EF4444] hover:bg-[#DC2626] text-white border-2 border-[#1A130D] border-b-4 text-[11px] font-black flex items-center gap-1 shadow-md"
                   >
                     <X className="w-3.5 h-3.5" />
-                    <span>ปิด</span>
+                    <span>CLOSE</span>
                   </button>
                 </div>
 
@@ -1820,8 +1707,8 @@ export const RaceHudOverlay: React.FC<RaceHudOverlayProps> = ({
                       onClick={onGoHome}
                       className="px-3.5 py-2.5 rounded-2xl border-3 border-[#2B2118] border-b-6 bg-[#FDE047] hover:bg-[#FACC15] text-xs sm:text-sm font-black text-[#2B2118] flex items-center gap-1.5"
                     >
-                      <Home className="w-4 h-4 stroke-[2.5]" />
-                      <span>หน้าแรก</span>
+                      <MenuIconEmblem icon="home" size={18} />
+                      <span>HOME</span>
                     </button>
                   )}
                   <button

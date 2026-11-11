@@ -64,5 +64,11 @@
 2. **SVG Exception Rule (`1 Dynamic SVG File`)**:
    - Use `.svg` **only** where static PNGs cannot support dynamic runtime parameters:
      - `public/assets/game/icons/hud_rank_shield_frame.svg`: Dynamic `1st–8th` rank shield frame supporting runtime CSS color variables (`Gold`, `Silver`, `Bronze`, `Slate`) and live ordinal text overlay.
+3. **Sprint 03 Mode Cards, Map Previews, Dungeon Stages & Menu Icons (`TASK-003` — 16 PNGs)**:
+   - **Game Mode Cards (`public/assets/game/modes/`)**: `mode_party_race.png`, `mode_dungeon_raid.png`, `mode_brawler_pvp.png` (`16:9`).
+   - **Race Map Cards (`public/assets/game/maps/`)**: `map_woodland_circuit.png`, `map_glacier_peak.png` (`16:9`).
+   - **Dungeon Stage Cards (`public/assets/game/dungeons/`)**: `stage_1_slime_ruins.png`, `stage_2_lava_kitchen.png`, `stage_3_frost_citadel.png` (`16:9`).
+   - **Menu & Slot Icons (`public/assets/game/icons/`)**: `menu_home.png`, `menu_heroes.png`, `menu_gear.png`, `menu_ranks.png`, `menu_account.png`, `slot_weapon.png`, `slot_headgear.png`, `slot_cape_aura.png` (`512×512` `1:1`).
+
 
 

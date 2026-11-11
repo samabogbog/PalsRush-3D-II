@@ -735,7 +735,7 @@ export default function App() {
                   className="h-11 px-4 rounded-2xl bg-[#FDE047] hover:bg-[#FACC15] text-[#2B2118] border-3 border-[#2B2118] border-b-6 text-sm font-black shadow-lg flex items-center gap-1.5"
                 >
                   <Home className="w-4 h-4" />
-                  <span>หน้าแรก</span>
+                  <span>HOME</span>
                 </button>
 
                 <button

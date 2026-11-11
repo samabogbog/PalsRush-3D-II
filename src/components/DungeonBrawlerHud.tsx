@@ -26,6 +26,7 @@ import {
   UserProfileData,
 } from '../models/equipmentTypes';
 import { DungeonBrawlerHudSnapshot } from './DungeonBrawlerCanvas';
+import { MenuIconEmblem } from './GameAssetIcons';
 
 export interface MatchRewardResult {
   mode: 'race' | 'dungeon' | 'pvp';
@@ -245,8 +246,8 @@ export const DungeonBrawlerHud: React.FC<DungeonBrawlerHudProps> = ({
               data-testid="combat-go-home-btn"
               className="h-9 px-3 rounded-2xl bg-[#FDE047] hover:bg-[#FACC15] text-[#2B2118] border-2 border-[#1A130D] border-b-4 text-xs font-black flex items-center gap-1.5 shadow whitespace-nowrap shrink-0"
             >
-              <Home className="w-3.5 h-3.5" />
-              <span>หน้าแรก (HOME)</span>
+              <MenuIconEmblem icon="home" size={18} />
+              <span>HOME</span>
             </button>
 
             <button
@@ -260,7 +261,7 @@ export const DungeonBrawlerHud: React.FC<DungeonBrawlerHudProps> = ({
               }`}
             >
               <Flame className="w-3.5 h-3.5" />
-              <span>DUNGEON RAID</span>
+              <span>DUNGEON</span>
             </button>
 
             <button
@@ -274,7 +275,7 @@ export const DungeonBrawlerHud: React.FC<DungeonBrawlerHudProps> = ({
               }`}
             >
               <Swords className="w-3.5 h-3.5" />
-              <span>3D BRAWLER PvP</span>
+              <span>PvP ARENA</span>
             </button>
 
             <button
@@ -283,8 +284,8 @@ export const DungeonBrawlerHud: React.FC<DungeonBrawlerHudProps> = ({
               data-testid="combat-open-armory"
               className="h-9 px-3 rounded-2xl bg-[#A855F7] hover:bg-[#9333EA] text-white border-2 border-[#1A130D] border-b-4 text-xs font-black flex items-center gap-1.5 shadow whitespace-nowrap shrink-0"
             >
-              <Shield className="w-3.5 h-3.5" />
-              <span>4-SLOT GEAR</span>
+              <MenuIconEmblem icon="gear" size={18} />
+              <span>GEAR</span>
             </button>
 
             <button
@@ -293,16 +294,16 @@ export const DungeonBrawlerHud: React.FC<DungeonBrawlerHudProps> = ({
               data-testid="combat-open-leaderboard"
               className="h-9 px-3 rounded-2xl bg-[#FACC15] hover:bg-[#FDE047] text-[#2B2118] border-2 border-[#1A130D] border-b-4 text-xs font-black flex items-center gap-1.5 shadow whitespace-nowrap shrink-0"
             >
-              <Trophy className="w-3.5 h-3.5" />
+              <MenuIconEmblem icon="ranks" size={18} />
               <span>RANKS</span>
             </button>
 
             <button
               type="button"
               onClick={() => onOpenArmoryModal('auth')}
-              className="h-9 px-2.5 rounded-2xl bg-[#FFFDF9] hover:bg-[#FEF3C7] text-[#2B2118] border-2 border-[#1A130D] border-b-4 text-xs font-black flex items-center gap-1 shadow whitespace-nowrap shrink-0"
+              className="h-9 px-2.5 rounded-2xl bg-[#FFFDF9] hover:bg-[#FEF3C7] text-[#2B2118] border-2 border-[#1A130D] border-b-4 text-xs font-black flex items-center gap-1.5 shadow whitespace-nowrap shrink-0"
             >
-              <UserCheck className="w-3.5 h-3.5 text-[#C86D3B]" />
+              <MenuIconEmblem icon="account" size={18} />
               <span>ACCOUNT</span>
             </button>
 
@@ -313,7 +314,7 @@ export const DungeonBrawlerHud: React.FC<DungeonBrawlerHudProps> = ({
               className="h-9 px-3 rounded-2xl bg-[#84CC16] hover:bg-[#A3E635] text-[#2B2118] border-2 border-[#1A130D] border-b-4 text-xs font-black flex items-center gap-1.5 shadow whitespace-nowrap shrink-0"
             >
               <Flag className="w-3.5 h-3.5" />
-              <span>PARTY RACE</span>
+              <span>RACE</span>
             </button>
           </div>
 
@@ -352,21 +353,21 @@ export const DungeonBrawlerHud: React.FC<DungeonBrawlerHudProps> = ({
       {(hud.phase === 'victory' || hud.phase === 'defeat') && isResultDismissed && (
         <div className="pointer-events-auto mx-auto bg-[#2B2118]/95 text-[#FFFDF9] border-3 border-[#F59E0B] rounded-2xl px-4 py-2 flex items-center gap-2.5 shadow-xl">
           <span className="text-xs font-black text-[#FDE047]">
-            {hud.phase === 'victory' ? '🏆 เคลียร์ด่านสำเร็จ!' : '💀 จบการต่อสู้'}
+            {hud.phase === 'victory' ? '🏆 STAGE CLEARED!' : '💀 BATTLE ENDED'}
           </span>
           <button
             type="button"
             onClick={() => setIsResultDismissed(false)}
             className="px-3 py-1 rounded-xl bg-[#F59E0B] text-[#2B2118] text-xs font-black"
           >
-            ดูรางวัล
+            REWARDS
           </button>
           <button
             type="button"
             onClick={onRestartCombat}
             className="px-3 py-1 rounded-xl bg-[#84CC16] text-[#2B2118] text-xs font-black"
           >
-            ลุยอีกครั้ง
+            RETRY
           </button>
           <button
             type="button"
@@ -374,7 +375,7 @@ export const DungeonBrawlerHud: React.FC<DungeonBrawlerHudProps> = ({
             className="px-3 py-1 rounded-xl bg-[#FFFDF9] text-[#2B2118] text-xs font-black flex items-center gap-1"
           >
             <Home className="w-3.5 h-3.5" />
-            <span>หน้าแรก</span>
+            <span>HOME</span>
           </button>
         </div>
       )}
@@ -402,9 +403,9 @@ export const DungeonBrawlerHud: React.FC<DungeonBrawlerHudProps> = ({
                 <h2 className="text-xl font-black mt-1">
                   {hud.phase === 'victory'
                     ? hud.subMode === 'pvp'
-                      ? 'ชนะเลิศศึกประลอง 3D Brawler!'
-                      : `เคลียร์ด่าน ${hud.stageNumber} สำเร็จ!`
-                    : 'พลาดท่าพ่ายแพ้! อัปเกรดของแล้วลุยใหม่!'}
+                      ? '3D Brawler Arena Champion!'
+                      : `Stage ${hud.stageNumber} Cleared!`
+                    : 'Defeated! Upgrade Gear & Try Again!'}
                 </h2>
               </div>
               <div className="flex items-center gap-1.5 shrink-0">
@@ -416,7 +417,7 @@ export const DungeonBrawlerHud: React.FC<DungeonBrawlerHudProps> = ({
                   className="px-2.5 py-1.5 rounded-xl bg-[#2B2118] hover:bg-[#EF4444] text-white text-xs font-black flex items-center gap-1 transition-colors"
                 >
                   <X className="w-3.5 h-3.5" />
-                  <span>ปิด</span>
+                  <span>CLOSE</span>
                 </button>
               </div>
             </div>
@@ -476,12 +477,11 @@ export const DungeonBrawlerHud: React.FC<DungeonBrawlerHudProps> = ({
                         color: RARITY_META[droppedItem.rarity].colorHex,
                       }}
                     >
-                      {RARITY_META[droppedItem.rarity].label} DROP (
-                      {RARITY_META[droppedItem.rarity].thaiLabel})
+                      {RARITY_META[droppedItem.rarity].label} DROP
                     </span>
                   </div>
                   <div className="text-sm font-black text-[#2B2118] mt-0.5">
-                    {droppedItem.thaiName}
+                    {droppedItem.name}
                   </div>
                   <div className="text-[11px] font-bold text-[#5C4938] tabular-nums">
                     ATK +{droppedItem.bonusAtk} · HP +{droppedItem.bonusHp} · DEF +
@@ -493,7 +493,7 @@ export const DungeonBrawlerHud: React.FC<DungeonBrawlerHudProps> = ({
                   onClick={() => onEquipDroppedItem(droppedItem.id)}
                   className="px-3 py-2 rounded-xl bg-[#2B2118] hover:bg-[#423326] text-[#FDE047] text-xs font-black whitespace-nowrap shrink-0 shadow"
                 >
-                  สวมใส่ทันที!
+                  EQUIP NOW
                 </button>
               </div>
             )}
@@ -504,7 +504,7 @@ export const DungeonBrawlerHud: React.FC<DungeonBrawlerHudProps> = ({
                 onClick={onRestartCombat}
                 className="flex-1 py-2.5 px-3 rounded-2xl bg-[#84CC16] hover:bg-[#A3E635] text-[#2B2118] border-3 border-[#2B2118] border-b-6 text-xs font-black whitespace-nowrap"
               >
-                ลุยอีกครั้ง (PLAY AGAIN)
+                PLAY AGAIN
               </button>
               {hud.subMode === 'dungeon' && hud.stageNumber < 3 && (
                 <button
@@ -512,7 +512,7 @@ export const DungeonBrawlerHud: React.FC<DungeonBrawlerHudProps> = ({
                   onClick={() => onSelectStage(hud.stageNumber + 1)}
                   className="flex-1 py-2.5 px-3 rounded-2xl bg-[#F59E0B] hover:bg-[#FBBF24] text-[#2B2118] border-3 border-[#2B2118] border-b-6 text-xs font-black whitespace-nowrap"
                 >
-                  ด่านถัดไป (STAGE {hud.stageNumber + 1})
+                  STAGE {hud.stageNumber + 1}
                 </button>
               )}
               <button
@@ -520,7 +520,7 @@ export const DungeonBrawlerHud: React.FC<DungeonBrawlerHudProps> = ({
                 onClick={() => onOpenArmoryModal('armory')}
                 className="px-3.5 py-2.5 rounded-2xl bg-[#2B2118] text-[#FFFDF9] border-3 border-[#1A130D] border-b-6 text-xs font-black whitespace-nowrap"
               >
-                จัดของ
+                GEAR
               </button>
               <button
                 type="button"
@@ -528,7 +528,7 @@ export const DungeonBrawlerHud: React.FC<DungeonBrawlerHudProps> = ({
                 className="px-3.5 py-2.5 rounded-2xl bg-[#FDE047] hover:bg-[#FACC15] text-[#2B2118] border-3 border-[#2B2118] border-b-6 text-xs font-black flex items-center gap-1 whitespace-nowrap"
               >
                 <Home className="w-3.5 h-3.5" />
-                <span>หน้าแรก</span>
+                <span>HOME</span>
               </button>
             </div>
           </div>
@@ -577,13 +577,13 @@ export const DungeonBrawlerHud: React.FC<DungeonBrawlerHudProps> = ({
 
         {/* Center Helper Tip */}
         <div className="hidden md:flex items-center gap-2 px-3.5 py-1.5 rounded-2xl bg-[#2B2118]/90 text-[#F3E8D6] border-2 border-[#1A130D] text-[11px] font-bold">
-          <span>[F / Click] ฟาดอาวุธ ({equippedWeapon.thaiName})</span>
+          <span>[F / Click] Swing ({equippedWeapon.name})</span>
           <span>·</span>
-          <span>[Q] สกิล {activeSkill.name}</span>
+          <span>[Q] {activeSkill.name}</span>
           <span>·</span>
-          <span>[E] ท่าไม้ตายอาวุธ (+ฮีล 15%)</span>
+          <span>[E] Weapon Ultimate (+15% Heal)</span>
           <span>·</span>
-          <span>[Space] กระโดดหลบ</span>
+          <span>[Space] Dodge</span>
         </div>
 
         {/* Right: 4 Action Combat Buttons */}
