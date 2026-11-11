@@ -1,11 +1,13 @@
 # PLAN-003: Clean Visual Home Hub, Mode Pre-Game Setups & Illustrated Card/Icon Atlas
 
 - **Plan ID**: `PLAN-003`
+- **Status**: `DONE — Track A & Track B Merged (2e74978)`
 - **Sprint**: Sprint 03 — Clean Visual Home Menu, Per-Mode Pre-Game Setup Screens & Illustrated Card/Menu Icon Pack
 - **Author**: `agent-lead-architect` (Agent 1)
 - **Specialist Assignee**: `agent-asset-gen` (Agent 2)
 - **Related Task**: `tasks/TASK-003-mode-cards-and-menu-icons.md`
-- **Target Feature Branch**: `agent/asset-gen/mode-cards-and-menu-icons`
+- **Review Record**: `reviews/PR-003-mode-cards-and-menu-icons-review.md`
+- **Target Feature Branch**: `agent/asset-gen/mode-cards-and-menu-icons` (`2e74978`)
 
 ---
 

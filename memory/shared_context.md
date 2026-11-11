@@ -1,6 +1,6 @@
 # Shared Agent Memory (`memory/shared_context.md`)
 
-> **Last Updated**: Sprint 02 — 16 Character Avatar Icons (`TASK-002`) & Live 3D Locker Stage (`PLAN-002`)
+> **Last Updated**: Sprint 03 — 16 Mode/Map/Dungeon Cards & Menu Icons (`TASK-003` / `PR-003` Merged)
 > **Maintainer**: `agent-lead-architect`
 > **Mandatory Read**: All agents (`agent-asset-gen`, `agent-ui-hud`, `agent-gameplay-sim`) must read this file prior to executing any task in `tasks/`.
 

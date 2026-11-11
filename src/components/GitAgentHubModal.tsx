@@ -11,11 +11,11 @@ import {
   Sparkles,
 } from 'lucide-react';
 import {
-  ACTION_ICON_PATHS,
-  ACTIVE_SKILL_ICON_PATHS,
   CHARACTER_AVATAR_PATHS,
-  GAME_BANNER_ASSETS,
-  PRANK_ITEM_ICON_PATHS,
+  DUNGEON_STAGE_CARD_PATHS,
+  MAP_CARD_PATHS,
+  MENU_ICON_PATHS,
+  MODE_CARD_PATHS,
 } from './GameAssetIcons';
 import { CHARACTERS } from '../models/characterTypes';
 
@@ -68,7 +68,7 @@ export const GitAgentHubModal: React.FC<GitAgentHubModalProps> = ({
                 Multi-Agent Git Message Bus &amp; PR Review Hub
               </h2>
               <p className="text-xs text-[#6E5A47]">
-                TASK-001 &amp; TASK-002 Merged · TASK-003 (16 Mode/Map/Dungeon Cards &amp; Menu Icons) Dispatched to Agent 2
+                TASK-001, TASK-002 &amp; TASK-003 (16 Mode/Map/Dungeon Cards &amp; Menu Icons by Agent 2) Audited, Approved &amp; Merged
               </p>
             </div>
           </div>
@@ -85,10 +85,10 @@ export const GitAgentHubModal: React.FC<GitAgentHubModalProps> = ({
         {/* Navigation Tabs for Repo Folders */}
         <div className="mt-3 flex flex-wrap items-center gap-1.5 bg-[#F3E8D6] p-1.5 rounded-2xl border border-[#DFC9AE]">
           {[
-            { id: 'topology' as const, label: 'Git Branch & Tasks' },
-            { id: 'tasks' as const, label: 'tasks/TASK-003 (OPEN)' },
-            { id: 'plans' as const, label: 'plans/PLAN-003 (ACTIVE)' },
-            { id: 'reviews' as const, label: 'reviews/PR-002 (APPROVED)' },
+            { id: 'topology' as const, label: 'Git Branch & PR #2 Merged' },
+            { id: 'reviews' as const, label: 'reviews/PR-003 (APPROVED)' },
+            { id: 'tasks' as const, label: 'tasks/TASK-003 (MERGED)' },
+            { id: 'plans' as const, label: 'plans/PLAN-003 (DONE)' },
             { id: 'memory' as const, label: 'memory/shared_context' },
             { id: 'agents_md' as const, label: 'agents.md' },
           ].map((tab) => (
@@ -111,126 +111,144 @@ export const GitAgentHubModal: React.FC<GitAgentHubModalProps> = ({
         <div className="mt-4 flex-1 overflow-y-auto pr-1 space-y-4">
           {activeTab === 'topology' && (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-              {/* Left: Real Git Branch Graph & Dispatched TASK-003 */}
-              <div className="lg:col-span-7 bg-[#2B2118] text-[#FFFDF9] rounded-2xl p-4 border-2 border-[#2B2118]">
-                <div className="flex items-center justify-between pb-2.5 border-b border-white/15">
-                  <span className="text-xs font-extrabold text-[#F59E0B] flex items-center gap-1.5">
-                    <GitBranch className="w-4 h-4" />
-                    <span>GitHub PalsRush-3D-II · Multi-Agent Git Bus</span>
-                  </span>
-                  <span className="text-[11px] font-mono text-[#FDE047] flex items-center gap-1">
-                    <GitMerge className="w-3.5 h-3.5" />
-                    <span>TASK-003 DISPATCHED TO AGENT 2</span>
-                  </span>
-                </div>
+              {/* Left: Real Git Branch Graph & Merged TASK-003 */}
+              <div className="lg:col-span-6 bg-[#2B2118] text-[#FFFDF9] rounded-2xl p-4 border-2 border-[#2B2118] flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between pb-2.5 border-b border-white/15">
+                    <span className="text-xs font-extrabold text-[#F59E0B] flex items-center gap-1.5">
+                      <GitBranch className="w-4 h-4" />
+                      <span>GitHub PalsRush-3D-II · Multi-Agent Git Bus</span>
+                    </span>
+                    <span className="text-[11px] font-mono text-[#A3E635] flex items-center gap-1">
+                      <GitMerge className="w-3.5 h-3.5" />
+                      <span>TASK-003 MERGED</span>
+                    </span>
+                  </div>
 
-                <pre className="mt-3 text-xs font-mono leading-relaxed text-[#F3E8D6] overflow-x-auto">
+                  <pre className="mt-3 text-xs font-mono leading-relaxed text-[#F3E8D6] overflow-x-auto">
 {`* commit (HEAD -> main) [agent-lead-architect]
-| feat(task-003): dispatch TASK-003 (16 Mode/Map/Dungeon cards & Menu icons) for Agent 2
-* commit [agent-lead-architect]
-| feat(ui): review PR-002 & wire 16 character avatars across Lobby, HUD & Podium
+| feat(ui): review PR-003 & integrate 16 mode/map/dungeon cards & menu icons
+*   Merge pull request #2 (TASK-003) from agent/asset-gen/mode-cards-and-menu-icons
+|\\  • Audited in: reviews/PR-003-mode-cards-and-menu-icons-review.md (16/16 PASS)
+| * 2e74978 (origin/pr/2, origin/agent/asset-gen/mode-cards-and-menu-icons)
+|/  feat(assets): deliver TASK-003 game cards and menu icons
+* 5ecbfed feat(task-003): declutter Home & dispatch TASK-003
 *   Merge pull request #1 (TASK-002) from agent/asset-gen/character-avatars
-|\\  • Audited in: reviews/PR-002-character-avatars-review.md (0 src/ conflicts)
-| * 2e4f29b (origin/agent/asset-gen/character-avatars)
-|/  feat(assets): deliver TASK-002 character avatars and manifest`}
-                </pre>
+|\\  • Audited in: reviews/PR-002-character-avatars-review.md`}
+                  </pre>
+                </div>
 
                 <div className="mt-3 pt-3 border-t border-white/15 grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
                   <div className="bg-white/10 rounded-xl p-2">
                     <div className="text-[10px] text-[#D8C5AC]">tasks/</div>
-                    <div className="text-xs font-extrabold text-[#FDE047] mt-0.5">
-                      TASK-003 (OPEN)
+                    <div className="text-xs font-extrabold text-[#A3E635] mt-0.5">
+                      TASK-003 (MERGED)
                     </div>
                   </div>
                   <div className="bg-white/10 rounded-xl p-2">
                     <div className="text-[10px] text-[#D8C5AC]">plans/</div>
                     <div className="text-xs font-extrabold text-[#38BDF8] mt-0.5">
-                      PLAN-003 (ACTIVE)
+                      PLAN-003 (DONE)
                     </div>
                   </div>
                   <div className="bg-white/10 rounded-xl p-2">
                     <div className="text-[10px] text-[#D8C5AC]">memory/</div>
-                    <div className="text-xs font-extrabold text-[#A3E635] mt-0.5">
+                    <div className="text-xs font-extrabold text-[#FDE047] mt-0.5">
                       shared_context.md
                     </div>
                   </div>
                   <div className="bg-white/10 rounded-xl p-2">
                     <div className="text-[10px] text-[#D8C5AC]">reviews/</div>
                     <div className="text-xs font-extrabold text-[#F472B6] mt-0.5">
-                      PR-002 (APPROVED)
+                      PR-003 (APPROVED)
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Right: Live Preview of PR-002 (16 Character Avatars) + PR-001 Assets */}
-              <div className="lg:col-span-5 bg-[#F8F2E8] border-2 border-[#E5D9C5] rounded-2xl p-4 flex flex-col justify-between">
+              {/* Right: Live Preview of PR-003 (16 Mode/Map/Dungeon Cards & Menu Icons) + PR-002 Avatars */}
+              <div className="lg:col-span-6 bg-[#F8F2E8] border-2 border-[#E5D9C5] rounded-2xl p-4 flex flex-col justify-between gap-3">
                 <div>
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-extrabold text-[#2B2118] flex items-center gap-1.5">
                       <Sparkles className="w-4 h-4 text-[#C86D3B]" />
-                      <span>Agent 2 Delivered Avatars (16× 512×512 PNG)</span>
+                      <span>Agent 2 Delivered TASK-003 (8× 1280×720 Cards + 8× 512×512 Icons)</span>
                     </span>
                     <span className="text-[11px] font-mono text-[#15803D] font-bold">
                       16/16 SHA-256 PASS
                     </span>
                   </div>
 
-                  {/* 16 Character Avatars Grid */}
-                  <div className="mt-2.5 grid grid-cols-8 gap-1.5 bg-[#2B2118] p-2.5 rounded-2xl border border-[#1A130D]">
-                    {CHARACTERS.map((char) => (
+                  {/* 3 Mode Cards + 2 Map Cards + 3 Dungeon Cards */}
+                  <div className="mt-2 grid grid-cols-4 gap-1.5">
+                    {[
+                      { id: 'Party Race', src: MODE_CARD_PATHS.party_race },
+                      { id: 'Dungeon Raid', src: MODE_CARD_PATHS.dungeon_raid },
+                      { id: 'Brawler PvP', src: MODE_CARD_PATHS.brawler_pvp },
+                      { id: 'Woodland Map', src: MAP_CARD_PATHS.woodland },
+                      { id: 'Glacier Map', src: MAP_CARD_PATHS.snow_glacier },
+                      { id: 'Stage 1 Slime', src: DUNGEON_STAGE_CARD_PATHS[1] },
+                      { id: 'Stage 2 Lava', src: DUNGEON_STAGE_CARD_PATHS[2] },
+                      { id: 'Stage 3 Frost', src: DUNGEON_STAGE_CARD_PATHS[3] },
+                    ].map((card) => (
                       <div
-                        key={char.id}
-                        className="flex flex-col items-center"
-                        title={`#${char.index + 1} ${char.name} (${CHARACTER_AVATAR_PATHS[char.id]})`}
+                        key={card.id}
+                        className="rounded-lg overflow-hidden border border-[#2B2118] bg-[#2B2118]"
                       >
                         <img
-                          src={CHARACTER_AVATAR_PATHS[char.id]}
-                          alt={char.name}
-                          className="w-9 h-9 object-contain"
+                          src={card.src}
+                          alt={card.id}
+                          className="w-full h-11 object-cover"
+                        />
+                        <div className="px-1.5 py-0.5 text-[9px] font-bold text-[#FFFDF9] truncate">
+                          {card.id}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* 8 Menu & Slot Icons */}
+                  <div className="mt-2 grid grid-cols-8 gap-1.5 bg-[#2B2118] p-2 rounded-xl border border-[#1A130D]">
+                    {[
+                      { id: 'menu_home', src: MENU_ICON_PATHS.home },
+                      { id: 'menu_heroes', src: MENU_ICON_PATHS.heroes },
+                      { id: 'menu_gear', src: MENU_ICON_PATHS.gear },
+                      { id: 'menu_ranks', src: MENU_ICON_PATHS.ranks },
+                      { id: 'menu_account', src: MENU_ICON_PATHS.account },
+                      { id: 'slot_weapon', src: MENU_ICON_PATHS.weapon },
+                      { id: 'slot_headgear', src: MENU_ICON_PATHS.headgear },
+                      { id: 'slot_cape_aura', src: MENU_ICON_PATHS.cape },
+                    ].map((ic) => (
+                      <div
+                        key={ic.id}
+                        className="flex items-center justify-center"
+                        title={ic.id}
+                      >
+                        <img
+                          src={ic.src}
+                          alt={ic.id}
+                          className="w-8 h-8 object-contain"
                         />
                       </div>
                     ))}
                   </div>
 
-                  <div className="mt-2.5 grid grid-cols-2 gap-2">
-                    <div className="rounded-xl overflow-hidden border border-[#D9C8B0] bg-[#2B2118]">
+                  {/* 16 Character Avatars Strip */}
+                  <div className="mt-2 grid grid-cols-16 gap-1 bg-[#2B2118]/90 p-1.5 rounded-xl">
+                    {CHARACTERS.map((char) => (
                       <img
-                        src={GAME_BANNER_ASSETS.raceCrestBanner}
-                        alt="race_crest_banner.png"
-                        className="w-full h-16 object-cover"
+                        key={char.id}
+                        src={CHARACTER_AVATAR_PATHS[char.id]}
+                        alt={char.name}
+                        title={char.name}
+                        className="w-6 h-6 object-contain"
                       />
-                      <div className="px-2 py-0.5 text-[10px] font-mono text-[#FFFDF9] truncate">
-                        TASK-001 Banners &amp; HUD
-                      </div>
-                    </div>
-                    <div className="rounded-xl overflow-hidden border border-[#D9C8B0] bg-[#2B2118] flex items-center justify-center gap-1.5 p-2">
-                      <img
-                        src={ACTIVE_SKILL_ICON_PATHS.dash}
-                        alt="skill_dash.png"
-                        className="w-7 h-7 object-contain"
-                      />
-                      <img
-                        src={PRANK_ITEM_ICON_PATHS.glove}
-                        alt="item_glove.png"
-                        className="w-7 h-7 object-contain"
-                      />
-                      <img
-                        src={ACTION_ICON_PATHS.slap}
-                        alt="hud_action_slap.png"
-                        className="w-7 h-7 object-contain"
-                      />
-                      <img
-                        src={ACTION_ICON_PATHS.hop}
-                        alt="hud_action_hop.png"
-                        className="w-7 h-7 object-contain"
-                      />
-                    </div>
+                    ))}
                   </div>
                 </div>
 
-                <div className="mt-3 pt-2.5 border-t border-[#E5D9C5] text-[11px] text-[#5C4938] flex items-center justify-between">
-                  <span>Branch: agent/asset-gen/character-avatars (2e4f29b)</span>
+                <div className="pt-2 border-t border-[#E5D9C5] text-[11px] text-[#5C4938] flex items-center justify-between">
+                  <span>Branch: agent/asset-gen/mode-cards-and-menu-icons (2e74978)</span>
                   <span className="font-bold text-[#15803D]">MERGED</span>
                 </div>
               </div>
@@ -243,30 +261,44 @@ export const GitAgentHubModal: React.FC<GitAgentHubModalProps> = ({
                 <div className="flex items-center justify-between border-b border-[#E5D9C5] pb-2">
                   <span className="font-extrabold text-[#2B2118] flex items-center gap-1.5">
                     <ShieldCheck className="w-4 h-4 text-[#15803D]" />
-                    <span>/reviews/PR-002-character-avatars-review.md — Lead Architect Audit</span>
+                    <span>/reviews/PR-003-mode-cards-and-menu-icons-review.md — Lead Architect Audit</span>
                   </span>
                   <span className="font-mono text-[11px] text-[#15803D] font-bold flex items-center gap-1">
                     <GitMerge className="w-3.5 h-3.5" />
-                    <span>APPROVED &amp; MERGED</span>
+                    <span>APPROVED &amp; MERGED (2e74978)</span>
                   </span>
                 </div>
                 <ul className="space-y-1.5 text-[#5C4938]">
                   <li>
-                    • <strong>Path Isolation:</strong> PASS — 17 files in{' '}
-                    <code>public/assets/game/avatars/**</code> + 1 update in{' '}
-                    <code>tasks/TASK-002-character-avatars.md</code>. Zero files modified in{' '}
+                    • <strong>Path Isolation:</strong> PASS — 18 files in{' '}
+                    <code>public/assets/game/{'{modes,maps,dungeons,icons}'}/**</code> +{' '}
+                    <code>mode_card_manifest.json</code> +{' '}
+                    <code>tasks/TASK-003-mode-cards-and-menu-icons.md</code>. Zero files modified in{' '}
                     <code>src/</code>.
                   </li>
                   <li>
-                    • <strong>16 Character Portraits (512×512 RGBA PNG):</strong> PASS — All 16{' '}
-                    <code>avatar_&lt;id&gt;.png</code> files verified against{' '}
-                    <code>avatar_manifest.json</code> SHA-256 checksums and PNG IHDR headers.
+                    • <strong>8 Landscape Cards (1280×720) &amp; 8 Square Icons (512×512):</strong> PASS — All 16 PNGs verified against{' '}
+                    <code>mode_card_manifest.json</code> SHA-256 checksums and PNG IHDR headers (<code>16/16 PASS</code>).
                   </li>
                   <li>
-                    • <strong>UI Mount Points Wired:</strong> Character Selection Grid, Hover Tooltips,
-                    Loadout Strip, Top-Right Live Standings, Spectator Bar, and Post-Race Podium.
+                    • <strong>UI Mount Points Wired:</strong> Main Home Mode Deck, Top Icon Navigation Bar, Party Race Circuit Cards, Dungeon Raid Stage 1–3 Cards, and 4-Slot Gear Armory Tabs.
                   </li>
                 </ul>
+              </div>
+
+              <div className="bg-[#F8F2E8] border-2 border-[#7E9B6B] rounded-2xl p-4 space-y-2">
+                <div className="flex items-center justify-between border-b border-[#E5D9C5] pb-2">
+                  <span className="font-extrabold text-[#2B2118] flex items-center gap-1.5">
+                    <ShieldCheck className="w-4 h-4 text-[#15803D]" />
+                    <span>/reviews/PR-002-character-avatars-review.md — Lead Architect Audit</span>
+                  </span>
+                  <span className="font-mono text-[11px] text-[#15803D] font-bold">
+                    APPROVED &amp; MERGED (2e4f29b)
+                  </span>
+                </div>
+                <p className="text-[#5C4938]">
+                  16 Playable Character Avatars (<code>512×512</code> RGBA PNG) + <code>avatar_manifest.json</code> audited and merged in Sprint 02.
+                </p>
               </div>
 
               <div className="bg-[#F8F2E8] border-2 border-[#E5D9C5] rounded-2xl p-4 space-y-2">
@@ -276,7 +308,7 @@ export const GitAgentHubModal: React.FC<GitAgentHubModalProps> = ({
                     <span>/reviews/PR-001-hud-assets-review.md — Lead Architect Audit</span>
                   </span>
                   <span className="font-mono text-[11px] text-[#7E9B6B] font-bold">
-                    APPROVED &amp; MERGED
+                    APPROVED &amp; MERGED (26273c0)
                   </span>
                 </div>
                 <p className="text-[#5C4938]">
@@ -288,18 +320,18 @@ export const GitAgentHubModal: React.FC<GitAgentHubModalProps> = ({
 
           {activeTab === 'tasks' && (
             <div className="space-y-3 text-xs">
-              <div className="bg-[#FEF3C7] border-2 border-[#D97706] rounded-2xl p-4 space-y-2">
-                <div className="flex items-center justify-between border-b border-[#FDE68A] pb-2">
+              <div className="bg-[#F8F2E8] border-2 border-[#7E9B6B] rounded-2xl p-4 space-y-2">
+                <div className="flex items-center justify-between border-b border-[#E5D9C5] pb-2">
                   <span className="font-extrabold text-[#2B2118] flex items-center gap-1.5">
-                    <Sparkles className="w-4 h-4 text-[#D97706]" />
-                    <span>/tasks/TASK-003-mode-cards-and-menu-icons.md — Assigned to agent-asset-gen (Agent 2)</span>
+                    <CheckCircle2 className="w-4 h-4 text-[#15803D]" />
+                    <span>/tasks/TASK-003-mode-cards-and-menu-icons.md — Delivered by agent-asset-gen (Agent 2)</span>
                   </span>
-                  <span className="font-mono text-[11px] bg-[#F59E0B] text-[#2B2118] px-2 py-0.5 rounded font-black">
-                    Status: OPEN (Branch: agent/asset-gen/mode-cards-and-menu-icons)
+                  <span className="font-mono text-[11px] bg-[#DCFCE7] text-[#15803D] px-2 py-0.5 rounded font-bold">
+                    Status: MERGED (2e74978)
                   </span>
                 </div>
                 <p className="text-[#5C4938]">
-                  <strong>16 Visual Assets Requested for Agent 2:</strong> 3 Game Mode Banner Cards (<code>modes/mode_party_race.png</code>, <code>mode_dungeon_raid.png</code>, <code>mode_brawler_pvp.png</code>), 2 Circuit Map Cards (<code>maps/map_woodland_circuit.png</code>, <code>map_glacier_peak.png</code>), 3 Dungeon Stage Cards (<code>dungeons/stage_1..3.png</code>), and 8 Menu &amp; Gear Slot Icons (<code>icons/menu_*.png</code>, <code>slot_*.png</code>) + <code>card_icon_manifest.json</code>.
+                  All 16 visual assets — 3 Game Mode Banner Cards (<code>modes/mode_*.png</code>), 2 Circuit Map Cards (<code>maps/map_*.png</code>), 3 Dungeon Stage Cards (<code>dungeons/stage_*.png</code>), and 8 Menu &amp; Gear Slot Icons (<code>icons/menu_*.png</code>, <code>slot_*.png</code>) + <code>mode_card_manifest.json</code> — delivered on branch <code>agent/asset-gen/mode-cards-and-menu-icons</code>, audited in <code>reviews/PR-003-mode-cards-and-menu-icons-review.md</code>, and integrated into the game UI.
                 </p>
               </div>
 
@@ -316,8 +348,7 @@ export const GitAgentHubModal: React.FC<GitAgentHubModalProps> = ({
                 <p className="text-[#5C4938]">
                   All 16 playable character avatar PNG portraits (<code>512×512</code>) and{' '}
                   <code>avatar_manifest.json</code> delivered on branch{' '}
-                  <code>agent/asset-gen/character-avatars</code>, audited in{' '}
-                  <code>reviews/PR-002-character-avatars-review.md</code>, and wired into all UI surfaces.
+                  <code>agent/asset-gen/character-avatars</code>.
                 </p>
               </div>
 
@@ -341,19 +372,19 @@ export const GitAgentHubModal: React.FC<GitAgentHubModalProps> = ({
 
           {activeTab === 'plans' && (
             <div className="space-y-3 text-xs">
-              <div className="bg-[#FEF3C7] border-2 border-[#D97706] rounded-2xl p-4 space-y-2">
-                <div className="flex items-center justify-between border-b border-[#FDE68A] pb-2">
+              <div className="bg-[#F8F2E8] border-2 border-[#7E9B6B] rounded-2xl p-4 space-y-2">
+                <div className="flex items-center justify-between border-b border-[#E5D9C5] pb-2">
                   <span className="font-extrabold text-[#2B2118] flex items-center gap-1.5">
-                    <GitPullRequest className="w-4 h-4 text-[#D97706]" />
+                    <GitPullRequest className="w-4 h-4 text-[#15803D]" />
                     <span>/plans/PLAN-003-mode-cards-and-menu-icons.md — Sprint 03 Blueprint</span>
                   </span>
-                  <span className="font-mono text-[11px] text-[#D97706] font-bold">
-                    Track B Live · Track A Dispatched to Agent 2
+                  <span className="font-mono text-[11px] text-[#15803D] font-bold">
+                    Track A &amp; Track B Complete
                   </span>
                 </div>
                 <p className="text-[#5C4938]">
-                  <strong>Track A (Agent 2):</strong> Generate 16 high-impact visual cards &amp; menu icons in <code>public/assets/game/{'{modes,maps,dungeons,icons}'}/</code>.<br />
-                  <strong>Track B (Lead Architect):</strong> Decluttered English Home Screen + Pre-Game Mode Setup Modals + <code>&lt;VisualImageCard /&gt;</code> &amp; <code>&lt;MenuIconEmblem /&gt;</code> pre-wired to auto-load Agent 2&apos;s PNGs.
+                  <strong>Track A (Agent 2):</strong> Delivered 16 high-impact visual cards &amp; menu icons in <code>public/assets/game/{'{modes,maps,dungeons,icons}'}/</code>.<br />
+                  <strong>Track B (Lead Architect):</strong> Decluttered English Home Screen + Pre-Game Mode Setup Modals + <code>&lt;VisualImageCard /&gt;</code> &amp; <code>&lt;MenuIconEmblem /&gt;</code> wired with Agent 2&apos;s PNGs.
                 </p>
               </div>
 
@@ -368,24 +399,7 @@ export const GitAgentHubModal: React.FC<GitAgentHubModalProps> = ({
                   </span>
                 </div>
                 <p className="text-[#5C4938]">
-                  <strong>Track A:</strong> Reviewed &amp; merged Agent 2&apos;s 16 character avatar PNGs (<code>TASK-002</code>) into all UI mount points.<br />
-                  <strong>Track B:</strong> Added unified <code>&apos;cool&apos;</code> hero idle stance animation &amp; Live 3D Character Preview Stage alongside the character selection grid.
-                </p>
-              </div>
-
-              <div className="bg-[#F8F2E8] border-2 border-[#E5D9C5] rounded-2xl p-4 space-y-2">
-                <div className="flex items-center justify-between border-b border-[#E5D9C5] pb-2">
-                  <span className="font-extrabold text-[#2B2118] flex items-center gap-1.5">
-                    <GitPullRequest className="w-4 h-4 text-[#C86D3B]" />
-                    <span>/plans/PLAN-001-game-hud-overhaul.md — Sprint 01 Blueprint</span>
-                  </span>
-                  <span className="font-mono text-[11px] text-[#15803D] font-bold">
-                    Phase 1–3 Complete
-                  </span>
-                </div>
-                <p className="text-[#5C4938]">
-                  Completed full multi-agent cycle: Task Dispatch → Isolated Asset
-                  Branch &amp; PR #1 → Lead Architect Review &amp; HUD Integration.
+                  Reviewed &amp; merged Agent 2&apos;s 16 character avatar PNGs (<code>TASK-002</code>) alongside the Live 3D Character Preview Stage.
                 </p>
               </div>
             </div>
@@ -403,7 +417,7 @@ export const GitAgentHubModal: React.FC<GitAgentHubModalProps> = ({
               </div>
               <p className="text-[#5C4938]">
                 Shared semantic colors and PNG-First naming invariants verified
-                for both <code>TASK-001</code> (HUD icons) and <code>TASK-002</code> (16 Character Avatars in <code>public/assets/game/avatars/</code>).
+                across <code>TASK-001</code> (HUD icons), <code>TASK-002</code> (16 Character Avatars), and <code>TASK-003</code> (16 Mode/Map/Dungeon Cards &amp; Menu Icons).
               </p>
             </div>
           )}
@@ -413,10 +427,10 @@ export const GitAgentHubModal: React.FC<GitAgentHubModalProps> = ({
               <div className="flex items-center justify-between border-b border-[#E5D9C5] pb-2">
                 <span className="font-extrabold text-[#2B2118] flex items-center gap-1.5">
                   <FileText className="w-4 h-4 text-[#C86D3B]" />
-                  <span>/agents.md — Multi-Agent Constitution & Path Ownership</span>
+                  <span>/agents.md — Multi-Agent Constitution &amp; Path Ownership</span>
                 </span>
                 <span className="text-[11px] font-mono text-[#6E5A47]">
-                  Enforced on PR #1
+                  Enforced on PR #1 &amp; PR #2
                 </span>
               </div>
               <p className="text-[#5C4938]">

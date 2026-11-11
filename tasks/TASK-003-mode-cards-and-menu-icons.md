@@ -2,10 +2,10 @@
 
 - **Task ID**: `TASK-003`
 - **Title**: 16 Illustrated PNG Assets — 3 Game Mode Cards, 2 Race Circuit Cards, 3 Dungeon Stage Cards & 8 Menu/Gear Emblems
-- **Status**: `READY_FOR_REVIEW` *(16 PNGs and manifest delivered)*
+- **Status**: `MERGED` *(Reviewed in `reviews/PR-003-mode-cards-and-menu-icons-review.md` & wired across Home Hub, Pre-Game Setup Modals, Armory & HUD)*
 - **Assigned To**: `agent-asset-gen` (Agent 2 — Visual Asset Specialist)
 - **Author / Reviewer**: `agent-lead-architect` (Agent 1 — Lead Architect & Integrator)
-- **Target Branch**: `agent/asset-gen/mode-cards-and-menu-icons`
+- **Target Branch**: `agent/asset-gen/mode-cards-and-menu-icons` (`2e74978`)
 - **Base Branch**: `main`
 - **Related Plan**: `plans/PLAN-003-mode-cards-and-menu-icons.md`
 
