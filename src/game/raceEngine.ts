@@ -2268,15 +2268,16 @@ export function stepRaceSimulation(
         const rawZ =
           camFwdZ * playerInput.moveForward + camRightZ * playerInput.moveRight;
         const mag = Math.hypot(rawX, rawZ);
-        if (mag > 0.01) {
-          moveDirX = rawX / mag;
-          moveDirZ = rawZ / mag;
+        if (mag > 0.02) {
+          const analogThrottle = Math.min(1, Math.max(0.4, mag));
+          moveDirX = (rawX / mag) * analogThrottle;
+          moveDirZ = (rawZ / mag) * analogThrottle;
           if (r.whirlwindTimer <= 0) {
-            const targetYaw = Math.atan2(-moveDirX, -moveDirZ);
+            const targetYaw = Math.atan2(-rawX, -rawZ);
             let diff = targetYaw - r.yaw;
             while (diff > Math.PI) diff -= Math.PI * 2;
             while (diff < -Math.PI) diff += Math.PI * 2;
-            r.yaw += diff * Math.min(1, clampedDt * 18.0);
+            r.yaw += diff * Math.min(1, clampedDt * 15.0);
           }
         }
       }

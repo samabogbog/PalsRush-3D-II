@@ -239,6 +239,10 @@ test('3D Physics: parabolic knockback arc, low air drag, elastic bounce, and pai
   // Test symmetric pairwise racer-vs-racer body collision depenetration & impulse
   const r2 = state.racers[2];
   const r3 = state.racers[3];
+  r2.qCooldown = 5;
+  r2.fCooldown = 5;
+  r3.qCooldown = 5;
+  r3.fCooldown = 5;
   r2.x = 0;
   r2.z = 10;
   r2.vx = 9;

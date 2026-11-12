@@ -111,19 +111,29 @@ export const DungeonBrawlerHud: React.FC<DungeonBrawlerHudProps> = ({
     const rect = el.getBoundingClientRect();
     const cx = rect.left + rect.width / 2;
     const cy = rect.top + rect.height / 2;
-    const maxR = rect.width * 0.36;
-    const dx = clientX - cx;
-    const dy = clientY - cy;
+    const maxR = Math.max(30, rect.width * 0.34);
+    let dx = clientX - cx;
+    let dy = clientY - cy;
     const dist = Math.hypot(dx, dy);
-    const clampedDist = Math.min(maxR, dist);
-    const angle = Math.atan2(dy, dx);
-    const nx = dist > 2 ? (Math.cos(angle) * clampedDist) / maxR : 0;
-    const ny = dist > 2 ? (Math.sin(angle) * clampedDist) / maxR : 0;
-    setJoyKnob({
-      x: Math.cos(angle) * clampedDist,
-      y: Math.sin(angle) * clampedDist,
-    });
-    onJoystickChange(nx, -ny);
+    if (dist > maxR) {
+      dx = (dx / dist) * maxR;
+      dy = (dy / dist) * maxR;
+    }
+    setJoyKnob({ x: dx, y: dy });
+
+    const rawNorm = Math.min(1, dist / maxR);
+    const deadzone = 0.1;
+    if (rawNorm <= deadzone || dist < 1e-4) {
+      onJoystickChange(0, 0);
+      return;
+    }
+    const rescaled = (rawNorm - deadzone) / (1 - deadzone);
+    const nx = (dx / dist) * rescaled;
+    const ny = (-dy / dist) * rescaled;
+    onJoystickChange(
+      Math.max(-1, Math.min(1, nx)),
+      Math.max(-1, Math.min(1, ny))
+    );
   };
 
   return (
@@ -529,9 +539,9 @@ export const DungeonBrawlerHud: React.FC<DungeonBrawlerHudProps> = ({
         </div>
       )}
 
-      {/* ==================== PINNED BOTTOM CONTROLS: LOCKED JOYSTICK & 4 COMBAT BUTTONS (ZERO CLS) ==================== */}
+      {/* ==================== PINNED BOTTOM CONTROLS: LOCKED JOYSTICK & RADIAL ARC COMBAT BUTTONS (ZERO CLS) ==================== */}
       <div className="absolute bottom-2 inset-x-2 sm:bottom-3.5 sm:inset-x-4 z-10 flex items-end justify-between gap-2">
-        {/* Left: Fixed-Size Virtual Analog Thumbstick */}
+        {/* Left: Fixed-Size Concentric Virtual Analog Thumbstick */}
         <div className="pointer-events-auto flex flex-col items-center gap-1 shrink-0">
           <div
             ref={joyBaseRef}
@@ -555,17 +565,40 @@ export const DungeonBrawlerHud: React.FC<DungeonBrawlerHudProps> = ({
               setJoyKnob({ x: 0, y: 0 });
               onJoystickChange(0, 0);
             }}
-            className="relative w-24 h-24 sm:w-28 sm:h-28 shrink-0 rounded-full bg-[#2B2118]/90 border-3 border-[#1A130D] shadow-xl flex items-center justify-center touch-none cursor-pointer"
+            className="relative w-28 h-28 sm:w-32 sm:h-32 shrink-0 rounded-full bg-[#2B2118]/90 border-3 border-[#FFFDF9]/55 shadow-2xl touch-none cursor-grab active:cursor-grabbing"
           >
+            {/* Subtle Centered Crosshair Axes */}
+            <div className="pointer-events-none absolute inset-x-4 top-1/2 -translate-y-1/2 h-[1.5px] bg-[#FFFDF9]/12 rounded-full" />
+            <div className="pointer-events-none absolute inset-y-4 left-1/2 -translate-x-1/2 w-[1.5px] bg-[#FFFDF9]/12 rounded-full" />
+
+            {/* Perfectly Centered Cardinal Direction Markers */}
+            <span className="pointer-events-none absolute top-1.5 left-1/2 -translate-x-1/2 text-[9px] leading-none font-black text-[#FDE047]/90">
+              ▲
+            </span>
+            <span className="pointer-events-none absolute bottom-1.5 left-1/2 -translate-x-1/2 text-[9px] leading-none font-black text-[#FDE047]/90">
+              ▼
+            </span>
+            <span className="pointer-events-none absolute left-1.5 top-1/2 -translate-y-1/2 text-[9px] leading-none font-black text-[#FDE047]/90">
+              ◀
+            </span>
+            <span className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 text-[9px] leading-none font-black text-[#FDE047]/90">
+              ▶
+            </span>
+
+            {/* Perfectly Concentric Inner Dashed Ring */}
+            <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 sm:w-18 sm:h-18 rounded-full border-2 border-dashed border-[#FFFDF9]/30" />
+
             <div
-              className="pointer-events-none w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-b from-[#FDE047] to-[#F59E0B] border-2 border-[#1A130D] shadow-md will-change-transform"
+              className="pointer-events-none absolute left-1/2 top-1/2 -ml-6 -mt-6 sm:-ml-6.5 sm:-mt-6.5 w-12 h-12 sm:w-13 sm:h-13 rounded-full bg-gradient-to-b from-[#FDE047] to-[#F59E0B] border-2 border-[#1A130D] shadow-xl flex items-center justify-center will-change-transform"
               style={{
                 transform: `translate3d(${joyKnob.x}px, ${joyKnob.y}px, 0)`,
               }}
-            />
+            >
+              <div className="w-4 h-4 rounded-full bg-[#FFFDF9]/90 border border-[#2B2118]/40" />
+            </div>
           </div>
-          <span className="px-2 py-0.5 rounded-lg bg-[#2B2118]/90 text-[#F3E8D6] text-[8px] sm:text-[9px] font-black whitespace-nowrap">
-            WASD / MOVE
+          <span className="px-2.5 py-0.5 rounded-full bg-[#2B2118]/90 text-[#FDE047] border border-[#1A130D] text-[8px] sm:text-[9px] font-black whitespace-nowrap">
+            JOYSTICK / WASD
           </span>
         </div>
 
@@ -580,9 +613,11 @@ export const DungeonBrawlerHud: React.FC<DungeonBrawlerHudProps> = ({
           <span>[Space] Dodge</span>
         </div>
 
-        {/* Right: 4 Locked-Geometry Action Combat Buttons (Zero Layout Shift on Cooldown) */}
-        <div className="pointer-events-auto flex items-end gap-1.5 sm:gap-2 shrink-0">
-          {/* [F] Basic Weapon Swing */}
+        {/* Right: Radial Arc Combat Pad (Large Bottom-Left Dodge/Jump Anchor + Curved [F], [E], [Q] Satellites) */}
+        <div className="pointer-events-auto relative w-[156px] h-[156px] sm:w-[180px] sm:h-[180px] shrink-0 select-none">
+          <div className="pointer-events-none absolute bottom-0 left-0 w-[136px] h-[136px] sm:w-[158px] sm:h-[158px] rounded-full border-2 border-dashed border-[#FFFDF9]/20" />
+
+          {/* SATELLITE 1 (ARC TOP): [F] Basic Weapon Swing */}
           <button
             type="button"
             onPointerDown={(e) => {
@@ -590,48 +625,18 @@ export const DungeonBrawlerHud: React.FC<DungeonBrawlerHudProps> = ({
               onTriggerCombatAction('atk');
             }}
             data-testid="combat-btn-attack"
-            className="relative w-[62px] h-[62px] sm:w-[74px] sm:h-[74px] shrink-0 rounded-2xl sm:rounded-3xl bg-gradient-to-b from-[#EF4444] to-[#DC2626] hover:from-[#F87171] hover:to-[#EF4444] text-white border-3 border-[#1A130D] shadow-xl flex flex-col items-center justify-center touch-none active:scale-95 transition-transform duration-75 will-change-transform"
+            className="absolute bottom-[104px] left-[25px] sm:bottom-[120px] sm:left-[29px] w-[48px] h-[48px] sm:w-[56px] sm:h-[56px] rounded-full bg-gradient-to-b from-[#EF4444] to-[#DC2626] hover:from-[#F87171] hover:to-[#EF4444] text-white border-3 border-[#1A130D] shadow-xl flex flex-col items-center justify-center touch-none active:scale-95 transition-transform duration-75 will-change-transform"
           >
-            <span className="pointer-events-none absolute -top-1.5 -left-1 px-1.5 py-0.2 rounded-md bg-[#1A130D] text-[#FDE047] text-[8px] sm:text-[9px] font-black">
+            <span className="pointer-events-none absolute -top-1 -left-1 px-1.5 py-0.1 rounded-full bg-[#1A130D] text-[#FDE047] border border-[#FFFDF9] text-[8px] sm:text-[9px] font-black">
               F
             </span>
-            <Swords className="w-6 h-6 sm:w-7 sm:h-7 pointer-events-none" />
-            <span className="text-[9px] sm:text-[10px] font-black mt-0.5 pointer-events-none">
+            <Swords className="w-5 h-5 sm:w-6 sm:h-6 pointer-events-none" />
+            <span className="pointer-events-none absolute -bottom-2 px-1.5 py-0.1 rounded-full bg-[#FFFDF9] text-[#2B2118] border border-[#1A130D] text-[7px] sm:text-[8px] font-black">
               BONK!
             </span>
           </button>
 
-          {/* [Q] Active Skill (Fixed 56x56 / 64x64 box + Overlay Cooldown) */}
-          <button
-            type="button"
-            onPointerDown={(e) => {
-              e.stopPropagation();
-              onTriggerCombatAction('q');
-            }}
-            data-testid="combat-btn-skill-q"
-            className="relative w-[56px] h-[56px] sm:w-[64px] sm:h-[64px] shrink-0 rounded-2xl bg-[#2B2118] hover:bg-[#3A2C20] text-white border-3 border-[#1A130D] shadow-xl flex flex-col items-center justify-center overflow-hidden touch-none active:scale-95 transition-transform duration-75 will-change-transform"
-          >
-            <span className="pointer-events-none absolute top-0.5 left-1 text-[8px] sm:text-[9px] font-black text-[#FDE047]">
-              Q
-            </span>
-            <img
-              src={`/assets/game/icons/skill_${selectedActiveSkillId}.png`}
-              alt={selectedActiveSkillId}
-              className="w-6 h-6 sm:w-7 sm:h-7 object-contain pointer-events-none"
-            />
-            <span className="text-[8px] sm:text-[9px] font-black pointer-events-none">
-              SKILL
-            </span>
-            {hud.skillQCooldown > 0 && (
-              <div className="pointer-events-none absolute inset-0 bg-black/75 flex items-center justify-center">
-                <span className="text-xs font-black text-[#FDE047] tabular-nums">
-                  {hud.skillQCooldown.toFixed(1)}s
-                </span>
-              </div>
-            )}
-          </button>
-
-          {/* [E] Weapon Ultimate (Fixed 56x56 / 64x64 box + Overlay Cooldown) */}
+          {/* SATELLITE 2 (ARC MIDDLE 45°): [E] Weapon Ultimate */}
           <button
             type="button"
             onPointerDown={(e) => {
@@ -639,42 +644,72 @@ export const DungeonBrawlerHud: React.FC<DungeonBrawlerHudProps> = ({
               onTriggerCombatAction('e');
             }}
             data-testid="combat-btn-ult-e"
-            className="relative w-[56px] h-[56px] sm:w-[64px] sm:h-[64px] shrink-0 rounded-2xl bg-gradient-to-b from-[#A855F7] to-[#7E22CE] text-white border-3 border-[#1A130D] shadow-xl flex flex-col items-center justify-center overflow-hidden touch-none active:scale-95 transition-transform duration-75 will-change-transform"
+            className="absolute bottom-[78px] left-[78px] sm:bottom-[90px] sm:left-[90px] w-[48px] h-[48px] sm:w-[56px] sm:h-[56px] rounded-full bg-gradient-to-b from-[#A855F7] to-[#7E22CE] text-white border-3 border-[#1A130D] shadow-xl flex flex-col items-center justify-center touch-none active:scale-95 transition-transform duration-75 will-change-transform"
           >
-            <span className="pointer-events-none absolute top-0.5 left-1 text-[8px] sm:text-[9px] font-black text-[#FDE047]">
+            <span className="pointer-events-none absolute -top-1 -left-1 px-1.5 py-0.1 rounded-full bg-[#1A130D] text-[#FDE047] border border-[#FFFDF9] text-[8px] sm:text-[9px] font-black">
               E
             </span>
             <Flame className="w-5 h-5 text-[#FDE047] pointer-events-none" />
-            <span className="text-[8px] sm:text-[9px] font-black pointer-events-none">
+            <span className="pointer-events-none absolute -bottom-2 px-1.5 py-0.1 rounded-full bg-[#2B2118] text-[#FDE047] border border-[#1A130D] text-[7px] sm:text-[8px] font-black">
               ULTI
             </span>
             {hud.ultECooldown > 0 && (
-              <div className="pointer-events-none absolute inset-0 bg-black/75 flex items-center justify-center">
-                <span className="text-xs font-black text-[#FDE047] tabular-nums">
+              <div className="pointer-events-none absolute inset-0 rounded-full bg-black/75 flex items-center justify-center">
+                <span className="text-[11px] font-black text-[#FDE047] tabular-nums">
                   {hud.ultECooldown.toFixed(1)}s
                 </span>
               </div>
             )}
           </button>
 
-          {/* [Space] Dodge Hop (Fixed 56x56 / 64x64 box) */}
+          {/* SATELLITE 3 (ARC END): [Q] Active Skill */}
+          <button
+            type="button"
+            onPointerDown={(e) => {
+              e.stopPropagation();
+              onTriggerCombatAction('q');
+            }}
+            data-testid="combat-btn-skill-q"
+            className="absolute bottom-[25px] left-[104px] sm:bottom-[29px] sm:left-[120px] w-[48px] h-[48px] sm:w-[56px] sm:h-[56px] rounded-full bg-[#2B2118] hover:bg-[#3A2C20] text-white border-3 border-[#1A130D] shadow-xl flex flex-col items-center justify-center touch-none active:scale-95 transition-transform duration-75 will-change-transform"
+          >
+            <span className="pointer-events-none absolute -top-1 -left-1 px-1.5 py-0.1 rounded-full bg-[#1A130D] text-[#FDE047] border border-[#FFFDF9] text-[8px] sm:text-[9px] font-black">
+              Q
+            </span>
+            <img
+              src={`/assets/game/icons/skill_${selectedActiveSkillId}.png`}
+              alt={selectedActiveSkillId}
+              className="w-6 h-6 sm:w-7 sm:h-7 object-contain pointer-events-none"
+            />
+            <span className="pointer-events-none absolute -bottom-2 px-1.5 py-0.1 rounded-full bg-[#84CC16] text-[#2B2118] border border-[#1A130D] text-[7px] sm:text-[8px] font-black">
+              SKILL
+            </span>
+            {hud.skillQCooldown > 0 && (
+              <div className="pointer-events-none absolute inset-0 rounded-full bg-black/75 flex items-center justify-center">
+                <span className="text-[11px] font-black text-[#FDE047] tabular-nums">
+                  {hud.skillQCooldown.toFixed(1)}s
+                </span>
+              </div>
+            )}
+          </button>
+
+          {/* PRIMARY GIANT BOTTOM-LEFT ANCHOR: [Space] Dodge / Jump */}
           <button
             type="button"
             onPointerDown={(e) => {
               e.stopPropagation();
               onTriggerCombatAction('jump');
             }}
-            className="relative w-[56px] h-[56px] sm:w-[64px] sm:h-[64px] shrink-0 rounded-2xl bg-[#84CC16] hover:bg-[#A3E635] text-[#2B2118] border-3 border-[#1A130D] shadow-xl flex flex-col items-center justify-center touch-none active:scale-95 transition-transform duration-75 will-change-transform"
+            className="absolute bottom-0 left-0 w-[80px] h-[80px] sm:w-[92px] sm:h-[92px] rounded-full bg-gradient-to-b from-[#A3E635] to-[#65A30D] hover:from-[#BEF264] hover:to-[#84CC16] text-[#2B2118] border-4 border-[#1A130D] shadow-2xl flex flex-col items-center justify-center touch-none active:scale-95 transition-transform duration-75 will-change-transform"
           >
-            <span className="pointer-events-none absolute top-0.5 left-1 text-[8px] sm:text-[9px] font-black">
+            <span className="pointer-events-none absolute -top-1 left-1 px-1.5 py-0.2 rounded-full bg-[#1A130D] text-[#A3E635] border border-[#FFFDF9] text-[8px] sm:text-[9px] font-black">
               SPC
             </span>
             <img
               src="/assets/game/icons/hud_action_hop.png"
               alt="Dodge Hop"
-              className="w-5 h-5 sm:w-6 sm:h-6 object-contain pointer-events-none"
+              className="w-9 h-9 sm:w-11 sm:h-11 object-contain pointer-events-none"
             />
-            <span className="text-[8px] sm:text-[9px] font-black pointer-events-none">
+            <span className="pointer-events-none absolute -bottom-2 px-2.5 py-0.5 rounded-full bg-[#FFFDF9] text-[#2B2118] border-2 border-[#1A130D] text-[9px] sm:text-[10px] font-black uppercase tracking-wide shadow">
               DODGE
             </span>
           </button>

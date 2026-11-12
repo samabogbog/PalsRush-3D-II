@@ -2759,15 +2759,28 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
 
       const joyX = joystickInputRef?.current.x ?? 0;
       const joyY = joystickInputRef?.current.y ?? 0;
+      const joyMag = Math.hypot(joyX, joyY);
 
-      const moveForward = Math.max(-1, Math.min(1, kbForward + joyY));
-      const moveRight = Math.max(-1, Math.min(1, kbRight + joyX));
+      // When steering with the virtual joystick, tilting left/right smoothly curves forward along the track
+      // instead of snapping 90 degrees perpendicular into the side fence.
+      let effectiveJoyForward = joyY;
+      let effectiveJoyRight = joyX;
+      if (joyMag > 0.05 && kbForward === 0 && kbRight === 0) {
+        if (joyY >= -0.22) {
+          const forwardAssist = Math.max(joyY, Math.abs(joyX) * 0.72);
+          effectiveJoyForward = forwardAssist * Math.min(1, Math.max(0.45, joyMag));
+          effectiveJoyRight = joyX * 0.74;
+        }
+      }
 
-      // Smoothly steer camera into turns when turning with A/D or Virtual Thumbstick (80% speed)
+      const moveForward = Math.max(-1, Math.min(1, kbForward + effectiveJoyForward));
+      const moveRight = Math.max(-1, Math.min(1, kbRight + effectiveJoyRight));
+
+      // Smoothly bank camera into turns when steering forward-left / forward-right
       const isActivelyAiming =
         document.pointerLockElement === domElem || activeDragPointers.size > 0;
-      if (Math.abs(moveRight) > 0.05 && !isActivelyAiming) {
-        targetCameraYawRef.current -= moveRight * dt * 1.24;
+      if (Math.abs(moveRight) > 0.05 && moveForward >= -0.1 && !isActivelyAiming) {
+        targetCameraYawRef.current -= moveRight * dt * 0.92;
       }
 
       // Apply 2nd-order ease-in-out damping to camera yaw & pitch

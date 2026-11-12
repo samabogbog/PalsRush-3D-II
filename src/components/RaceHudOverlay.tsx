@@ -579,13 +579,20 @@ export const RaceHudOverlay: React.FC<RaceHudOverlayProps> = ({
     x: 0,
     y: 0,
   });
+  // Control layout mode:
+  // - 'left_arc': Jump anchored at bottom-left corner of action pad with Slap, Item, Skill curving along its edge
+  // - 'right_arc': Jump anchored at bottom-right corner of action pad with Slap, Item, Skill curving along its edge
+  // - 'swap_sides': Action pad at bottom-leftmost corner of screen (Jump at bottom-leftmost corner) & Joystick on bottom-right
+  const [controlArcMode, setControlArcMode] = useState<
+    'left_arc' | 'right_arc' | 'swap_sides'
+  >('left_arc');
 
   const updateStickFromEvent = useCallback(
     (clientX: number, clientY: number) => {
       const base = stickBaseRef.current;
       if (!base) return;
       const rect = base.getBoundingClientRect();
-      const maxRadius = Math.max(28, rect.width * 0.34);
+      const maxRadius = Math.max(30, rect.width * 0.34);
       const centerX = rect.left + rect.width / 2;
       const centerY = rect.top + rect.height / 2;
       let dx = clientX - centerX;
@@ -596,12 +603,49 @@ export const RaceHudOverlay: React.FC<RaceHudOverlayProps> = ({
         dy = (dy / dist) * maxRadius;
       }
       setKnobOffset({ x: dx, y: dy });
-      const normX = Math.max(-1, Math.min(1, dx / maxRadius));
-      const normY = Math.max(-1, Math.min(1, -dy / maxRadius));
+
+      const rawNormDist = Math.min(1, dist / maxRadius);
+      const deadzone = 0.1;
+      if (rawNormDist <= deadzone || dist < 1e-4) {
+        onJoystickChange?.(0, 0);
+        return;
+      }
+      const rescaledMag = (rawNormDist - deadzone) / (1 - deadzone);
+      const unitX = dx / dist;
+      const unitY = -dy / dist;
+      const normX = Math.max(-1, Math.min(1, unitX * rescaledMag));
+      const normY = Math.max(-1, Math.min(1, unitY * rescaledMag));
       onJoystickChange?.(normX, normY);
     },
     [onJoystickChange]
   );
+
+  const resetStick = useCallback(() => {
+    stickPointerIdRef.current = null;
+    setIsStickActive(false);
+    setKnobOffset({ x: 0, y: 0 });
+    onJoystickChange?.(0, 0);
+  }, [onJoystickChange]);
+
+  useEffect(() => {
+    if (!isStickActive) return;
+    const onWinPointerMove = (e: PointerEvent) => {
+      if (stickPointerIdRef.current !== e.pointerId) return;
+      updateStickFromEvent(e.clientX, e.clientY);
+    };
+    const onWinPointerUp = (e: PointerEvent) => {
+      if (stickPointerIdRef.current !== e.pointerId) return;
+      resetStick();
+    };
+    window.addEventListener('pointermove', onWinPointerMove, { passive: true });
+    window.addEventListener('pointerup', onWinPointerUp);
+    window.addEventListener('pointercancel', onWinPointerUp);
+    return () => {
+      window.removeEventListener('pointermove', onWinPointerMove);
+      window.removeEventListener('pointerup', onWinPointerUp);
+      window.removeEventListener('pointercancel', onWinPointerUp);
+    };
+  }, [isStickActive, updateStickFromEvent, resetStick]);
 
   const handleStickPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     e.stopPropagation();
@@ -624,10 +668,7 @@ export const RaceHudOverlay: React.FC<RaceHudOverlayProps> = ({
   const handleStickPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
     if (stickPointerIdRef.current !== e.pointerId) return;
     e.stopPropagation();
-    stickPointerIdRef.current = null;
-    setIsStickActive(false);
-    setKnobOffset({ x: 0, y: 0 });
-    onJoystickChange?.(0, 0);
+    resetStick();
   };
 
   return (
@@ -899,241 +940,304 @@ export const RaceHudOverlay: React.FC<RaceHudOverlayProps> = ({
 
       {/* ==================== PINNED BOTTOM GAMEPAD BAR (HIDDEN DURING REPLAY MODE) ==================== */}
       {!hud.replay?.isActive && (
-      <div className="absolute bottom-2 inset-x-2 sm:bottom-3.5 sm:inset-x-4 z-10 flex items-end justify-between gap-2">
-        {/* BOTTOM-LEFT: Fixed-Size Virtual Analog Thumbstick */}
-        <div className="pointer-events-auto flex flex-col items-center gap-1 pl-0.5 sm:pl-1 shrink-0">
+      <div
+        className={`absolute bottom-2 inset-x-2 sm:bottom-3.5 sm:inset-x-4 z-10 flex items-end justify-between gap-2 ${
+          controlArcMode === 'swap_sides' ? 'flex-row-reverse' : 'flex-row'
+        }`}
+      >
+        {/* VIRTUAL ANALOG THUMBSTICK (100% Concentric Absolute Layers — Zero Tilt/Skew) */}
+        <div className="pointer-events-auto flex flex-col items-center gap-1 px-0.5 sm:px-1 shrink-0">
           <div
             ref={stickBaseRef}
             onPointerDown={handleStickPointerDown}
             onPointerMove={handleStickPointerMove}
             onPointerUp={handleStickPointerUp}
             onPointerCancel={handleStickPointerUp}
+            data-testid="virtual-joystick-base"
             aria-label="Virtual Analog Steering Thumbstick"
-            className={`relative w-24 h-24 sm:w-32 sm:h-32 shrink-0 rounded-full bg-[#2B2118]/85 border-3 shadow-2xl touch-none flex items-center justify-center cursor-grab active:cursor-grabbing transition-colors ${
-              isStickActive ? 'border-[#FDE047]' : 'border-[#FFFDF9]/50'
+            className={`relative w-28 h-28 sm:w-34 sm:h-34 shrink-0 rounded-full bg-[#2B2118]/90 border-3 shadow-2xl touch-none cursor-grab active:cursor-grabbing transition-colors ${
+              isStickActive ? 'border-[#FDE047]' : 'border-[#FFFDF9]/55'
             }`}
           >
-            <span className="pointer-events-none absolute top-1.5 text-[9px] font-black text-[#FDE047]/90">
+            {/* Subtle Centered Crosshair Axes */}
+            <div className="pointer-events-none absolute inset-x-4 top-1/2 -translate-y-1/2 h-[1.5px] bg-[#FFFDF9]/12 rounded-full" />
+            <div className="pointer-events-none absolute inset-y-4 left-1/2 -translate-x-1/2 w-[1.5px] bg-[#FFFDF9]/12 rounded-full" />
+
+            {/* Perfectly Centered Cardinal Direction Markers */}
+            <span className="pointer-events-none absolute top-1.5 left-1/2 -translate-x-1/2 text-[9px] leading-none font-black text-[#FDE047]/90">
               ▲
             </span>
-            <span className="pointer-events-none absolute bottom-1.5 text-[9px] font-black text-[#FDE047]/90">
+            <span className="pointer-events-none absolute bottom-1.5 left-1/2 -translate-x-1/2 text-[9px] leading-none font-black text-[#FDE047]/90">
               ▼
             </span>
-            <span className="pointer-events-none absolute left-2 text-[9px] font-black text-[#FDE047]/90">
+            <span className="pointer-events-none absolute left-1.5 top-1/2 -translate-y-1/2 text-[9px] leading-none font-black text-[#FDE047]/90">
               ◀
             </span>
-            <span className="pointer-events-none absolute right-2 text-[9px] font-black text-[#FDE047]/90">
+            <span className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 text-[9px] leading-none font-black text-[#FDE047]/90">
               ▶
             </span>
 
-            <div className="pointer-events-none w-14 h-14 sm:w-18 sm:h-18 rounded-full border-2 border-dashed border-[#FFFDF9]/25" />
+            {/* Perfectly Concentric Inner Dashed Ring (Absolute Centered) */}
+            <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 sm:w-20 sm:h-20 rounded-full border-2 border-dashed border-[#FFFDF9]/30" />
 
-            {/* Draggable Thumb Knob (Compositor-only transform) */}
+            {/* Draggable Thumb Knob (Absolute Dead-Center + Compositor translate3d) */}
             <div
-              className="pointer-events-none w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-gradient-to-b from-[#FDE047] to-[#F59E0B] border-2 border-[#2B2118] shadow-xl flex items-center justify-center will-change-transform"
+              data-testid="virtual-joystick-knob"
+              className="pointer-events-none absolute left-1/2 top-1/2 -ml-6 -mt-6 sm:-ml-7 sm:-mt-7 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-b from-[#FDE047] to-[#F59E0B] border-2 border-[#2B2118] shadow-xl flex items-center justify-center will-change-transform"
               style={{
                 transform: `translate3d(${knobOffset.x}px, ${knobOffset.y}px, 0)`,
               }}
             >
-              <div className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-[#FFFDF9]/85 border border-[#2B2118]/40" />
+              <div className="w-4 h-4 sm:w-4.5 sm:h-4.5 rounded-full bg-[#FFFDF9]/90 border border-[#2B2118]/40" />
             </div>
           </div>
 
-          <span className="px-2 py-0.5 rounded-full bg-[#2B2118]/90 text-[#FDE047] border border-[#1A130D] text-[8px] sm:text-[9px] font-black tracking-wide uppercase shadow whitespace-nowrap">
+          <span className="px-2.5 py-0.5 rounded-full bg-[#2B2118]/90 text-[#FDE047] border border-[#1A130D] text-[8px] sm:text-[9px] font-black tracking-wide uppercase shadow whitespace-nowrap">
             JOYSTICK / WASD
           </span>
         </div>
 
-        {/* CENTER-BOTTOM HINT PILL (Desktop only) */}
-        <div className="hidden xl:flex flex-col items-center pb-1">
-          <div className="px-3.5 py-1 rounded-full bg-[#2B2118]/80 text-[#FFFDF9] border border-[#1A130D] text-[11px] font-bold shadow-md whitespace-nowrap">
+        {/* CENTER-BOTTOM: LAYOUT MODE SWITCHER + DESKTOP HINT */}
+        <div className="pointer-events-auto flex flex-col items-center gap-1 pb-0.5">
+          <button
+            type="button"
+            onClick={() =>
+              setControlArcMode((prev) =>
+                prev === 'left_arc'
+                  ? 'right_arc'
+                  : prev === 'right_arc'
+                  ? 'swap_sides'
+                  : 'left_arc'
+              )
+            }
+            data-testid="hud-arc-layout-toggle"
+            title="Switch mobile button arc orientation or swap left/right sides"
+            className="px-2.5 py-0.5 rounded-full bg-[#2B2118]/85 hover:bg-[#3D3024] text-[#FDE047] border border-[#1A130D] text-[9px] sm:text-[10px] font-black tracking-wide shadow active:scale-95 transition-transform whitespace-nowrap"
+          >
+            {controlArcMode === 'left_arc'
+              ? '⇄ ARC: L-CORNER'
+              : controlArcMode === 'right_arc'
+              ? '⇄ ARC: R-CORNER'
+              : '⇄ ARC: SWAPPED'}
+          </button>
+          <div className="hidden xl:flex px-3.5 py-1 rounded-full bg-[#2B2118]/80 text-[#FFFDF9] border border-[#1A130D] text-[11px] font-bold shadow-md whitespace-nowrap">
             Swipe Screen to Rotate Camera · Click 3D Track for 360° Mouse Look (ESC to unlock)
           </div>
         </div>
 
-        {/* BOTTOM-RIGHT: LOCKED-GEOMETRY ACTION CLUSTER (Zero Layout Shift during Cooldown or Item Pickup) */}
-        <div className="pointer-events-auto flex flex-col items-end gap-2.5 pr-0.5 sm:pr-1 shrink-0">
-          {/* UPPER ARC ROW: [Q] ACTIVE SKILL + [E] PRANK ITEM */}
-          <div className="flex items-center gap-2.5 sm:gap-3 mr-2 sm:mr-3">
-            {/* SLOT 1: [Q] ACTIVE SKILL BUTTON (Fixed 60x60 / 68x68 box) */}
-            <div className="relative group w-[58px] h-[58px] sm:w-[68px] sm:h-[68px] shrink-0">
-              <button
-                type="button"
-                onPointerDown={(e) => {
-                  e.stopPropagation();
-                  onTriggerAction('q');
-                }}
-                disabled={hud.qCooldown > 0}
-                aria-label={`Active Skill ${activeSkill.name}`}
-                className={`relative w-full h-full rounded-2xl sm:rounded-3xl border-3 touch-none transition-transform duration-75 active:scale-95 will-change-transform flex flex-col items-center justify-center shadow-2xl ${
-                  hud.qCooldown <= 0
-                    ? 'bg-[#FFFDF9] border-[#2B2118] hover:bg-[#FEF3C7]'
-                    : 'bg-[#3D3024] border-[#1A130D]'
-                }`}
-              >
-                <span className="pointer-events-none absolute -top-1.5 -left-1.5 px-1.5 py-0.2 rounded-lg bg-[#2B2118] text-[#FDE047] border border-[#FFFDF9] text-[9px] sm:text-[10px] font-black shadow-xs">
-                  Q
-                </span>
+        {/* RADIAL ARC ACTION PAD: Large Corner Jump Button + 3 Evenly-Spaced Curved Satellites (Slap [F], Item [E], Skill [Q]) */}
+        <div
+          data-testid="radial-action-cluster"
+          className="pointer-events-auto relative w-[156px] h-[156px] sm:w-[180px] sm:h-[180px] shrink-0 select-none"
+        >
+          {/* Subtle Concentric Orbit Arc Guide Ring around the Jump Button */}
+          <div
+            className={`pointer-events-none absolute bottom-0 w-[136px] h-[136px] sm:w-[158px] sm:h-[158px] rounded-full border-2 border-dashed border-[#FFFDF9]/20 ${
+              controlArcMode === 'right_arc' ? 'right-0' : 'left-0'
+            }`}
+          />
 
-                <ActiveSkillEmblem skillId={selectedActiveSkillId} size={38} />
+          {/* ==================== SATELLITE 1 (ARC TOP / OUTER): [F] SIDEWAYS SLAP ==================== */}
+          <div
+            className={`absolute group w-[48px] h-[48px] sm:w-[56px] sm:h-[56px] ${
+              controlArcMode === 'right_arc'
+                ? 'bottom-[25px] right-[104px] sm:bottom-[29px] sm:right-[120px]'
+                : 'bottom-[104px] left-[25px] sm:bottom-[120px] sm:left-[29px]'
+            }`}
+          >
+            <button
+              type="button"
+              onPointerDown={(e) => {
+                e.stopPropagation();
+                onTriggerAction('f');
+              }}
+              disabled={hud.fCooldown > 0}
+              data-testid="race-btn-slap-f"
+              aria-label="Sideways Slap"
+              className={`relative w-full h-full rounded-full border-3 touch-none transition-transform duration-75 active:scale-95 will-change-transform flex flex-col items-center justify-center shadow-2xl ${
+                hud.fCooldown <= 0
+                  ? 'bg-[#C86D3B] hover:bg-[#D97706] border-[#2B2118]'
+                  : 'bg-[#3D3024] border-[#1A130D]'
+              }`}
+            >
+              <span className="pointer-events-none absolute -top-1 -left-1 px-1.5 py-0.1 rounded-full bg-[#2B2118] text-[#FDE047] border border-[#FFFDF9] text-[8px] sm:text-[9px] font-black shadow-xs">
+                F
+              </span>
 
-                {hud.qCooldown > 0 && (
-                  <div className="pointer-events-none absolute inset-0 rounded-2xl sm:rounded-3xl bg-black/70 flex items-center justify-center">
-                    <span className="text-xs sm:text-sm font-black text-[#FDE047] game-text-shadow tabular-nums">
-                      {hud.qCooldown.toFixed(1)}s
-                    </span>
-                  </div>
-                )}
+              <ActionButtonEmblem action="slap" size={28} />
 
-                <span
-                  className={`pointer-events-none absolute -bottom-2 px-2 py-0.2 rounded-full border border-[#2B2118] text-[8px] font-black uppercase whitespace-nowrap ${
-                    hud.qCooldown > 0
-                      ? 'bg-[#2B2118] text-[#FDE047]'
-                      : 'bg-[#84CC16] text-[#2B2118]'
-                  }`}
-                >
-                  SKILL
-                </span>
-              </button>
-
-              {/* Hover Tooltip for [Q] Skill */}
-              <div className="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150 absolute bottom-full right-0 mb-2.5 z-30 w-52 bg-[#2B2118] text-[#FFFDF9] border-2 border-[#FDE047] rounded-2xl p-2.5 shadow-2xl text-xs">
-                <div className="flex items-center justify-between font-black text-[#FDE047]">
-                  <span>[Q] {activeSkill.name}</span>
-                  <span className="text-[10px] bg-white/15 px-1.5 py-0.5 rounded tabular-nums">
-                    CD {activeSkill.cooldownSec}s
+              {hud.fCooldown > 0 && (
+                <div className="pointer-events-none absolute inset-0 rounded-full bg-black/70 flex items-center justify-center">
+                  <span className="text-[11px] sm:text-xs font-black text-[#FDE047] game-text-shadow tabular-nums">
+                    {hud.fCooldown.toFixed(1)}s
                   </span>
                 </div>
-                <p className="text-[11px] text-[#F3E8D6] mt-1 leading-snug">
-                  {activeSkill.activeDescription}
-                </p>
-              </div>
-            </div>
+              )}
 
-            {/* SLOT 2: [E] PRANK ITEM BUTTON (Fixed 58x58 / 68x68 box, no animate-pulse layout jitter) */}
-            <div className="relative group w-[58px] h-[58px] sm:w-[68px] sm:h-[68px] shrink-0">
-              <button
-                type="button"
-                onPointerDown={(e) => {
-                  e.stopPropagation();
-                  onTriggerAction('e');
-                }}
-                disabled={!heldItemSpec}
-                aria-label={
-                  heldItemSpec ? `Use ${heldItemSpec.name}` : 'Empty Item Slot'
-                }
-                className={`relative w-full h-full rounded-2xl sm:rounded-3xl border-3 touch-none transition-transform duration-75 active:scale-95 will-change-transform flex flex-col items-center justify-center shadow-2xl ${
-                  heldItemSpec
-                    ? 'bg-[#FEF08A] border-[#2B2118] hover:bg-[#FDE047]'
-                    : 'bg-[#2B2118]/90 border-[#1A130D]'
-                }`}
-              >
-                <span className="pointer-events-none absolute -top-1.5 -left-1.5 px-1.5 py-0.2 rounded-lg bg-[#2B2118] text-[#FFFDF9] border border-[#FFFDF9] text-[9px] sm:text-[10px] font-black shadow-xs">
-                  E
-                </span>
+              <span className="pointer-events-none absolute -bottom-2 px-1.5 py-0.1 rounded-full bg-[#FFFDF9] text-[#2B2118] border border-[#2B2118] text-[7px] sm:text-[8px] font-black uppercase whitespace-nowrap">
+                SLAP
+              </span>
+            </button>
 
-                <PrankItemEmblem itemId={hud.heldItem} size={38} />
-
-                <span
-                  className={`pointer-events-none absolute -bottom-2 px-2 py-0.2 rounded-full border border-[#2B2118] text-[8px] font-black uppercase whitespace-nowrap ${
-                    heldItemSpec
-                      ? 'bg-[#EF4444] text-white'
-                      : 'bg-[#3D3024] text-[#D8C5AC]'
-                  }`}
-                >
-                  {heldItemSpec ? 'USE!' : 'ITEM'}
-                </span>
-              </button>
-
-              {/* Hover Tooltip for [E] Item Slot */}
-              <div className="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150 absolute bottom-full right-0 mb-2.5 z-30 w-52 bg-[#2B2118] text-[#FFFDF9] border-2 border-[#F59E0B] rounded-2xl p-2.5 shadow-2xl text-xs">
-                <div className="font-black text-[#FDE047]">
-                  [E] {heldItemSpec ? heldItemSpec.name : 'Mystery Item Slot'}
-                </div>
-                <p className="text-[11px] text-[#F3E8D6] mt-1 leading-snug">
-                  {heldItemSpec
-                    ? heldItemSpec.description
-                    : 'Run through a spinning gold box on the track to grab a prank item!'}
-                </p>
-              </div>
+            {/* Hover Tooltip for [F] Slap */}
+            <div className="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150 absolute bottom-full right-0 mb-2.5 z-30 w-48 bg-[#2B2118] text-[#FFFDF9] border-2 border-[#C86D3B] rounded-2xl p-2.5 shadow-2xl text-xs">
+              <div className="font-black text-[#FDE047]">[F] Sideways Slap</div>
+              <p className="text-[11px] text-[#F3E8D6] mt-1 leading-snug">
+                Smack nearby rivals sideways off wooden bridges or into deep water!
+              </p>
             </div>
           </div>
 
-          {/* LOWER ARC ROW: [F] SIDEWAYS SLAP + PRIMARY GIANT [SPC] HOP BUTTON */}
-          <div className="flex items-end gap-2.5 sm:gap-3">
-            {/* SLOT 3: [F] SIDEWAYS SLAP BUTTON (Fixed 56x56 / 64x64 box) */}
-            <div className="relative group w-[56px] h-[56px] sm:w-[64px] sm:h-[64px] shrink-0">
-              <button
-                type="button"
-                onPointerDown={(e) => {
-                  e.stopPropagation();
-                  onTriggerAction('f');
-                }}
-                disabled={hud.fCooldown > 0}
-                aria-label="Sideways Slap"
-                className={`relative w-full h-full rounded-2xl sm:rounded-3xl border-3 touch-none transition-transform duration-75 active:scale-95 will-change-transform flex flex-col items-center justify-center shadow-2xl ${
-                  hud.fCooldown <= 0
-                    ? 'bg-[#C86D3B] hover:bg-[#D97706] border-[#2B2118]'
-                    : 'bg-[#3D3024] border-[#1A130D]'
+          {/* ==================== SATELLITE 2 (ARC MIDDLE 45°): [E] PRANK ITEM ==================== */}
+          <div
+            className={`absolute group w-[48px] h-[48px] sm:w-[56px] sm:h-[56px] ${
+              controlArcMode === 'right_arc'
+                ? 'bottom-[78px] right-[78px] sm:bottom-[90px] sm:right-[90px]'
+                : 'bottom-[78px] left-[78px] sm:bottom-[90px] sm:left-[90px]'
+            }`}
+          >
+            <button
+              type="button"
+              onPointerDown={(e) => {
+                e.stopPropagation();
+                onTriggerAction('e');
+              }}
+              disabled={!heldItemSpec}
+              data-testid="race-btn-item-e"
+              aria-label={
+                heldItemSpec ? `Use ${heldItemSpec.name}` : 'Empty Item Slot'
+              }
+              className={`relative w-full h-full rounded-full border-3 touch-none transition-transform duration-75 active:scale-95 will-change-transform flex flex-col items-center justify-center shadow-2xl ${
+                heldItemSpec
+                  ? 'bg-[#FEF08A] border-[#2B2118] hover:bg-[#FDE047]'
+                  : 'bg-[#2B2118]/90 border-[#1A130D]'
+              }`}
+            >
+              <span className="pointer-events-none absolute -top-1 -left-1 px-1.5 py-0.1 rounded-full bg-[#2B2118] text-[#FFFDF9] border border-[#FFFDF9] text-[8px] sm:text-[9px] font-black shadow-xs">
+                E
+              </span>
+
+              <PrankItemEmblem itemId={hud.heldItem} size={30} />
+
+              <span
+                className={`pointer-events-none absolute -bottom-2 px-1.5 py-0.1 rounded-full border border-[#2B2118] text-[7px] sm:text-[8px] font-black uppercase whitespace-nowrap ${
+                  heldItemSpec
+                    ? 'bg-[#EF4444] text-white'
+                    : 'bg-[#3D3024] text-[#D8C5AC]'
                 }`}
               >
-                <span className="pointer-events-none absolute -top-1.5 -left-1.5 px-1.5 py-0.2 rounded-lg bg-[#2B2118] text-[#FDE047] border border-[#FFFDF9] text-[9px] sm:text-[10px] font-black shadow-xs">
-                  F
-                </span>
+                {heldItemSpec ? 'USE!' : 'ITEM'}
+              </span>
+            </button>
 
-                <ActionButtonEmblem action="slap" size={34} />
-
-                {hud.fCooldown > 0 && (
-                  <div className="pointer-events-none absolute inset-0 rounded-2xl sm:rounded-3xl bg-black/70 flex items-center justify-center">
-                    <span className="text-xs sm:text-sm font-black text-[#FDE047] game-text-shadow tabular-nums">
-                      {hud.fCooldown.toFixed(1)}s
-                    </span>
-                  </div>
-                )}
-
-                <span className="pointer-events-none absolute -bottom-2 px-2 py-0.2 rounded-full bg-[#FFFDF9] text-[#2B2118] border border-[#2B2118] text-[8px] font-black uppercase whitespace-nowrap">
-                  SLAP
-                </span>
-              </button>
-
-              {/* Hover Tooltip for [F] Slap */}
-              <div className="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150 absolute bottom-full right-0 mb-2.5 z-30 w-48 bg-[#2B2118] text-[#FFFDF9] border-2 border-[#C86D3B] rounded-2xl p-2.5 shadow-2xl text-xs">
-                <div className="font-black text-[#FDE047]">[F] Sideways Slap</div>
-                <p className="text-[11px] text-[#F3E8D6] mt-1 leading-snug">
-                  Smack nearby rivals sideways off wooden bridges or into deep water!
-                </p>
+            {/* Hover Tooltip for [E] Item Slot */}
+            <div className="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150 absolute bottom-full right-0 mb-2.5 z-30 w-52 bg-[#2B2118] text-[#FFFDF9] border-2 border-[#F59E0B] rounded-2xl p-2.5 shadow-2xl text-xs">
+              <div className="font-black text-[#FDE047]">
+                [E] {heldItemSpec ? heldItemSpec.name : 'Mystery Item Slot'}
               </div>
+              <p className="text-[11px] text-[#F3E8D6] mt-1 leading-snug">
+                {heldItemSpec
+                  ? heldItemSpec.description
+                  : 'Run through a spinning gold box on the track to grab a prank item!'}
+              </p>
             </div>
+          </div>
 
-            {/* SLOT 4: PRIMARY [SPACE] HOP / JUMP ANCHOR BUTTON (Fixed 64x64 / 74x74 circle) */}
-            <div className="relative group w-[64px] h-[64px] sm:w-[74px] sm:h-[74px] shrink-0">
-              <button
-                type="button"
-                onPointerDown={(e) => {
-                  e.stopPropagation();
-                  onTriggerAction('jump');
-                }}
-                aria-label="Hop Jump"
-                className="relative w-full h-full rounded-full border-3 border-[#2B2118] bg-[#84CC16] hover:bg-[#A3E635] active:scale-95 touch-none transition-transform duration-75 will-change-transform flex flex-col items-center justify-center shadow-2xl"
+          {/* ==================== SATELLITE 3 (ARC END): [Q] ACTIVE SKILL ==================== */}
+          <div
+            className={`absolute group w-[48px] h-[48px] sm:w-[56px] sm:h-[56px] ${
+              controlArcMode === 'right_arc'
+                ? 'bottom-[104px] right-[25px] sm:bottom-[120px] sm:right-[29px]'
+                : 'bottom-[25px] left-[104px] sm:bottom-[29px] sm:left-[120px]'
+            }`}
+          >
+            <button
+              type="button"
+              onPointerDown={(e) => {
+                e.stopPropagation();
+                onTriggerAction('q');
+              }}
+              disabled={hud.qCooldown > 0}
+              data-testid="race-btn-skill-q"
+              aria-label={`Active Skill ${activeSkill.name}`}
+              className={`relative w-full h-full rounded-full border-3 touch-none transition-transform duration-75 active:scale-95 will-change-transform flex flex-col items-center justify-center shadow-2xl ${
+                hud.qCooldown <= 0
+                  ? 'bg-[#FFFDF9] border-[#2B2118] hover:bg-[#FEF3C7]'
+                  : 'bg-[#3D3024] border-[#1A130D]'
+              }`}
+            >
+              <span className="pointer-events-none absolute -top-1 -left-1 px-1.5 py-0.1 rounded-full bg-[#2B2118] text-[#FDE047] border border-[#FFFDF9] text-[8px] sm:text-[9px] font-black shadow-xs">
+                Q
+              </span>
+
+              <ActiveSkillEmblem skillId={selectedActiveSkillId} size={30} />
+
+              {hud.qCooldown > 0 && (
+                <div className="pointer-events-none absolute inset-0 rounded-full bg-black/70 flex items-center justify-center">
+                  <span className="text-[11px] sm:text-xs font-black text-[#FDE047] game-text-shadow tabular-nums">
+                    {hud.qCooldown.toFixed(1)}s
+                  </span>
+                </div>
+              )}
+
+              <span
+                className={`pointer-events-none absolute -bottom-2 px-1.5 py-0.1 rounded-full border border-[#2B2118] text-[7px] sm:text-[8px] font-black uppercase whitespace-nowrap ${
+                  hud.qCooldown > 0
+                    ? 'bg-[#2B2118] text-[#FDE047]'
+                    : 'bg-[#84CC16] text-[#2B2118]'
+                }`}
               >
-                <span className="pointer-events-none absolute -top-1.5 -left-1 px-1.5 py-0.2 rounded-lg bg-[#2B2118] text-[#A3E635] border border-[#FFFDF9] text-[8px] sm:text-[9px] font-black shadow-xs">
-                  SPC
+                SKILL
+              </span>
+            </button>
+
+            {/* Hover Tooltip for [Q] Skill */}
+            <div className="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150 absolute bottom-full right-0 mb-2.5 z-30 w-52 bg-[#2B2118] text-[#FFFDF9] border-2 border-[#FDE047] rounded-2xl p-2.5 shadow-2xl text-xs">
+              <div className="flex items-center justify-between font-black text-[#FDE047]">
+                <span>[Q] {activeSkill.name}</span>
+                <span className="text-[10px] bg-white/15 px-1.5 py-0.5 rounded tabular-nums">
+                  CD {activeSkill.cooldownSec}s
                 </span>
-
-                <ActionButtonEmblem action="hop" size={40} />
-
-                <span className="pointer-events-none absolute -bottom-2 px-2 py-0.2 rounded-full bg-[#FFFDF9] text-[#2B2118] border border-[#2B2118] text-[8px] sm:text-[9px] font-black uppercase whitespace-nowrap">
-                  HOP
-                </span>
-              </button>
-
-              {/* Hover Tooltip for [Space] Hop */}
-              <div className="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150 absolute bottom-full right-0 mb-2.5 z-30 w-48 bg-[#2B2118] text-[#FFFDF9] border-2 border-[#84CC16] rounded-2xl p-2.5 shadow-2xl text-xs">
-                <div className="font-black text-[#A3E635]">[Space] Hop Jump</div>
-                <p className="text-[11px] text-[#F3E8D6] mt-1 leading-snug">
-                  Hop across deep river stepping stones, spinning logs &amp; slime!
-                </p>
               </div>
+              <p className="text-[11px] text-[#F3E8D6] mt-1 leading-snug">
+                {activeSkill.activeDescription}
+              </p>
+            </div>
+          </div>
+
+          {/* ==================== PRIMARY GIANT CORNER ANCHOR: [SPACE] HOP / JUMP BUTTON ==================== */}
+          <div
+            className={`absolute bottom-0 group w-[80px] h-[80px] sm:w-[92px] sm:h-[92px] ${
+              controlArcMode === 'right_arc' ? 'right-0' : 'left-0'
+            }`}
+          >
+            <button
+              type="button"
+              onPointerDown={(e) => {
+                e.stopPropagation();
+                onTriggerAction('jump');
+              }}
+              data-testid="race-btn-hop-jump"
+              aria-label="Hop Jump"
+              className="relative w-full h-full rounded-full border-4 border-[#2B2118] bg-gradient-to-b from-[#A3E635] to-[#65A30D] hover:from-[#BEF264] hover:to-[#84CC16] active:scale-95 touch-none transition-transform duration-75 will-change-transform flex flex-col items-center justify-center shadow-2xl"
+            >
+              <span className="pointer-events-none absolute -top-1 left-1 px-1.5 py-0.2 rounded-full bg-[#2B2118] text-[#A3E635] border border-[#FFFDF9] text-[8px] sm:text-[9px] font-black shadow-xs">
+                SPC
+              </span>
+
+              <ActionButtonEmblem action="hop" size={48} />
+
+              <span className="pointer-events-none absolute -bottom-2 px-2.5 py-0.5 rounded-full bg-[#FFFDF9] text-[#2B2118] border-2 border-[#2B2118] text-[9px] sm:text-[10px] font-black uppercase tracking-wide whitespace-nowrap shadow">
+                HOP
+              </span>
+            </button>
+
+            {/* Hover Tooltip for [Space] Hop */}
+            <div className="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150 absolute bottom-full right-0 mb-2.5 z-30 w-48 bg-[#2B2118] text-[#FFFDF9] border-2 border-[#84CC16] rounded-2xl p-2.5 shadow-2xl text-xs">
+              <div className="font-black text-[#A3E635]">[Space] Hop Jump</div>
+              <p className="text-[11px] text-[#F3E8D6] mt-1 leading-snug">
+                Hop across deep river stepping stones, spinning logs &amp; slime!
+              </p>
             </div>
           </div>
         </div>
