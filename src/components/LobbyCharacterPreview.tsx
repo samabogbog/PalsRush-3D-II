@@ -219,7 +219,11 @@ export const LobbyCharacterPreview: React.FC<LobbyCharacterPreviewProps> = ({
       }
 
       if (activeRig) {
-        attachEquipmentToCharacterRig(activeRig, stateRef.current.loadout);
+        // Omit floor-ring aura in the pure white 3D preview so no ring/pedestal appears under the feet
+        const cleanPreviewLoadout = stateRef.current.loadout
+          ? { ...stateRef.current.loadout, aura: null }
+          : undefined;
+        attachEquipmentToCharacterRig(activeRig, cleanPreviewLoadout);
         activeLoadoutKey = targetLoadoutKey;
       }
     };
@@ -333,70 +337,19 @@ export const LobbyCharacterPreview: React.FC<LobbyCharacterPreviewProps> = ({
         className="absolute inset-0 z-0 w-full h-full bg-white"
       />
 
-      {/* Top Floating Overlay: Character Number, Name, Zoom +/- & 360° Toggle */}
-      <div className="pointer-events-none absolute top-2 inset-x-2.5 z-10 flex items-start justify-between gap-2">
-        <div className="min-w-0 bg-white/90 backdrop-blur-xs border-2 border-[#2B2118] rounded-xl px-2.5 py-1 shadow-sm">
-          <div className="flex items-center gap-1.5">
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-full bg-[#F59E0B] text-[#2B2118] text-[9px] sm:text-[10px] font-black uppercase tracking-wider">
-              <Sparkles className="w-2.5 h-2.5" />
-              <span>#{character.index + 1}</span>
-            </span>
-            <h3 className="text-xs sm:text-sm font-black text-[#2B2118] leading-tight truncate">
-              {character.name}
-            </h3>
-          </div>
-          <p className="hidden md:block text-[10px] font-bold text-[#6E5844] leading-snug truncate mt-0.5">
-            {character.accessory}
-          </p>
-        </div>
+      {/* LEFT SIDE EDGE: Mini Character Index Badge (top-left) + Compact Vertical Pose Switcher (bottom-left) */}
+      <div className="pointer-events-none absolute left-1.5 inset-y-1.5 z-10 flex flex-col justify-between items-start">
+        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-lg bg-[#F59E0B]/95 text-[#2B2118] border border-[#2B2118] text-[9px] font-black uppercase tracking-wider shadow-2xs">
+          <Sparkles className="w-2.5 h-2.5" />
+          <span>#{character.index + 1}</span>
+        </span>
 
-        <div className="pointer-events-auto flex items-center gap-1 shrink-0">
-          <button
-            type="button"
-            onClick={() => {
-              zoomDeltaRef.current = -0.55;
-            }}
-            title="Zoom In"
-            aria-label="Zoom In 3D Model"
-            className="p-1.5 rounded-xl border-2 border-[#2B2118] bg-white/90 hover:bg-[#FEF3C7] text-[#2B2118] shadow-xs transition-colors cursor-pointer"
-          >
-            <ZoomIn className="w-3.5 h-3.5" />
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              zoomDeltaRef.current = 0.55;
-            }}
-            title="Zoom Out"
-            aria-label="Zoom Out 3D Model"
-            className="p-1.5 rounded-xl border-2 border-[#2B2118] bg-white/90 hover:bg-[#FEF3C7] text-[#2B2118] shadow-xs transition-colors cursor-pointer"
-          >
-            <ZoomOut className="w-3.5 h-3.5" />
-          </button>
-          {/* Turntable Auto-Sway Toggle */}
-          <button
-            type="button"
-            onClick={() => setAutoRotate((prev) => !prev)}
-            title="Toggle Auto-Sway / Drag 3D Model to Rotate"
-            className={`px-2 py-1 rounded-xl border-2 text-[10px] font-black flex items-center gap-1 transition-colors shrink-0 shadow-xs cursor-pointer ${
-              autoRotate
-                ? 'bg-[#84CC16] text-[#2B2118] border-[#2B2118]'
-                : 'bg-white/90 text-[#2B2118] border-[#2B2118] hover:bg-[#F5EDE0]'
-            }`}
-          >
-            <RotateCw className="w-3 h-3" />
-            <span>360°</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Bottom Floating Overlay: Pose Switcher Pills */}
-      <div className="pointer-events-none absolute bottom-2 inset-x-2.5 z-10 flex items-center justify-center">
-        <div className="pointer-events-auto inline-flex items-center gap-1 bg-white/90 backdrop-blur-xs border-2 border-[#2B2118] rounded-xl p-1 shadow-sm">
+        {/* Compact Vertical Pose Strip tucked on the bottom-left side */}
+        <div className="pointer-events-auto flex flex-col gap-0.5 bg-white/90 backdrop-blur-xs border border-[#2B2118] rounded-lg p-0.5 shadow-2xs">
           {[
             { id: 'cool' as const, label: 'COOL' },
             { id: 'jump' as const, label: 'HOP' },
-            { id: 'run' as const, label: 'SPRINT' },
+            { id: 'run' as const, label: 'RUN' },
           ].map((p) => {
             const active = previewPose === p.id;
             return (
@@ -407,9 +360,9 @@ export const LobbyCharacterPreview: React.FC<LobbyCharacterPreviewProps> = ({
                   setPreviewPose(p.id);
                   setCheerCount((c) => c + 1);
                 }}
-                className={`px-2.5 py-0.5 rounded-lg text-[10px] sm:text-[11px] font-black border transition-colors cursor-pointer ${
+                className={`px-1.5 py-0.5 rounded text-[8px] sm:text-[9px] leading-tight font-black border transition-colors cursor-pointer ${
                   active
-                    ? 'bg-[#FDE047] text-[#2B2118] border-[#2B2118] shadow-2xs'
+                    ? 'bg-[#FDE047] text-[#2B2118] border-[#2B2118]'
                     : 'bg-transparent text-[#5A4635] border-transparent hover:bg-[#F5EDE0]'
                 }`}
               >
@@ -417,6 +370,50 @@ export const LobbyCharacterPreview: React.FC<LobbyCharacterPreviewProps> = ({
               </button>
             );
           })}
+        </div>
+      </div>
+
+      {/* RIGHT SIDE EDGE: Compact Vertical Camera Tools (360°, Zoom +, Zoom -) */}
+      <div className="pointer-events-none absolute right-1.5 inset-y-1.5 z-10 flex flex-col justify-between items-end">
+        <div className="pointer-events-auto flex flex-col items-end gap-1">
+          {/* Turntable Auto-Sway Toggle */}
+          <button
+            type="button"
+            onClick={() => setAutoRotate((prev) => !prev)}
+            title="Toggle Auto-Sway / Drag 3D Model to Rotate"
+            className={`h-6 px-1.5 rounded-lg border text-[8px] sm:text-[9px] font-black flex items-center gap-0.5 transition-colors shadow-2xs cursor-pointer ${
+              autoRotate
+                ? 'bg-[#84CC16] text-[#2B2118] border-[#2B2118]'
+                : 'bg-white/90 text-[#2B2118] border-[#2B2118] hover:bg-[#F5EDE0]'
+            }`}
+          >
+            <RotateCw className="w-2.5 h-2.5" />
+            <span>360°</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              zoomDeltaRef.current = -0.55;
+            }}
+            title="Zoom In"
+            aria-label="Zoom In 3D Model"
+            className="w-6 h-6 rounded-lg border border-[#2B2118] bg-white/90 hover:bg-[#FEF3C7] text-[#2B2118] flex items-center justify-center shadow-2xs transition-colors cursor-pointer"
+          >
+            <ZoomIn className="w-3 h-3" />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              zoomDeltaRef.current = 0.55;
+            }}
+            title="Zoom Out"
+            aria-label="Zoom Out 3D Model"
+            className="w-6 h-6 rounded-lg border border-[#2B2118] bg-white/90 hover:bg-[#FEF3C7] text-[#2B2118] flex items-center justify-center shadow-2xs transition-colors cursor-pointer"
+          >
+            <ZoomOut className="w-3 h-3" />
+          </button>
         </div>
       </div>
     </div>

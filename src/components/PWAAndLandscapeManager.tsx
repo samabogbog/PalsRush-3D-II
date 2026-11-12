@@ -94,7 +94,7 @@ export async function requestLandscapeFullscreen(): Promise<boolean> {
   try {
     if (!document.fullscreenElement) {
       if (docEl.requestFullscreen) {
-        await docEl.requestFullscreen();
+        await docEl.requestFullscreen({ navigationUI: 'hide' });
       } else if (docEl.webkitRequestFullscreen) {
         await docEl.webkitRequestFullscreen();
       }
@@ -307,6 +307,28 @@ export const MobileViewportAndLandscapeGuard: React.FC = () => {
       }
     };
 
+    // Immediately attempt fullscreen on load, and automatically enter fullscreen on the very first touch/tap/click anywhere
+    requestLandscapeFullscreen().catch(() => {});
+
+    const autoEnterFullscreenOnFirstGesture = () => {
+      if (!document.fullscreenElement) {
+        requestLandscapeFullscreen().catch(() => {});
+      }
+    };
+
+    document.addEventListener('pointerdown', autoEnterFullscreenOnFirstGesture, {
+      capture: true,
+      passive: true,
+    });
+    document.addEventListener('touchstart', autoEnterFullscreenOnFirstGesture, {
+      capture: true,
+      passive: true,
+    });
+    document.addEventListener('click', autoEnterFullscreenOnFirstGesture, {
+      capture: true,
+      passive: true,
+    });
+
     document.addEventListener('gesturestart', preventZoomGesture, {
       passive: false,
     });
@@ -324,6 +346,19 @@ export const MobileViewportAndLandscapeGuard: React.FC = () => {
     return () => {
       window.removeEventListener('resize', checkOrientation);
       window.removeEventListener('orientationchange', checkOrientation);
+      document.removeEventListener(
+        'pointerdown',
+        autoEnterFullscreenOnFirstGesture,
+        { capture: true }
+      );
+      document.removeEventListener(
+        'touchstart',
+        autoEnterFullscreenOnFirstGesture,
+        { capture: true }
+      );
+      document.removeEventListener('click', autoEnterFullscreenOnFirstGesture, {
+        capture: true,
+      });
       document.removeEventListener('gesturestart', preventZoomGesture);
       document.removeEventListener('gesturechange', preventZoomGesture);
       document.removeEventListener('gestureend', preventZoomGesture);

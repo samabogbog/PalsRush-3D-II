@@ -334,7 +334,7 @@ export const PrankItemEmblem: React.FC<{
 };
 
 /**
- * Core Arcade Action Button Emblem (`[F] Slap` & `[Space] Hop` PNG icons from PR #1).
+ * Core Arcade Action Button Emblem (`[F] Wooden Club Slap` & `[Space] Hop`).
  */
 export const ActionButtonEmblem: React.FC<{
   action: 'slap' | 'hop';
@@ -342,17 +342,218 @@ export const ActionButtonEmblem: React.FC<{
   className?: string;
 }> = ({ action, size = 28, className = '' }) => {
   const [missing, setMissing] = useState(false);
+
+  if (action === 'slap') {
+    return (
+      <svg
+        width={size}
+        height={size}
+        viewBox="0 0 48 48"
+        fill="none"
+        role="img"
+        aria-label="Wooden Club Slap"
+        className={`shrink-0 drop-shadow-xs select-none ${className}`}
+      >
+        {/* Spiky Comic Starburst Behind Club */}
+        <polygon
+          points="24,3 29,13 40,8 35,19 45,24 35,29 40,40 29,35 24,45 19,35 8,40 13,29 3,24 13,19 8,8 19,13"
+          fill="#FACC15"
+          stroke="#14110D"
+          strokeWidth="2.8"
+          strokeLinejoin="round"
+        />
+        {/* Wooden Club (ไม้กระบอง) angled diagonally */}
+        <g transform="rotate(-38 24 24)">
+          <rect
+            x="21"
+            y="29"
+            width="6"
+            height="11"
+            rx="2.5"
+            fill="#FEF3C7"
+            stroke="#14110D"
+            strokeWidth="2.5"
+          />
+          <path
+            d="M19,29 L16,10 C16,5 32,5 32,10 L29,29 Z"
+            fill="#B45309"
+            stroke="#14110D"
+            strokeWidth="2.8"
+            strokeLinejoin="round"
+          />
+          <circle cx="19" cy="14" r="2.2" fill="#FDE68A" stroke="#14110D" strokeWidth="1.5" />
+          <circle cx="29" cy="17" r="2.2" fill="#FDE68A" stroke="#14110D" strokeWidth="1.5" />
+          <circle cx="23" cy="11" r="2" fill="#FDE68A" stroke="#14110D" strokeWidth="1.5" />
+        </g>
+      </svg>
+    );
+  }
+
   if (missing) return null;
 
   return (
     <img
       src={ACTION_ICON_PATHS[action]}
-      alt={action === 'slap' ? 'Sideways Slap' : 'Hop Jump'}
+      alt="Hop Jump"
       width={size}
       height={size}
       onError={() => setMissing(true)}
       className={`shrink-0 object-contain drop-shadow-xs ${className}`}
     />
+  );
+};
+
+/**
+ * Comic-Book Pop-Art "SLAP!" Starburst Graphic (matching the user's reference images).
+ */
+export const ComicSlapPopBurstSvg: React.FC<{
+  size?: number;
+  className?: string;
+}> = ({ size = 168, className = '' }) => {
+  return (
+    <svg
+      width={size}
+      height={size * 0.78}
+      viewBox="0 0 320 250"
+      fill="none"
+      role="img"
+      aria-label="SLAP! Comic Effect"
+      className={`select-none pointer-events-none drop-shadow-2xl ${className}`}
+    >
+      <defs>
+        <linearGradient id="slapYellowBurst" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#FEF08A" />
+          <stop offset="55%" stopColor="#FACC15" />
+          <stop offset="100%" stopColor="#F97316" />
+        </linearGradient>
+        <linearGradient id="slapMagentaBurst" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#EC4899" />
+          <stop offset="100%" stopColor="#BE185D" />
+        </linearGradient>
+        <linearGradient id="slapCyanLetters" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#7DD3FC" />
+          <stop offset="45%" stopColor="#38BDF8" />
+          <stop offset="100%" stopColor="#0284C7" />
+        </linearGradient>
+        <linearGradient id="slapRedLetters" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#FB923C" />
+          <stop offset="50%" stopColor="#EF4444" />
+          <stop offset="100%" stopColor="#B91C1C" />
+        </linearGradient>
+      </defs>
+
+      {/* Radial Black Comic Action Speed Lines */}
+      <g stroke="#14110D" strokeLinecap="round">
+        <line x1="56" y1="42" x2="26" y2="16" strokeWidth="4.5" />
+        <line x1="72" y1="34" x2="52" y2="12" strokeWidth="3.5" />
+        <line x1="142" y1="28" x2="136" y2="4" strokeWidth="4.5" />
+        <line x1="154" y1="28" x2="152" y2="10" strokeWidth="3.5" />
+        <line x1="220" y1="40" x2="268" y2="12" strokeWidth="4.5" />
+        <line x1="226" y1="48" x2="256" y2="30" strokeWidth="3.5" />
+        <line x1="48" y1="158" x2="18" y2="178" strokeWidth="4.5" />
+        <line x1="258" y1="172" x2="288" y2="192" strokeWidth="4.5" />
+        <line x1="252" y1="180" x2="274" y2="195" strokeWidth="3.5" />
+        <line x1="145" y1="194" x2="135" y2="242" strokeWidth="4.5" />
+        <line x1="156" y1="194" x2="150" y2="230" strokeWidth="3.5" />
+      </g>
+
+      {/* Outer Spiky Yellow-Orange Starburst with White Halo & Thick Black Rim */}
+      <polygon
+        points="158,14 176,56 218,26 208,72 268,46 236,92 298,108 244,132 282,168 228,162 246,214 196,176 172,226 146,180 112,218 106,172 56,204 82,150 28,146 76,114 34,76 88,82 72,34 122,68"
+        fill="url(#slapYellowBurst)"
+        stroke="#FFFFFF"
+        strokeWidth="11"
+        strokeLinejoin="round"
+      />
+      <polygon
+        points="158,14 176,56 218,26 208,72 268,46 236,92 298,108 244,132 282,168 228,162 246,214 196,176 172,226 146,180 112,218 106,172 56,204 82,150 28,146 76,114 34,76 88,82 72,34 122,68"
+        fill="url(#slapYellowBurst)"
+        stroke="#14110D"
+        strokeWidth="5.5"
+        strokeLinejoin="round"
+      />
+
+      {/* Inner Spiky Magenta / Crimson Comic Impact Burst */}
+      <polygon
+        points="156,42 174,76 212,52 198,92 244,82 212,116 252,142 204,146 216,186 174,158 148,196 132,158 92,182 108,140 68,128 110,104 88,64 134,84"
+        fill="url(#slapMagentaBurst)"
+        stroke="#14110D"
+        strokeWidth="4"
+        strokeLinejoin="round"
+      />
+
+      {/* Bold Tilted 3D Comic-Book "SLAP!" Lettering */}
+      <g transform="translate(162, 134) rotate(-10)">
+        {/* Deep 3D Black Extrusion Block Shadow */}
+        <text
+          x="8"
+          y="10"
+          textAnchor="middle"
+          dominantBaseline="central"
+          fontFamily="'Boogaloo', 'Fredoka', Impact, sans-serif"
+          fontWeight="900"
+          fontSize="88"
+          letterSpacing="2"
+          fill="#0F0A07"
+          stroke="#0F0A07"
+          strokeWidth="18"
+          strokeLinejoin="round"
+        >
+          SLAP!
+        </text>
+        {/* Lime-Green Comic 3D Side Bevel */}
+        <text
+          x="-4"
+          y="5"
+          textAnchor="middle"
+          dominantBaseline="central"
+          fontFamily="'Boogaloo', 'Fredoka', Impact, sans-serif"
+          fontWeight="900"
+          fontSize="88"
+          letterSpacing="2"
+          fill="#4ADE80"
+          stroke="#0F0A07"
+          strokeWidth="14"
+          strokeLinejoin="round"
+        >
+          SLAP!
+        </text>
+        {/* Main Glossy Cyan & Red-Orange Comic Text */}
+        <text
+          x="0"
+          y="0"
+          textAnchor="middle"
+          dominantBaseline="central"
+          fontFamily="'Boogaloo', 'Fredoka', Impact, sans-serif"
+          fontWeight="900"
+          fontSize="88"
+          letterSpacing="2"
+          fill="url(#slapCyanLetters)"
+          stroke="#0F0A07"
+          strokeWidth="11"
+          strokeLinejoin="round"
+        >
+          SLAP!
+        </text>
+        {/* Glossy White Comic Highlight */}
+        <text
+          x="-2"
+          y="-3"
+          textAnchor="middle"
+          dominantBaseline="central"
+          fontFamily="'Boogaloo', 'Fredoka', Impact, sans-serif"
+          fontWeight="900"
+          fontSize="88"
+          letterSpacing="2"
+          fill="none"
+          stroke="rgba(255,255,255,0.65)"
+          strokeWidth="2.2"
+          strokeLinejoin="round"
+        >
+          SLAP!
+        </text>
+      </g>
+    </svg>
   );
 };
 

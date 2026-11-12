@@ -11,6 +11,7 @@ import {
   PASSIVE_SKILLS,
   PassiveSkillId,
 } from '../models/characterTypes';
+import { cuteAudio } from '../utils/cuteAudioEngine';
 
 export type TrackId = 'woodland' | 'snow_glacier';
 
@@ -1154,6 +1155,12 @@ export interface ShockwaveEffect {
   age: number;
   maxAge: number;
   maxRadius: number;
+  kind?: 'slap' | 'shockwave' | 'ice_blast';
+  yaw?: number;
+  hitCount?: number;
+  hitX?: number;
+  hitY?: number;
+  hitZ?: number;
 }
 
 function buildSlimePads(): SlimePadSpec[] {
@@ -1588,6 +1595,9 @@ export function activateRacerSkillQ(
   const skill = ACTIVE_SKILLS[racer.activeSkillId];
   racer.qCooldown = skill.cooldownSec;
   racer.pokeImpulse = 0.85;
+  if (racer.isPlayer) {
+    cuteAudio.playSkillActivate();
+  }
 
   if (racer.activeSkillId === 'dash') {
     racer.dashTimer = skill.durationSec;
@@ -1697,6 +1707,9 @@ export function activateRacerItemE(
   const item = racer.heldItem;
   racer.heldItem = null;
   racer.pokeImpulse = 0.8;
+  if (racer.isPlayer) {
+    cuteAudio.playItemUse();
+  }
   const luckyMult = racer.passiveSkillId === 'lucky_magnet' ? 1.3 : 1.0;
 
   const fwdX = -Math.sin(racer.yaw);
@@ -1813,29 +1826,41 @@ export function activateRacerSlapF(
     return false;
   }
   racer.fCooldown = 1.35;
-  racer.slapAnimTimer = 0.35;
-  racer.pokeImpulse = 0.9;
+  racer.slapAnimTimer = 0.42;
+  racer.pokeImpulse = 0.95;
+
+  if (racer.isPlayer) {
+    cuteAudio.playClubSwing();
+  }
 
   const reach = racer.passiveSkillId === 'slime_boots' ? 3.3 : 2.75;
-  state.shockwaves.push({
-    id: `slap_${Date.now()}_${racer.id}`,
-    x: racer.x,
-    y: racer.y,
-    z: racer.z,
-    colorHex: '#F97316',
-    age: 0,
-    maxAge: 0.28,
-    maxRadius: reach,
-  });
+  const fwdX = -Math.sin(racer.yaw);
+  const fwdZ = -Math.cos(racer.yaw);
 
   let hitAny = false;
+  let hitCount = 0;
+  let hitX = racer.x + fwdX * 1.45;
+  let hitY = racer.y + 1.45;
+  let hitZ = racer.z + fwdZ * 1.45;
+
   for (const other of state.racers) {
     if (other.id === racer.id || other.finished) continue;
     const dx = other.x - racer.x;
     const dz = other.z - racer.z;
     const dist = Math.hypot(dx, dz);
-    if (dist <= reach) {
+    if (dist <= reach && dist > 0.0001) {
+      // Strict 180-degree front hemisphere check: only hit targets in front of the racer (-90° to +90°)
+      const forwardDot = (dx / dist) * fwdX + (dz / dist) * fwdZ;
+      if (forwardDot < -0.02) {
+        continue;
+      }
+
       hitAny = true;
+      hitCount++;
+      hitX = other.x;
+      hitY = other.y + 1.55;
+      hitZ = other.z;
+
       if (other.shieldTimer > 0) {
         other.shieldTimer = 0;
         other.hazardCooldown = 0.5;
@@ -1870,21 +1895,40 @@ export function activateRacerSlapF(
       racer.slapsLanded += 1;
 
       if (racer.isPlayer || other.isPlayer) {
+        cuteAudio.playSlapHit();
         pushEvent(
           state,
-          `👋 ${racer.spec.shortName} slapped ${other.spec.shortName} sideways!`,
+          `🏏 ${racer.spec.shortName} club-slapped ${other.spec.shortName} sideways!`,
           '#F97316'
         );
       }
       if (racer.isPlayer) {
         state.bannerCallout = {
-          text: `SLAPPED ${other.spec.shortName.toUpperCase()} SIDEWAYS!`,
+          text: `SLAP! CLUBBED ${other.spec.shortName.toUpperCase()}!`,
           colorHex: '#F97316',
           ttl: 1.0,
         };
       }
     }
   }
+
+  state.shockwaves.push({
+    id: `slap_${Date.now()}_${racer.id}`,
+    x: racer.x,
+    y: racer.y,
+    z: racer.z,
+    colorHex: '#F97316',
+    age: 0,
+    maxAge: 0.48,
+    maxRadius: reach,
+    kind: 'slap',
+    yaw: racer.yaw,
+    hitCount,
+    hitX,
+    hitY,
+    hitZ,
+  });
+
   return hitAny;
 }
 
@@ -1917,10 +1961,16 @@ export function stepRaceSimulation(
   }
 
   if (state.phase === 'countdown') {
+    const prevCeil = Math.ceil(state.countdownSec);
     state.countdownSec -= clampedDt;
+    const nextCeil = Math.ceil(state.countdownSec);
+    if (state.countdownSec > 0 && nextCeil < prevCeil) {
+      cuteAudio.playCountdownBeep(false);
+    }
     if (state.countdownSec <= 0) {
       state.countdownSec = 0;
       state.phase = 'racing';
+      cuteAudio.playCountdownBeep(true);
       state.bannerCallout = {
         text: 'GO! GO! GO!',
         colorHex: '#84CC16',
@@ -2255,6 +2305,7 @@ export function stepRaceSimulation(
         const jumpMult = r.passiveSkillId === 'feather_hop' ? 1.22 : 1.0;
         r.vy = 11.4 * jumpMult;
         r.y = r.groundY + 0.08;
+        cuteAudio.playJump();
       }
 
       if (r.stunTimer <= 0) {
@@ -2269,15 +2320,14 @@ export function stepRaceSimulation(
           camFwdZ * playerInput.moveForward + camRightZ * playerInput.moveRight;
         const mag = Math.hypot(rawX, rawZ);
         if (mag > 0.02) {
-          const analogThrottle = Math.min(1, Math.max(0.4, mag));
-          moveDirX = (rawX / mag) * analogThrottle;
-          moveDirZ = (rawZ / mag) * analogThrottle;
+          moveDirX = rawX / mag;
+          moveDirZ = rawZ / mag;
           if (r.whirlwindTimer <= 0) {
-            const targetYaw = Math.atan2(-rawX, -rawZ);
+            const targetYaw = Math.atan2(-moveDirX, -moveDirZ);
             let diff = targetYaw - r.yaw;
             while (diff > Math.PI) diff -= Math.PI * 2;
             while (diff < -Math.PI) diff += Math.PI * 2;
-            r.yaw += diff * Math.min(1, clampedDt * 15.0);
+            r.yaw += diff * Math.min(1, clampedDt * 18.0);
           }
         }
       }
@@ -2429,8 +2479,18 @@ export function stepRaceSimulation(
         !currentProj.isDeepWaterHazard &&
         Math.random() < 0.03
       ) {
+        const botFwdX = -Math.sin(r.yaw);
+        const botFwdZ = -Math.cos(r.yaw);
         for (const other of state.racers) {
-          if (other.id !== r.id && Math.hypot(other.x - r.x, other.z - r.z) < 2.2) {
+          if (other.id === r.id || other.finished) continue;
+          const bdx = other.x - r.x;
+          const bdz = other.z - r.z;
+          const bdist = Math.hypot(bdx, bdz);
+          if (
+            bdist < 2.2 &&
+            bdist > 0.01 &&
+            (bdx / bdist) * botFwdX + (bdz / bdist) * botFwdZ >= 0
+          ) {
             activateRacerSlapF(state, r);
             break;
           }
@@ -2442,8 +2502,9 @@ export function stepRaceSimulation(
     const isAirborne = r.y > r.groundY + 0.12;
     const targetVx = r.stunTimer > 0 ? 0 : moveDirX * topSpeed;
     const targetVz = r.stunTimer > 0 ? 0 : moveDirZ * topSpeed;
-    const groundAccel = currentProj.surfaceType === 'ice' ? 7.8 : 12.5;
-    const accel = r.stunTimer > 0 ? 3.2 : isAirborne ? 5.8 : groundAccel;
+    const groundAccel =
+      currentProj.surfaceType === 'ice' ? 9.5 : r.isPlayer ? 18.5 : 12.5;
+    const accel = r.stunTimer > 0 ? 3.2 : isAirborne ? 7.2 : groundAccel;
     r.vx += (targetVx - r.vx) * Math.min(1, accel * clampedDt);
     r.vz += (targetVz - r.vz) * Math.min(1, accel * clampedDt);
 
@@ -2614,6 +2675,7 @@ export function stepRaceSimulation(
             r.fCooldown = Math.max(0, r.fCooldown - 2.0);
           }
           if (r.isPlayer) {
+            cuteAudio.playItemPickup();
             state.bannerCallout = {
               text: `GOT ${ITEMS[randomItem].shortLabel.toUpperCase()} [PRESS E]!`,
               colorHex: ITEMS[randomItem].colorHex,
@@ -2796,6 +2858,7 @@ export function stepRaceSimulation(
         '#84CC16'
       );
       if (r.isPlayer) {
+        cuteAudio.playFinishFanfare();
         state.phase = 'finished';
         state.bannerCallout = {
           text: 'FINISH! RACE COMPLETE!',

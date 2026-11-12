@@ -613,11 +613,11 @@ export const DungeonBrawlerHud: React.FC<DungeonBrawlerHudProps> = ({
           <span>[Space] Dodge</span>
         </div>
 
-        {/* Right: Radial Arc Combat Pad (Large Bottom-Left Dodge/Jump Anchor + Curved [F], [E], [Q] Satellites) */}
+        {/* Right: Inward-Facing Radial Arc Combat Pad (Large Corner Dodge/Jump + Curved [F], [E], [Q] Satellites facing inward) */}
         <div className="pointer-events-auto relative w-[156px] h-[156px] sm:w-[180px] sm:h-[180px] shrink-0 select-none">
-          <div className="pointer-events-none absolute bottom-0 left-0 w-[136px] h-[136px] sm:w-[158px] sm:h-[158px] rounded-full border-2 border-dashed border-[#FFFDF9]/20" />
+          <div className="pointer-events-none absolute bottom-0 right-0 w-[136px] h-[136px] sm:w-[158px] sm:h-[158px] rounded-full border-2 border-dashed border-[#FFFDF9]/20" />
 
-          {/* SATELLITE 1 (ARC TOP): [F] Basic Weapon Swing */}
+          {/* SATELLITE 1 (INWARD ARC LOWER-LEFT): [F] Basic Weapon Swing */}
           <button
             type="button"
             onPointerDown={(e) => {
@@ -625,7 +625,7 @@ export const DungeonBrawlerHud: React.FC<DungeonBrawlerHudProps> = ({
               onTriggerCombatAction('atk');
             }}
             data-testid="combat-btn-attack"
-            className="absolute bottom-[104px] left-[25px] sm:bottom-[120px] sm:left-[29px] w-[48px] h-[48px] sm:w-[56px] sm:h-[56px] rounded-full bg-gradient-to-b from-[#EF4444] to-[#DC2626] hover:from-[#F87171] hover:to-[#EF4444] text-white border-3 border-[#1A130D] shadow-xl flex flex-col items-center justify-center touch-none active:scale-95 transition-transform duration-75 will-change-transform"
+            className="absolute bottom-[25px] right-[104px] sm:bottom-[29px] sm:right-[120px] w-[48px] h-[48px] sm:w-[56px] sm:h-[56px] rounded-full bg-gradient-to-b from-[#EF4444] to-[#DC2626] hover:from-[#F87171] hover:to-[#EF4444] text-white border-3 border-[#1A130D] shadow-xl flex flex-col items-center justify-center touch-none active:scale-95 transition-transform duration-75 will-change-transform"
           >
             <span className="pointer-events-none absolute -top-1 -left-1 px-1.5 py-0.1 rounded-full bg-[#1A130D] text-[#FDE047] border border-[#FFFDF9] text-[8px] sm:text-[9px] font-black">
               F
@@ -636,7 +636,7 @@ export const DungeonBrawlerHud: React.FC<DungeonBrawlerHudProps> = ({
             </span>
           </button>
 
-          {/* SATELLITE 2 (ARC MIDDLE 45°): [E] Weapon Ultimate */}
+          {/* SATELLITE 2 (INWARD ARC MIDDLE 45°): [E] Weapon Ultimate */}
           <button
             type="button"
             onPointerDown={(e) => {
@@ -644,7 +644,7 @@ export const DungeonBrawlerHud: React.FC<DungeonBrawlerHudProps> = ({
               onTriggerCombatAction('e');
             }}
             data-testid="combat-btn-ult-e"
-            className="absolute bottom-[78px] left-[78px] sm:bottom-[90px] sm:left-[90px] w-[48px] h-[48px] sm:w-[56px] sm:h-[56px] rounded-full bg-gradient-to-b from-[#A855F7] to-[#7E22CE] text-white border-3 border-[#1A130D] shadow-xl flex flex-col items-center justify-center touch-none active:scale-95 transition-transform duration-75 will-change-transform"
+            className="absolute bottom-[78px] right-[78px] sm:bottom-[90px] sm:right-[90px] w-[48px] h-[48px] sm:w-[56px] sm:h-[56px] rounded-full bg-gradient-to-b from-[#A855F7] to-[#7E22CE] text-white border-3 border-[#1A130D] shadow-xl flex flex-col items-center justify-center touch-none active:scale-95 transition-transform duration-75 will-change-transform"
           >
             <span className="pointer-events-none absolute -top-1 -left-1 px-1.5 py-0.1 rounded-full bg-[#1A130D] text-[#FDE047] border border-[#FFFDF9] text-[8px] sm:text-[9px] font-black">
               E
@@ -662,7 +662,7 @@ export const DungeonBrawlerHud: React.FC<DungeonBrawlerHudProps> = ({
             )}
           </button>
 
-          {/* SATELLITE 3 (ARC END): [Q] Active Skill */}
+          {/* SATELLITE 3 (INWARD ARC TOP): [Q] Active Skill */}
           <button
             type="button"
             onPointerDown={(e) => {
@@ -670,7 +670,7 @@ export const DungeonBrawlerHud: React.FC<DungeonBrawlerHudProps> = ({
               onTriggerCombatAction('q');
             }}
             data-testid="combat-btn-skill-q"
-            className="absolute bottom-[25px] left-[104px] sm:bottom-[29px] sm:left-[120px] w-[48px] h-[48px] sm:w-[56px] sm:h-[56px] rounded-full bg-[#2B2118] hover:bg-[#3A2C20] text-white border-3 border-[#1A130D] shadow-xl flex flex-col items-center justify-center touch-none active:scale-95 transition-transform duration-75 will-change-transform"
+            className="absolute bottom-[104px] right-[25px] sm:bottom-[120px] sm:right-[29px] w-[48px] h-[48px] sm:w-[56px] sm:h-[56px] rounded-full bg-[#2B2118] hover:bg-[#3A2C20] text-white border-3 border-[#1A130D] shadow-xl flex flex-col items-center justify-center touch-none active:scale-95 transition-transform duration-75 will-change-transform"
           >
             <span className="pointer-events-none absolute -top-1 -left-1 px-1.5 py-0.1 rounded-full bg-[#1A130D] text-[#FDE047] border border-[#FFFDF9] text-[8px] sm:text-[9px] font-black">
               Q
@@ -692,14 +692,14 @@ export const DungeonBrawlerHud: React.FC<DungeonBrawlerHudProps> = ({
             )}
           </button>
 
-          {/* PRIMARY GIANT BOTTOM-LEFT ANCHOR: [Space] Dodge / Jump */}
+          {/* PRIMARY GIANT CORNER ANCHOR: [Space] Dodge / Jump */}
           <button
             type="button"
             onPointerDown={(e) => {
               e.stopPropagation();
               onTriggerCombatAction('jump');
             }}
-            className="absolute bottom-0 left-0 w-[80px] h-[80px] sm:w-[92px] sm:h-[92px] rounded-full bg-gradient-to-b from-[#A3E635] to-[#65A30D] hover:from-[#BEF264] hover:to-[#84CC16] text-[#2B2118] border-4 border-[#1A130D] shadow-2xl flex flex-col items-center justify-center touch-none active:scale-95 transition-transform duration-75 will-change-transform"
+            className="absolute bottom-0 right-0 w-[80px] h-[80px] sm:w-[92px] sm:h-[92px] rounded-full bg-gradient-to-b from-[#A3E635] to-[#65A30D] hover:from-[#BEF264] hover:to-[#84CC16] text-[#2B2118] border-4 border-[#1A130D] shadow-2xl flex flex-col items-center justify-center touch-none active:scale-95 transition-transform duration-75 will-change-transform"
           >
             <span className="pointer-events-none absolute -top-1 left-1 px-1.5 py-0.2 rounded-full bg-[#1A130D] text-[#A3E635] border border-[#FFFDF9] text-[8px] sm:text-[9px] font-black">
               SPC

@@ -39,6 +39,7 @@ import { GitAgentHubModal } from './components/GitAgentHubModal';
 import { HomeHubScreen } from './components/HomeHubScreen';
 import { MobileViewportAndLandscapeGuard } from './components/PWAAndLandscapeManager';
 import { TrackId } from './game/raceEngine';
+import { cuteAudio } from './utils/cuteAudioEngine';
 import {
   auth,
   loadUserProfileFromFirestore,
@@ -60,6 +61,19 @@ export type AppMode = 'home' | 'race' | 'combat' | 'studio';
 
 export default function App() {
   const [appMode, setAppMode] = useState<AppMode>('home');
+
+  // Unlock Web Audio and start cozy marimba BGM on first touch/click/key
+  useEffect(() => {
+    const unlock = () => {
+      cuteAudio.unlockAndStartBgm();
+    };
+    window.addEventListener('pointerdown', unlock, { passive: true });
+    window.addEventListener('keydown', unlock, { passive: true });
+    return () => {
+      window.removeEventListener('pointerdown', unlock);
+      window.removeEventListener('keydown', unlock);
+    };
+  }, []);
   const [combatSubMode, setCombatSubMode] = useState<'dungeon' | 'pvp'>(
     'dungeon'
   );

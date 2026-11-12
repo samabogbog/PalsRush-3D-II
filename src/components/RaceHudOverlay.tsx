@@ -29,6 +29,9 @@ import {
   Crown,
   CheckCircle2,
   FastForward,
+  Volume2,
+  VolumeX,
+  EyeOff,
 } from 'lucide-react';
 import {
   ACTIVE_SKILL_LIST,
@@ -49,6 +52,7 @@ import {
   ActiveSkillEmblem,
   ArcadeRankShield,
   CharacterAvatarEmblem,
+  ComicSlapPopBurstSvg,
   GAME_BANNER_ASSETS,
   MenuIconEmblem,
   PassiveSkillEmblem,
@@ -58,6 +62,7 @@ import {
 } from './GameAssetIcons';
 import { LobbyCharacterPreview } from './LobbyCharacterPreview';
 import { UserProfileData } from '../models/equipmentTypes';
+import { cuteAudio } from '../utils/cuteAudioEngine';
 
 export interface RaceHudOverlayProps {
   selectedTrackId: TrackId;
@@ -407,9 +412,25 @@ export const RaceHudOverlay: React.FC<RaceHudOverlayProps> = ({
   const passiveSkill = PASSIVE_SKILLS[selectedPassiveSkillId];
   const heldItemSpec = hud.heldItem ? ITEMS[hud.heldItem] : null;
 
-  // Post-Race Results Modal Collapse & Live Spectator state
+  // Post-Race Results Modal Collapse, Compact Replay UI Collapse & Audio state
   const [isResultsCollapsed, setIsResultsCollapsed] = useState<boolean>(false);
+  const [isReplayHudCollapsed, setIsReplayHudCollapsed] =
+    useState<boolean>(false);
+  const [isAudioMuted, setIsAudioMuted] = useState<boolean>(() =>
+    cuteAudio.getMuted()
+  );
+  const [localSlapBurst, setLocalSlapBurst] = useState<boolean>(false);
   const prevAllFinishedRef = useRef<boolean>(false);
+
+  useEffect(() => {
+    return cuteAudio.subscribe((muted) => setIsAudioMuted(muted));
+  }, []);
+
+  useEffect(() => {
+    if (!hud.replay?.isActive) {
+      setIsReplayHudCollapsed(false);
+    }
+  }, [hud.replay?.isActive]);
 
   useEffect(() => {
     if (!isLobbyOpen || !onCloseLobby) return;
@@ -579,20 +600,18 @@ export const RaceHudOverlay: React.FC<RaceHudOverlayProps> = ({
     x: 0,
     y: 0,
   });
-  // Control layout mode:
-  // - 'left_arc': Jump anchored at bottom-left corner of action pad with Slap, Item, Skill curving along its edge
-  // - 'right_arc': Jump anchored at bottom-right corner of action pad with Slap, Item, Skill curving along its edge
-  // - 'swap_sides': Action pad at bottom-leftmost corner of screen (Jump at bottom-leftmost corner) & Joystick on bottom-right
-  const [controlArcMode, setControlArcMode] = useState<
-    'left_arc' | 'right_arc' | 'swap_sides'
-  >('left_arc');
+  // Control layout mode: inward-facing radial arc ('right_arc') where Jump sits at the bottom-right corner
+  // and Slap [F], Item [E], Skill [Q] curve inward toward the center of the screen along the Jump button's rim.
+  const [controlArcMode] = useState<'left_arc' | 'right_arc' | 'swap_sides'>(
+    'right_arc'
+  );
 
   const updateStickFromEvent = useCallback(
     (clientX: number, clientY: number) => {
       const base = stickBaseRef.current;
       if (!base) return;
       const rect = base.getBoundingClientRect();
-      const maxRadius = Math.max(30, rect.width * 0.34);
+      const maxRadius = Math.max(28, rect.width * 0.34);
       const centerX = rect.left + rect.width / 2;
       const centerY = rect.top + rect.height / 2;
       let dx = clientX - centerX;
@@ -605,12 +624,13 @@ export const RaceHudOverlay: React.FC<RaceHudOverlayProps> = ({
       setKnobOffset({ x: dx, y: dy });
 
       const rawNormDist = Math.min(1, dist / maxRadius);
-      const deadzone = 0.1;
+      const deadzone = 0.08;
       if (rawNormDist <= deadzone || dist < 1e-4) {
         onJoystickChange?.(0, 0);
         return;
       }
-      const rescaledMag = (rawNormDist - deadzone) / (1 - deadzone);
+      // Reach 100% full speed at 50% stick travel so the character sprints at full speed effortlessly
+      const rescaledMag = Math.min(1, (rawNormDist - deadzone) / 0.42);
       const unitX = dx / dist;
       const unitY = -dy / dist;
       const normX = Math.max(-1, Math.min(1, unitX * rescaledMag));
@@ -674,7 +694,8 @@ export const RaceHudOverlay: React.FC<RaceHudOverlayProps> = ({
   return (
     <div className="pointer-events-none absolute inset-0 z-30 select-none overflow-hidden">
 
-      {/* ==================== PINNED TOP GAME HUD ROW (NEVER SHIFTS BOTTOM CONTROLS) ==================== */}
+      {/* ==================== PINNED TOP GAME HUD ROW (HIDDEN DURING REPLAY FOR FULL-SCREEN VIEW) ==================== */}
+      {!hud.replay?.isActive && (
       <div className="absolute top-2 inset-x-2 sm:top-3.5 sm:inset-x-4 z-10 flex items-start justify-between gap-2">
         {/* Top-Left: Sculpted Rank Shield + Fixed-Width Tabular Progress Bar + Passive Icon Badge */}
         <div className="relative flex flex-col">
@@ -797,6 +818,29 @@ export const RaceHudOverlay: React.FC<RaceHudOverlayProps> = ({
               </span>
             </button>
 
+            {/* Cute BGM & SFX Mute / Unmute Toggle Button */}
+            <button
+              type="button"
+              onClick={() => {
+                cuteAudio.unlockAndStartBgm();
+                cuteAudio.toggleMute();
+              }}
+              data-testid="hud-audio-mute-btn"
+              aria-label={isAudioMuted ? 'Unmute Game Audio' : 'Mute Game Audio'}
+              title={isAudioMuted ? 'Unmute BGM & SFX' : 'Mute BGM & SFX'}
+              className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl border-2 border-[#2B2118] active:scale-95 transition-transform flex items-center justify-center shadow-lg shrink-0 ${
+                isAudioMuted
+                  ? 'bg-[#3D3024] text-[#D8C5AC]'
+                  : 'bg-[#FFFDF9] hover:bg-[#FEF3C7] text-[#2B2118]'
+              }`}
+            >
+              {isAudioMuted ? (
+                <VolumeX className="w-4 h-4 stroke-[2.5]" />
+              ) : (
+                <Volume2 className="w-4 h-4 text-[#16A34A] stroke-[2.5]" />
+              )}
+            </button>
+
             {/* 3D Dungeon Raid & PvP Mode Button */}
             <button
               type="button"
@@ -914,10 +958,11 @@ export const RaceHudOverlay: React.FC<RaceHudOverlayProps> = ({
           </div>
         </div>
       </div>
+      )}
 
-      {/* ==================== PINNED CENTER COUNTDOWN OR CALLOUT POPUP (ZERO LAYOUT IMPACT) ==================== */}
-      <div className="pointer-events-none absolute inset-x-4 top-1/3 -translate-y-1/2 z-10 flex flex-col items-center justify-center">
-        {hud.phase === 'countdown' && !isLobbyOpen && (
+      {/* ==================== PINNED CENTER COUNTDOWN, CALLOUT OR COMIC "SLAP!" POP-ART EFFECT ==================== */}
+      <div className="pointer-events-none absolute inset-x-4 top-[30%] -translate-y-1/2 z-10 flex flex-col items-center justify-center gap-1">
+        {hud.phase === 'countdown' && !isLobbyOpen && !hud.replay?.isActive && (
           <div className="bg-[#2B2118] text-[#FFFDF9] px-7 py-3 sm:px-10 sm:py-5 rounded-3xl shadow-2xl border-4 border-[#F59E0B] text-center">
             <p className="text-xs sm:text-sm font-black text-[#FDE047] tracking-wider uppercase">
               GET READY!
@@ -928,20 +973,35 @@ export const RaceHudOverlay: React.FC<RaceHudOverlayProps> = ({
           </div>
         )}
 
-        {hud.bannerCallout && hud.phase === 'racing' && !isLobbyOpen && (
-          <div
-            className="px-4 py-1.5 sm:px-6 sm:py-2 rounded-2xl bg-[#2B2118]/95 font-black text-sm sm:text-lg tracking-wide shadow-2xl border-2 border-[#FFFDF9]/30 text-center"
-            style={{ color: hud.bannerCallout.colorHex }}
-          >
-            {hud.bannerCallout.text}
-          </div>
-        )}
+        {/* Comic-Book Pop-Art "SLAP!" Burst when swinging Wooden Club [F] */}
+        {(hud.slapAnimActive || localSlapBurst) &&
+          !isLobbyOpen &&
+          !hud.replay?.isActive && (
+            <div
+              data-testid="comic-slap-effect-burst"
+              className="transform scale-105 -rotate-3 transition-transform duration-100"
+            >
+              <ComicSlapPopBurstSvg size={172} />
+            </div>
+          )}
+
+        {hud.bannerCallout &&
+          hud.phase === 'racing' &&
+          !isLobbyOpen &&
+          !hud.replay?.isActive && (
+            <div
+              className="px-4 py-1.5 sm:px-6 sm:py-2 rounded-2xl bg-[#2B2118]/95 font-black text-sm sm:text-lg tracking-wide shadow-2xl border-2 border-[#FFFDF9]/30 text-center"
+              style={{ color: hud.bannerCallout.colorHex }}
+            >
+              {hud.bannerCallout.text}
+            </div>
+          )}
       </div>
 
       {/* ==================== PINNED BOTTOM GAMEPAD BAR (HIDDEN DURING REPLAY MODE) ==================== */}
       {!hud.replay?.isActive && (
       <div
-        className={`absolute bottom-2 inset-x-2 sm:bottom-3.5 sm:inset-x-4 z-10 flex items-end justify-between gap-2 ${
+        className={`pointer-events-none absolute bottom-2 inset-x-2 sm:bottom-3.5 sm:inset-x-4 z-10 flex items-end justify-between gap-2 ${
           controlArcMode === 'swap_sides' ? 'flex-row-reverse' : 'flex-row'
         }`}
       >
@@ -997,30 +1057,9 @@ export const RaceHudOverlay: React.FC<RaceHudOverlayProps> = ({
           </span>
         </div>
 
-        {/* CENTER-BOTTOM: LAYOUT MODE SWITCHER + DESKTOP HINT */}
-        <div className="pointer-events-auto flex flex-col items-center gap-1 pb-0.5">
-          <button
-            type="button"
-            onClick={() =>
-              setControlArcMode((prev) =>
-                prev === 'left_arc'
-                  ? 'right_arc'
-                  : prev === 'right_arc'
-                  ? 'swap_sides'
-                  : 'left_arc'
-              )
-            }
-            data-testid="hud-arc-layout-toggle"
-            title="Switch mobile button arc orientation or swap left/right sides"
-            className="px-2.5 py-0.5 rounded-full bg-[#2B2118]/85 hover:bg-[#3D3024] text-[#FDE047] border border-[#1A130D] text-[9px] sm:text-[10px] font-black tracking-wide shadow active:scale-95 transition-transform whitespace-nowrap"
-          >
-            {controlArcMode === 'left_arc'
-              ? '⇄ ARC: L-CORNER'
-              : controlArcMode === 'right_arc'
-              ? '⇄ ARC: R-CORNER'
-              : '⇄ ARC: SWAPPED'}
-          </button>
-          <div className="hidden xl:flex px-3.5 py-1 rounded-full bg-[#2B2118]/80 text-[#FFFDF9] border border-[#1A130D] text-[11px] font-bold shadow-md whitespace-nowrap">
+        {/* CENTER-BOTTOM HINT PILL (Desktop only) */}
+        <div className="pointer-events-none hidden xl:flex flex-col items-center pb-0.5">
+          <div className="px-3.5 py-1 rounded-full bg-[#2B2118]/80 text-[#FFFDF9] border border-[#1A130D] text-[11px] font-bold shadow-md whitespace-nowrap">
             Swipe Screen to Rotate Camera · Click 3D Track for 360° Mouse Look (ESC to unlock)
           </div>
         </div>
@@ -1049,6 +1088,11 @@ export const RaceHudOverlay: React.FC<RaceHudOverlayProps> = ({
               type="button"
               onPointerDown={(e) => {
                 e.stopPropagation();
+                cuteAudio.unlockAndStartBgm();
+                if (hud.fCooldown <= 0) {
+                  setLocalSlapBurst(true);
+                  window.setTimeout(() => setLocalSlapBurst(false), 440);
+                }
                 onTriggerAction('f');
               }}
               disabled={hud.fCooldown > 0}
@@ -1532,198 +1576,234 @@ export const RaceHudOverlay: React.FC<RaceHudOverlayProps> = ({
         </div>
       )}
 
-      {/* ==================== 3D RACE REPLAY BROADCAST CONSOLE (HIGH & WIDE SKY CAMERA) ==================== */}
+      {/* ==================== ULTRA-COMPACT, COLLAPSIBLE FULL-SCREEN REPLAY DOCK ==================== */}
       {hud.replay?.isActive && !isLobbyOpen && (
         <div
           data-testid="replay-broadcast-console"
-          className="pointer-events-none fixed inset-0 z-40 flex flex-col justify-between p-2 sm:p-3.5"
+          className="pointer-events-none fixed inset-0 z-40 flex flex-col justify-end p-1.5 sm:p-2.5"
         >
-          {/* TOP REPLAY BROADCAST BAR: Camera Target Selector (Follow Leader vs Any of 8 Racers) */}
-          <div className="pointer-events-auto bg-[#1A130D]/95 text-[#FFFDF9] border-2 sm:border-3 border-[#F59E0B] rounded-2xl sm:rounded-3xl p-2 sm:p-2.5 shadow-2xl flex flex-col gap-1.5 max-w-5xl w-full mx-auto">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              {/* Left: Live Replay Badge + Sky Camera Telemetry */}
-              <div className="flex items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-[#EF4444] text-white text-[10px] sm:text-xs font-black tracking-wide uppercase shadow">
-                  <span className="w-2 h-2 rounded-full bg-white animate-ping" />
-                  REPLAY · HIGH &amp; WIDE CAM
-                </span>
-                <span className="hidden md:inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-[#2B2118] text-[#FDE047] border border-[#FFFDF9]/15 text-[10px] font-bold">
-                  FOV 68° · SKY VIEW · {hud.zoneName}
-                </span>
-              </div>
-
-              {/* Right: Return to Standings Table or Play Again */}
-              <div className="flex items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => {
-                    onReplayAction?.({ type: 'stop_replay' });
-                    setIsResultsCollapsed(false);
-                  }}
-                  data-testid="replay-back-to-standings-btn"
-                  className="px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-xl bg-[#FDE047] hover:bg-[#FACC15] text-[#2B2118] border-2 border-[#2B2118] text-[10px] sm:text-xs font-black flex items-center gap-1 shadow"
-                >
-                  <Trophy className="w-3.5 h-3.5 stroke-[2.5]" />
-                  <span>STANDINGS TABLE</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    onReplayAction?.({ type: 'stop_replay' });
-                    onRestartRace();
-                  }}
-                  className="px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-xl bg-[#84CC16] hover:bg-[#A3E635] text-[#2B2118] border-2 border-[#2B2118] text-[10px] sm:text-xs font-black shadow"
-                >
-                  PLAY AGAIN
-                </button>
-              </div>
-            </div>
-
-            {/* Camera Target Switcher Row: [👑 LEADER (1ST)] + All 8 Individual Racers */}
-            <div className="flex items-center gap-1 sm:gap-1.5 overflow-x-auto pb-0.5">
-              <button
-                type="button"
-                onClick={() =>
-                  onReplayAction?.({ type: 'set_target', target: 'leader' })
-                }
-                data-testid="replay-target-leader-btn"
-                className={`shrink-0 px-2.5 py-1 rounded-xl border-2 text-[10px] sm:text-xs font-black flex items-center gap-1 transition-colors ${
-                  hud.replay.target === 'leader'
-                    ? 'bg-[#F59E0B] text-[#2B2118] border-[#FFFDF9] shadow-md'
-                    : 'bg-[#2B2118] text-[#FDE047] border-[#FFFDF9]/20 hover:bg-[#3D3024]'
-                }`}
-              >
-                <Crown className="w-3.5 h-3.5 stroke-[2.5]" />
-                <span>
-                  LEADER (1ST:{' '}
-                  {hud.standings.find(
-                    (s) => s.id === hud.replay.activeLeaderId
-                  )?.shortName ||
-                    hud.standings[0]?.shortName ||
-                    '1st'}
-                  )
-                </span>
-              </button>
-
-              <div className="h-5 w-px bg-[#FFFDF9]/20 shrink-0 mx-0.5" />
-
-              {hud.standings.map((r) => {
-                const isSelectedRacer = hud.replay.target === r.id;
-                const isCurrentlyFocused =
-                  hud.replay.activeFocusRacerId === r.id;
-                return (
-                  <button
-                    key={r.id}
-                    type="button"
-                    onClick={() =>
-                      onReplayAction?.({ type: 'set_target', target: r.id })
-                    }
-                    data-testid={`replay-target-${r.id}`}
-                    className={`shrink-0 px-2 py-1 rounded-xl border-2 text-[10px] sm:text-xs font-black flex items-center gap-1 transition-colors tabular-nums ${
-                      isSelectedRacer
-                        ? 'bg-[#38BDF8] text-[#082F49] border-[#FFFDF9] shadow-md'
-                        : isCurrentlyFocused
-                        ? 'bg-[#3D3024] text-[#FDE047] border-[#F59E0B]'
-                        : 'bg-[#2B2118] text-[#F3E8D6] border-[#FFFDF9]/15 hover:bg-[#3D3024]'
-                    }`}
-                  >
-                    <span className="opacity-85">#{r.rank}</span>
-                    <CharacterAvatarEmblem
-                      characterId={r.id}
-                      primaryHex={r.primaryHex}
-                      size={16}
-                    />
-                    <span>
-                      {r.shortName}
-                      {r.isPlayer ? ' (YOU)' : ''}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* BOTTOM REPLAY TIMELINE SCRUBBER & SPEED CONTROLS */}
-          <div className="pointer-events-auto bg-[#1A130D]/95 text-[#FFFDF9] border-2 sm:border-3 border-[#2B2118] rounded-2xl sm:rounded-3xl px-3 py-2 sm:px-4 sm:py-2.5 shadow-2xl max-w-4xl w-full mx-auto flex flex-wrap items-center justify-between gap-2 sm:gap-3">
-            {/* Play / Pause & Restart Buttons */}
-            <div className="flex items-center gap-1.5 shrink-0">
-              <button
-                type="button"
-                onClick={() => onReplayAction?.({ type: 'restart' })}
-                aria-label="Restart Replay from Beginning"
-                className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-[#2B2118] hover:bg-[#3D3024] text-[#FDE047] border border-[#FFFDF9]/25 flex items-center justify-center shadow"
-              >
-                <SkipBack className="w-4 h-4 stroke-[2.5]" />
-              </button>
+          {isReplayHudCollapsed ? (
+            /* COLLAPSED FULL-SCREEN CINEMA PILL: 99% Unobstructed Screen */
+            <div className="pointer-events-auto self-end flex items-center gap-1.5 bg-[#1A130D]/85 text-[#FFFDF9] border border-[#FFFDF9]/25 rounded-full px-2.5 py-1 shadow-xl">
               <button
                 type="button"
                 onClick={() => onReplayAction?.({ type: 'toggle_play' })}
                 data-testid="replay-toggle-play-btn"
-                aria-label={hud.replay.isPlaying ? 'Pause Replay' : 'Play Replay'}
-                className="h-8 sm:h-9 px-3 rounded-xl bg-[#84CC16] hover:bg-[#A3E635] text-[#2B2118] border-2 border-[#2B2118] text-xs font-black flex items-center gap-1 shadow"
+                className="w-6 h-6 rounded-full bg-[#84CC16] text-[#2B2118] flex items-center justify-center"
               >
                 {hud.replay.isPlaying ? (
-                  <>
-                    <Pause className="w-3.5 h-3.5 fill-current" />
-                    <span>PAUSE</span>
-                  </>
+                  <Pause className="w-3 h-3 fill-current" />
                 ) : (
-                  <>
-                    <Play className="w-3.5 h-3.5 fill-current" />
-                    <span>PLAY</span>
-                  </>
+                  <Play className="w-3 h-3 fill-current" />
                 )}
               </button>
-            </div>
-
-            {/* Interactive Timeline Range Slider */}
-            <div className="flex-1 min-w-[160px] flex items-center gap-2 tabular-nums">
-              <span className="text-[11px] sm:text-xs font-black text-[#FDE047] w-14 text-right shrink-0">
+              <span className="text-[10px] font-black text-[#FDE047] tabular-nums">
                 {formatRaceTime(hud.replay.currentTimeSec)}
               </span>
-              <input
-                type="range"
-                min={0}
-                max={Math.max(0.1, hud.replay.durationSec)}
-                step={0.05}
-                value={Math.min(
-                  hud.replay.durationSec,
-                  hud.replay.currentTimeSec
-                )}
-                onChange={(e) =>
-                  onReplayAction?.({
-                    type: 'seek',
-                    timeSec: parseFloat(e.target.value),
-                  })
-                }
-                aria-label="Replay Timeline Scrubber"
-                className="flex-1 h-2.5 bg-[#2B2118] rounded-lg appearance-none cursor-pointer accent-[#F59E0B]"
-              />
-              <span className="text-[11px] sm:text-xs font-bold text-[#D8C5AC] w-14 shrink-0">
-                {formatRaceTime(hud.replay.durationSec)}
-              </span>
+              <button
+                type="button"
+                onClick={() => setIsReplayHudCollapsed(false)}
+                data-testid="replay-expand-ui-btn"
+                className="px-2 py-0.5 rounded-full bg-[#FDE047] text-[#2B2118] text-[10px] font-black flex items-center gap-0.5"
+              >
+                <ChevronUp className="w-3 h-3 stroke-[2.8]" />
+                <span>SHOW UI</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  onReplayAction?.({ type: 'stop_replay' });
+                  setIsResultsCollapsed(false);
+                }}
+                data-testid="replay-back-to-standings-btn"
+                className="px-2 py-0.5 rounded-full bg-[#2B2118] text-[#FFFDF9] border border-[#FFFDF9]/25 text-[10px] font-black"
+              >
+                TABLE
+              </button>
             </div>
+          ) : (
+            /* EXPANDED COMPACT SINGLE BOTTOM DOCK: Top 88% of screen is 100% open sky-cam race view! */
+            <div className="pointer-events-auto bg-[#1A130D]/90 text-[#FFFDF9] border-2 border-[#2B2118] rounded-2xl px-2.5 py-1.5 shadow-2xl max-w-3xl w-full mx-auto flex flex-col gap-1">
+              {/* Compact Row 1: Camera Target Avatars ([👑 1st] + 8 Mini Avatar Badges) + Action Buttons */}
+              <div className="flex items-center justify-between gap-1.5">
+                <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      onReplayAction?.({ type: 'set_target', target: 'leader' })
+                    }
+                    data-testid="replay-target-leader-btn"
+                    title="Follow Race Leader (1st Place)"
+                    className={`shrink-0 px-2 py-0.5 rounded-lg border text-[10px] font-black flex items-center gap-1 transition-colors ${
+                      hud.replay.target === 'leader'
+                        ? 'bg-[#F59E0B] text-[#2B2118] border-[#FFFDF9]'
+                        : 'bg-[#2B2118] text-[#FDE047] border-[#FFFDF9]/20 hover:bg-[#3D3024]'
+                    }`}
+                  >
+                    <Crown className="w-3 h-3 stroke-[2.5]" />
+                    <span>
+                      1ST (
+                      {hud.standings.find(
+                        (s) => s.id === hud.replay.activeLeaderId
+                      )?.shortName ||
+                        hud.standings[0]?.shortName ||
+                        'Leader'}
+                      )
+                    </span>
+                  </button>
 
-            {/* Playback Speed Multipliers (0.5x, 1x, 2x, 4x) */}
-            <div className="flex items-center gap-1 shrink-0">
-              {[0.5, 1, 2, 4].map((spd) => (
-                <button
-                  key={spd}
-                  type="button"
-                  onClick={() =>
-                    onReplayAction?.({ type: 'set_speed', speed: spd })
-                  }
-                  className={`px-2 py-1 rounded-lg text-[10px] sm:text-xs font-black border transition-colors tabular-nums ${
-                    Math.abs(hud.replay.speed - spd) < 0.05
-                      ? 'bg-[#FDE047] text-[#2B2118] border-[#FFFDF9]'
-                      : 'bg-[#2B2118] text-[#F3E8D6] border-[#FFFDF9]/20 hover:bg-[#3D3024]'
-                  }`}
-                >
-                  {spd}x
-                </button>
-              ))}
+                  {hud.standings.map((r) => {
+                    const isSelectedRacer = hud.replay.target === r.id;
+                    const isCurrentlyFocused =
+                      hud.replay.activeFocusRacerId === r.id;
+                    return (
+                      <button
+                        key={r.id}
+                        type="button"
+                        onClick={() =>
+                          onReplayAction?.({ type: 'set_target', target: r.id })
+                        }
+                        data-testid={`replay-target-${r.id}`}
+                        title={`#${r.rank} ${r.shortName}${r.isPlayer ? ' (YOU)' : ''}`}
+                        className={`shrink-0 px-1.5 py-0.5 rounded-lg border text-[10px] font-black flex items-center gap-1 transition-colors tabular-nums ${
+                          isSelectedRacer
+                            ? 'bg-[#38BDF8] text-[#082F49] border-[#FFFDF9]'
+                            : isCurrentlyFocused
+                            ? 'bg-[#3D3024] text-[#FDE047] border-[#F59E0B]'
+                            : 'bg-[#2B2118] text-[#F3E8D6] border-[#FFFDF9]/15 hover:bg-[#3D3024]'
+                        }`}
+                      >
+                        <CharacterAvatarEmblem
+                          characterId={r.id}
+                          primaryHex={r.primaryHex}
+                          size={14}
+                        />
+                        <span className="hidden sm:inline">{r.shortName}</span>
+                        <span className="sm:hidden">#{r.rank}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Right Compact Actions: Standings Table, Play Again & Collapse UI */}
+                <div className="flex items-center gap-1 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onReplayAction?.({ type: 'stop_replay' });
+                      setIsResultsCollapsed(false);
+                    }}
+                    data-testid="replay-back-to-standings-btn"
+                    className="px-2 py-0.5 rounded-lg bg-[#FDE047] hover:bg-[#FACC15] text-[#2B2118] border border-[#2B2118] text-[10px] font-black flex items-center gap-1 whitespace-nowrap"
+                  >
+                    <Trophy className="w-3 h-3 stroke-[2.5]" />
+                    <span>STANDINGS</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onReplayAction?.({ type: 'stop_replay' });
+                      onRestartRace();
+                    }}
+                    className="hidden sm:inline-flex px-2 py-0.5 rounded-lg bg-[#84CC16] hover:bg-[#A3E635] text-[#2B2118] border border-[#2B2118] text-[10px] font-black whitespace-nowrap"
+                  >
+                    RACE AGAIN
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsReplayHudCollapsed(true)}
+                    data-testid="replay-collapse-ui-btn"
+                    title="Hide Replay Bar for Full-Screen View"
+                    className="px-2 py-0.5 rounded-lg bg-[#2B2118] hover:bg-[#3D3024] text-[#FDE047] border border-[#FFFDF9]/25 text-[10px] font-black flex items-center gap-0.5 whitespace-nowrap"
+                  >
+                    <EyeOff className="w-3 h-3" />
+                    <span>HIDE</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Compact Row 2: Play/Pause + Scrubber + Speed Multipliers */}
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => onReplayAction?.({ type: 'restart' })}
+                    aria-label="Restart Replay from Beginning"
+                    className="w-6 h-6 rounded-lg bg-[#2B2118] hover:bg-[#3D3024] text-[#FDE047] border border-[#FFFDF9]/25 flex items-center justify-center"
+                  >
+                    <SkipBack className="w-3 h-3 stroke-[2.5]" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onReplayAction?.({ type: 'toggle_play' })}
+                    data-testid="replay-toggle-play-btn"
+                    aria-label={
+                      hud.replay.isPlaying ? 'Pause Replay' : 'Play Replay'
+                    }
+                    className="h-6 px-2 rounded-lg bg-[#84CC16] hover:bg-[#A3E635] text-[#2B2118] border border-[#2B2118] text-[10px] font-black flex items-center gap-1"
+                  >
+                    {hud.replay.isPlaying ? (
+                      <>
+                        <Pause className="w-2.5 h-2.5 fill-current" />
+                        <span>PAUSE</span>
+                      </>
+                    ) : (
+                      <>
+                        <Play className="w-2.5 h-2.5 fill-current" />
+                        <span>PLAY</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                <div className="flex-1 min-w-[120px] flex items-center gap-1.5 tabular-nums">
+                  <span className="text-[10px] font-black text-[#FDE047] w-11 text-right shrink-0">
+                    {formatRaceTime(hud.replay.currentTimeSec)}
+                  </span>
+                  <input
+                    type="range"
+                    min={0}
+                    max={Math.max(0.1, hud.replay.durationSec)}
+                    step={0.05}
+                    value={Math.min(
+                      hud.replay.durationSec,
+                      hud.replay.currentTimeSec
+                    )}
+                    onChange={(e) =>
+                      onReplayAction?.({
+                        type: 'seek',
+                        timeSec: parseFloat(e.target.value),
+                      })
+                    }
+                    aria-label="Replay Timeline Scrubber"
+                    className="flex-1 h-2 bg-[#2B2118] rounded-lg appearance-none cursor-pointer accent-[#F59E0B]"
+                  />
+                  <span className="text-[10px] font-bold text-[#D8C5AC] w-11 shrink-0">
+                    {formatRaceTime(hud.replay.durationSec)}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-0.5 shrink-0">
+                  {[0.5, 1, 2, 4].map((spd) => (
+                    <button
+                      key={spd}
+                      type="button"
+                      onClick={() =>
+                        onReplayAction?.({ type: 'set_speed', speed: spd })
+                      }
+                      className={`px-1.5 py-0.5 rounded text-[9px] sm:text-[10px] font-black border transition-colors tabular-nums ${
+                        Math.abs(hud.replay.speed - spd) < 0.05
+                          ? 'bg-[#FDE047] text-[#2B2118] border-[#FFFDF9]'
+                          : 'bg-[#2B2118] text-[#F3E8D6] border-[#FFFDF9]/20 hover:bg-[#3D3024]'
+                      }`}
+                    >
+                      {spd}x
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       )}
 

@@ -505,9 +505,13 @@ export function attachEquipmentToCharacterRig(
   loadout?: EquippedLoadout | null
 ): void {
   clearExistingAttachment(rig.rightArmPivot, EQUIP_GROUP_NAMES.weapon);
+  clearExistingAttachment(rig.rightArmPivot, '__slap_wooden_club__');
   clearExistingAttachment(rig.headPivot, EQUIP_GROUP_NAMES.headgear);
   clearExistingAttachment(rig.bodyGroup, EQUIP_GROUP_NAMES.cape);
   clearExistingAttachment(rig.rootGroup, EQUIP_GROUP_NAMES.aura);
+
+  // Always attach the 3D Wooden Club (ไม้กระบอง) for the [F] Slap Swing animation (hidden until swinging)
+  rig.rightArmPivot.add(buildWoodenClubMesh());
 
   if (!loadout) return;
 
@@ -526,7 +530,108 @@ export function attachEquipmentToCharacterRig(
 }
 
 /**
- * Animates rotating 3D aura rings, propeller caps, and weapon attack swings.
+ * Builds a tactile 3D Chibi Wooden Club (ไม้กระบอง) with leather grip, tapered oak barrel,
+ * wood ring bands, and cute rounded wooden studs + golden swoosh trail.
+ */
+function buildWoodenClubMesh(): THREE.Group {
+  const clubGroup = new THREE.Group();
+  clubGroup.name = '__slap_wooden_club__';
+  clubGroup.position.set(0.18, -0.32, 0.24);
+  clubGroup.rotation.set(0.45, 0, -0.12);
+  clubGroup.visible = false;
+
+  const darkOakMat = new THREE.MeshStandardMaterial({
+    color: '#78350F',
+    roughness: 0.72,
+  });
+  const warmWoodMat = new THREE.MeshStandardMaterial({
+    color: '#B45309',
+    roughness: 0.62,
+  });
+  const lightStudMat = new THREE.MeshStandardMaterial({
+    color: '#FDE68A',
+    roughness: 0.45,
+  });
+  const leatherWrapMat = new THREE.MeshStandardMaterial({
+    color: '#FEF3C7',
+    roughness: 0.85,
+  });
+
+  // Pommel knob
+  const pommel = new THREE.Mesh(
+    new THREE.SphereGeometry(0.085, 10, 10),
+    darkOakMat
+  );
+  pommel.position.set(0, -0.06, 0);
+  clubGroup.add(pommel);
+
+  // Leather wrapped handle grip
+  const grip = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.062, 0.052, 0.34, 10),
+    leatherWrapMat
+  );
+  grip.position.set(0, 0.12, 0);
+  clubGroup.add(grip);
+
+  // Tapered hefty wooden club barrel (ไม้กระบอง)
+  const clubBarrel = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.21, 0.075, 0.78, 12),
+    warmWoodMat
+  );
+  clubBarrel.position.set(0, 0.62, 0);
+  clubBarrel.castShadow = true;
+  clubGroup.add(clubBarrel);
+
+  // Rounded club dome tip
+  const clubTip = new THREE.Mesh(
+    new THREE.SphereGeometry(0.208, 12, 10),
+    warmWoodMat
+  );
+  clubTip.position.set(0, 1.0, 0);
+  clubTip.scale.set(1, 0.65, 1);
+  clubGroup.add(clubTip);
+
+  // Dark wood grain ring band
+  const band = new THREE.Mesh(
+    new THREE.TorusGeometry(0.175, 0.024, 8, 16),
+    darkOakMat
+  );
+  band.rotation.x = Math.PI / 2;
+  band.position.set(0, 0.76, 0);
+  clubGroup.add(band);
+
+  // Cute chunky wooden studs around the club head
+  const studAngles = [0, Math.PI * 0.5, Math.PI, Math.PI * 1.5];
+  studAngles.forEach((ang, idx) => {
+    const r = idx % 2 === 0 ? 0.19 : 0.16;
+    const yPos = idx % 2 === 0 ? 0.84 : 0.64;
+    const stud = new THREE.Mesh(
+      new THREE.ConeGeometry(0.065, 0.15, 7),
+      lightStudMat
+    );
+    stud.position.set(Math.cos(ang) * r, yPos, Math.sin(ang) * r);
+    stud.lookAt(Math.cos(ang) * 2, yPos, Math.sin(ang) * 2);
+    stud.rotateX(Math.PI / 2);
+    clubGroup.add(stud);
+  });
+
+  // Dynamic glowing motion swoosh fin along the club head
+  const swooshGeo = new RoundedBoxGeometry(0.06, 0.68, 0.34, 2, 0.02);
+  const swooshMat = new THREE.MeshBasicMaterial({
+    color: '#FDE047',
+    transparent: true,
+    opacity: 0.75,
+  });
+  const swoosh = new THREE.Mesh(swooshGeo, swooshMat);
+  swoosh.name = '__club_swoosh__';
+  swoosh.position.set(-0.16, 0.74, 0);
+  clubGroup.add(swoosh);
+
+  return clubGroup;
+}
+
+/**
+ * Animates rotating 3D aura rings, propeller caps, and wooden club slap swings.
  */
 export function animateEquipmentOnRig(
   rig: CharacterRig,
@@ -547,9 +652,42 @@ export function animateEquipmentOnRig(
     }
   }
 
+  let clubGroup = rig.rightArmPivot.getObjectByName('__slap_wooden_club__');
+  if (!clubGroup) {
+    clubGroup = buildWoodenClubMesh();
+    rig.rightArmPivot.add(clubGroup);
+  }
+  const equippedWeapon = rig.rightArmPivot.getObjectByName(
+    EQUIP_GROUP_NAMES.weapon
+  );
+
   if (attackSwingPhase > 0) {
-    const swingSin = Math.sin(attackSwingPhase * Math.PI);
-    rig.rightArmPivot.rotation.x = -1.65 * swingSin;
-    rig.rightArmPivot.rotation.z = 0.45 * swingSin;
+    // Note: attackSwingPhase counts down from 1.0 -> 0.0 during slapAnimTimer
+    const progress = 1.0 - attackSwingPhase; // 0.0 (start) -> 1.0 (end)
+    const swingSin = Math.sin(progress * Math.PI);
+    // Wide 180-degree horizontal-diagonal club cleave from right-back across to front-left!
+    const sweepArc = Math.cos(progress * Math.PI); // +1 (windup right) -> -1 (follow-through left)
+
+    clubGroup.visible = true;
+    clubGroup.scale.setScalar(1.0 + swingSin * 0.35);
+    clubGroup.rotation.set(
+      0.85 + swingSin * 0.55,
+      sweepArc * 0.45,
+      -0.35 - sweepArc * 0.85
+    );
+
+    if (equippedWeapon) {
+      equippedWeapon.visible = false;
+    }
+
+    rig.rightArmPivot.rotation.x = -1.55 * swingSin - 0.35;
+    rig.rightArmPivot.rotation.y = sweepArc * 1.15;
+    rig.rightArmPivot.rotation.z = 0.65 * sweepArc + 0.35 * swingSin;
+    rig.bodyGroup.rotation.y += sweepArc * 0.42 * swingSin;
+  } else {
+    clubGroup.visible = false;
+    if (equippedWeapon) {
+      equippedWeapon.visible = true;
+    }
   }
 }

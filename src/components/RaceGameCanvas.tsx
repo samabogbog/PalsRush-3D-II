@@ -99,6 +99,12 @@ export interface ReplayKeyframe {
     age: number;
     maxAge: number;
     colorHex: string;
+    kind?: 'slap' | 'shockwave' | 'ice_blast';
+    yaw?: number;
+    hitCount?: number;
+    hitX?: number;
+    hitY?: number;
+    hitZ?: number;
   }[];
 }
 
@@ -130,6 +136,7 @@ export interface RaceHudSnapshot {
   shieldActive: boolean;
   whirlwindActive: boolean;
   slowActive: boolean;
+  slapAnimActive?: boolean;
   slapsLanded: number;
   standings: {
     id: CharacterId;
@@ -189,6 +196,137 @@ function createCheckeredBannerTexture(): THREE.CanvasTexture {
   tex.wrapS = THREE.RepeatWrapping;
   tex.wrapT = THREE.RepeatWrapping;
   tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+/**
+ * Generates a high-impact Comic-Book Pop-Art "SLAP!" Starburst Texture
+ * inspired by classic comic action bursts (spiky yellow/orange/magenta starburst,
+ * radial speed lines, and 3D comic-extruded "SLAP!" lettering).
+ */
+let cachedComicSlapTexture: THREE.CanvasTexture | null = null;
+function getComicSlapBurstTexture(): THREE.CanvasTexture {
+  if (cachedComicSlapTexture) return cachedComicSlapTexture;
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 512;
+  const ctx = canvas.getContext('2d')!;
+  const cx = 256;
+  const cy = 256;
+
+  ctx.clearRect(0, 0, 512, 512);
+
+  // 1. Radial Comic Action Speed Lines
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.strokeStyle = '#14110D';
+  ctx.lineCap = 'round';
+  const rayAngles = [
+    -2.5, -2.1, -1.65, -1.45, -0.8, -0.65, 0.3, 0.75, 0.9, 1.6, 1.75, 2.55,
+  ];
+  rayAngles.forEach((ang, idx) => {
+    const r0 = 155 + (idx % 2) * 14;
+    const r1 = 225 + (idx % 3) * 18;
+    ctx.lineWidth = idx % 2 === 0 ? 7 : 5;
+    ctx.beginPath();
+    ctx.moveTo(Math.cos(ang) * r0, Math.sin(ang) * r0);
+    ctx.lineTo(Math.cos(ang) * r1, Math.sin(ang) * r1);
+    ctx.stroke();
+  });
+  ctx.restore();
+
+  // 2. Outer Spiky Yellow-Orange Starburst Polygon with White + Black Comic Rim
+  const drawSpikyBurst = (
+    points: number,
+    outerR: number,
+    innerR: number,
+    fillStyle: string | CanvasGradient,
+    strokeStyle: string,
+    lineWidth: number,
+    rotOffset = 0
+  ) => {
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(rotOffset);
+    ctx.beginPath();
+    for (let i = 0; i < points * 2; i++) {
+      const ang = (i * Math.PI) / points;
+      const jitter = ((i * 7) % 5) * 4.5;
+      const r = (i % 2 === 0 ? outerR + jitter : innerR - jitter * 0.5);
+      const px = Math.cos(ang) * r;
+      const py = Math.sin(ang) * r * 0.84;
+      if (i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+    ctx.fillStyle = fillStyle;
+    ctx.fill();
+    if (lineWidth > 0) {
+      ctx.lineWidth = lineWidth;
+      ctx.lineJoin = 'round';
+      ctx.strokeStyle = strokeStyle;
+      ctx.stroke();
+    }
+    ctx.restore();
+  };
+
+  const yellowGrad = ctx.createLinearGradient(80, 80, 420, 420);
+  yellowGrad.addColorStop(0, '#FEF08A');
+  yellowGrad.addColorStop(0.5, '#FACC15');
+  yellowGrad.addColorStop(1, '#F97316');
+
+  // Outer white sticker halo + thick black comic outline + yellow starburst
+  drawSpikyBurst(16, 218, 134, '#FFFFFF', '#FFFFFF', 18, -0.12);
+  drawSpikyBurst(16, 212, 130, yellowGrad, '#14110D', 10, -0.12);
+
+  // 3. Inner Magenta / Crimson Comic Impact Starburst
+  const pinkGrad = ctx.createLinearGradient(140, 140, 380, 380);
+  pinkGrad.addColorStop(0, '#EC4899');
+  pinkGrad.addColorStop(1, '#BE185D');
+  drawSpikyBurst(12, 156, 92, pinkGrad, '#14110D', 6, 0.18);
+
+  // 4. Bold 3D Comic-Book "SLAP!" Lettering (Tilted + Deep 3D Extrusion + Glossy Highlight)
+  ctx.save();
+  ctx.translate(cx, cy + 16);
+  ctx.rotate(-0.16);
+  ctx.font = '900 132px "Boogaloo", "Fredoka", Impact, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.lineJoin = 'round';
+
+  // Deep 3D black & lime/crimson block shadow extrusion
+  for (let d = 14; d >= 1; d--) {
+    ctx.lineWidth = 22;
+    ctx.strokeStyle = '#0F0A07';
+    ctx.strokeText('SLAP!', d * 0.85, d * 1.05);
+  }
+
+  // Vibrant Lime-Green / Gold inner 3D bevel layer (matching image 1)
+  ctx.fillStyle = '#4ADE80';
+  ctx.fillText('SLAP!', -6, 6);
+
+  // Main Letter Fill: Vivid Sky-Cyan to Fiery Red-Orange Pop Gradient
+  const textGrad = ctx.createLinearGradient(0, -68, 0, 62);
+  textGrad.addColorStop(0, '#38BDF8');
+  textGrad.addColorStop(0.48, '#0EA5E9');
+  textGrad.addColorStop(0.52, '#F97316');
+  textGrad.addColorStop(1, '#EF4444');
+
+  ctx.lineWidth = 18;
+  ctx.strokeStyle = '#0F0A07';
+  ctx.strokeText('SLAP!', 0, 0);
+  ctx.fillStyle = textGrad;
+  ctx.fillText('SLAP!', 0, 0);
+
+  // Inner crisp white comic shine highlight
+  ctx.lineWidth = 3.5;
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+  ctx.strokeText('SLAP!', -2, -3);
+  ctx.restore();
+
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  cachedComicSlapTexture = tex;
   return tex;
 }
 
@@ -1711,6 +1849,12 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
         age: s.age,
         maxAge: s.maxAge,
         colorHex: s.colorHex,
+        kind: s.kind,
+        yaw: s.yaw,
+        hitCount: s.hitCount,
+        hitX: s.hitX,
+        hitY: s.hitY,
+        hitZ: s.hitZ,
       })),
     });
     lastRecordedReplaySecRef.current = state.elapsedRaceSec;
@@ -2640,20 +2784,19 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
     const onPointerMove = (e: PointerEvent) => {
       if (isLobbyOpenRef.current) return;
 
-      // Mode 1: Pointer Lock is active -> Unlimited 360° hardware mouse deltas (80% speed, ease-in-out damped)
+      // Mode 1: Pointer Lock is active -> Unlimited 360° hardware mouse deltas (snappy & smooth)
       if (document.pointerLockElement === domElem) {
         const dx = e.movementX || 0;
         const dy = e.movementY || 0;
-        targetCameraYawRef.current -= dx * 0.00256;
+        targetCameraYawRef.current -= dx * 0.0044;
         targetCameraPitchRef.current = Math.max(
           0.16,
-          Math.min(0.85, targetCameraPitchRef.current + dy * 0.00208)
+          Math.min(0.85, targetCameraPitchRef.current + dy * 0.0032)
         );
         return;
       }
 
-      // Mode 2: Active Mouse Drag or Mobile Touch-Swipe on Canvas (80% speed, ease-in-out damped)
-      // (Moving an unlocked mouse without holding the button NEVER rotates the camera back!)
+      // Mode 2: Active Mouse Drag or Mobile Touch-Swipe on Canvas (fast, responsive camera turn)
       const tracked = activeDragPointers.get(e.pointerId);
       if (!tracked) return;
 
@@ -2662,11 +2805,12 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
       tracked.lastX = e.clientX;
       tracked.lastY = e.clientY;
 
-      const sensitivity = e.pointerType === 'touch' ? 0.0052 : 0.00416;
+      const sensitivity = e.pointerType === 'touch' ? 0.0115 : 0.0068;
+      const pitchSens = e.pointerType === 'touch' ? 0.0062 : 0.0045;
       targetCameraYawRef.current -= dx * sensitivity;
       targetCameraPitchRef.current = Math.max(
         0.16,
-        Math.min(0.85, targetCameraPitchRef.current + dy * 0.0032)
+        Math.min(0.85, targetCameraPitchRef.current + dy * pitchSens)
       );
     };
 
@@ -2762,40 +2906,39 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
       const joyMag = Math.hypot(joyX, joyY);
 
       // When steering with the virtual joystick, tilting left/right smoothly curves forward along the track
-      // instead of snapping 90 degrees perpendicular into the side fence.
+      // at 100% full speed instead of slowing down or snapping 90 degrees into the fence.
       let effectiveJoyForward = joyY;
       let effectiveJoyRight = joyX;
       if (joyMag > 0.05 && kbForward === 0 && kbRight === 0) {
         if (joyY >= -0.22) {
-          const forwardAssist = Math.max(joyY, Math.abs(joyX) * 0.72);
-          effectiveJoyForward = forwardAssist * Math.min(1, Math.max(0.45, joyMag));
-          effectiveJoyRight = joyX * 0.74;
+          effectiveJoyForward = Math.max(joyY, Math.abs(joyX) * 0.8);
+          effectiveJoyRight = joyX * 0.82;
         }
       }
 
       const moveForward = Math.max(-1, Math.min(1, kbForward + effectiveJoyForward));
       const moveRight = Math.max(-1, Math.min(1, kbRight + effectiveJoyRight));
 
-      // Smoothly bank camera into turns when steering forward-left / forward-right
+      // Snappily turn camera into turns when steering left/right
       const isActivelyAiming =
         document.pointerLockElement === domElem || activeDragPointers.size > 0;
-      if (Math.abs(moveRight) > 0.05 && moveForward >= -0.1 && !isActivelyAiming) {
-        targetCameraYawRef.current -= moveRight * dt * 0.92;
+      if (Math.abs(moveRight) > 0.04 && moveForward >= -0.15 && !isActivelyAiming) {
+        targetCameraYawRef.current -= moveRight * dt * 2.35;
       }
 
-      // Apply 2nd-order ease-in-out damping to camera yaw & pitch
+      // Apply snappy ease-in-out damping to camera yaw & pitch
       cameraYawRef.current = smoothDampScalar(
         cameraYawRef.current,
         targetCameraYawRef.current,
         cameraYawVelRef,
-        0.095,
+        0.048,
         dt
       );
       cameraPitchRef.current = smoothDampScalar(
         cameraPitchRef.current,
         targetCameraPitchRef.current,
         cameraPitchVelRef,
-        0.095,
+        0.048,
         dt
       );
 
@@ -2866,6 +3009,12 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
         age: number;
         maxAge: number;
         colorHex: string;
+        kind?: 'slap' | 'shockwave' | 'ice_blast';
+        yaw?: number;
+        hitCount?: number;
+        hitX?: number;
+        hitY?: number;
+        hitZ?: number;
       }[] = state.shockwaves;
       let activeSceneTimeSec = state.elapsedRaceSec;
       let activeLeaderId: CharacterId =
@@ -3007,20 +3156,83 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
         }
       }
       for (const sw of activeShockwaves) {
-        const progress = sw.age / sw.maxAge;
+        const progress = Math.min(1, sw.age / Math.max(0.01, sw.maxAge));
         const radius = 0.6 + (sw.maxRadius - 0.6) * progress;
-        const ring = new THREE.Mesh(
-          new THREE.RingGeometry(radius * 0.82, radius, 28),
-          new THREE.MeshBasicMaterial({
-            color: sw.colorHex,
-            side: THREE.DoubleSide,
+
+        if (sw.kind === 'slap') {
+          // 180-Degree Forward Wooden-Club Cleave Arc (strictly in front of the racer!)
+          const yaw = sw.yaw ?? 0;
+          const arcMesh = new THREE.Mesh(
+            new THREE.RingGeometry(radius * 0.35, radius, 26, 1, 0, Math.PI),
+            new THREE.MeshBasicMaterial({
+              color: '#FACC15',
+              side: THREE.DoubleSide,
+              transparent: true,
+              opacity: (1 - progress) * 0.85,
+            })
+          );
+          arcMesh.rotation.order = 'YXZ';
+          arcMesh.rotation.y = yaw;
+          arcMesh.rotation.x = -Math.PI / 2;
+          arcMesh.position.set(sw.x, sw.y + 0.38, sw.z);
+          dynamicEffectsGroup.add(arcMesh);
+
+          // Outer orange rim of the 180-degree front cleave arc
+          const outerRim = new THREE.Mesh(
+            new THREE.RingGeometry(radius * 0.82, radius * 1.04, 26, 1, 0, Math.PI),
+            new THREE.MeshBasicMaterial({
+              color: '#EF4444',
+              side: THREE.DoubleSide,
+              transparent: true,
+              opacity: (1 - progress) * 0.95,
+            })
+          );
+          outerRim.rotation.order = 'YXZ';
+          outerRim.rotation.y = yaw;
+          outerRim.rotation.x = -Math.PI / 2;
+          outerRim.position.set(sw.x, sw.y + 0.4, sw.z);
+          dynamicEffectsGroup.add(outerRim);
+
+          // 3D Comic-Book "SLAP!" Pop-Art Starburst Billboard Sprite
+          const slapSpriteMat = new THREE.SpriteMaterial({
+            map: getComicSlapBurstTexture(),
             transparent: true,
-            opacity: 1 - progress,
-          })
-        );
-        ring.rotation.x = -Math.PI / 2;
-        ring.position.set(sw.x, sw.y + 0.12, sw.z);
-        dynamicEffectsGroup.add(ring);
+            opacity: progress < 0.72 ? 1.0 : Math.max(0, (1 - progress) / 0.28),
+            depthTest: false,
+            depthWrite: false,
+          });
+          const slapSprite = new THREE.Sprite(slapSpriteMat);
+          slapSprite.renderOrder = 999;
+          const fwdX = -Math.sin(yaw);
+          const fwdZ = -Math.cos(yaw);
+          const bx = sw.hitX ?? sw.x + fwdX * 1.4;
+          const by =
+            (sw.hitY ?? sw.y + 1.45) + Math.sin(progress * Math.PI) * 0.45;
+          const bz = sw.hitZ ?? sw.z + fwdZ * 1.4;
+          slapSprite.position.set(bx, by, bz);
+
+          // Snappy elastic comic pop-in scale
+          const baseBurstSize = (sw.hitCount ?? 0) > 0 ? 2.45 : 1.95;
+          const popScale =
+            progress < 0.22
+              ? (progress / 0.22) * 1.25 * baseBurstSize
+              : (1.25 - (progress - 0.22) * 0.35) * baseBurstSize;
+          slapSprite.scale.set(popScale, popScale, 1);
+          dynamicEffectsGroup.add(slapSprite);
+        } else {
+          const ring = new THREE.Mesh(
+            new THREE.RingGeometry(radius * 0.82, radius, 28),
+            new THREE.MeshBasicMaterial({
+              color: sw.colorHex,
+              side: THREE.DoubleSide,
+              transparent: true,
+              opacity: 1 - progress,
+            })
+          );
+          ring.rotation.x = -Math.PI / 2;
+          ring.position.set(sw.x, sw.y + 0.12, sw.z);
+          dynamicEffectsGroup.add(ring);
+        }
       }
 
       // Update all 8 Racer Rigs, Procedural Chibi Kinematics & Cute Footstep Dust/Splash Puffs!
@@ -3119,7 +3331,7 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
         const speedMag = Math.hypot(r.vx, r.vz);
         const animSpeed =
           r.pose === 'run'
-            ? Math.max(0.85, Math.min(1.55, speedMag / 9.8))
+            ? Math.max(1.2, Math.min(1.9, speedMag / 7.5))
             : 1.0;
 
         const effectiveAnimDt = rep.isActive
@@ -3139,9 +3351,10 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
         );
 
         if (r.slapAnimTimer > 0) {
-          const swing = Math.sin((r.slapAnimTimer / 0.35) * Math.PI) * 1.15;
-          frame.leftArmRotZ -= swing;
-          frame.rightArmRotZ += swing;
+          const swingPhase = r.slapAnimTimer / 0.42;
+          const swingSin = Math.sin((1 - swingPhase) * Math.PI);
+          frame.leftArmRotZ -= swingSin * 0.65;
+          frame.rightArmRotZ += swingSin * 1.25;
         }
 
         const airOffset = Math.max(0, r.y - r.groundY);
@@ -3165,7 +3378,7 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
         animateEquipmentOnRig(
           vis.rig,
           stepInfo.animTime,
-          r.slapAnimTimer > 0 ? r.slapAnimTimer / 0.35 : 0
+          r.slapAnimTimer > 0 ? r.slapAnimTimer / 0.42 : 0
         );
 
         // Spawn cute footstep dust/smoke puffs (or water splash puffs in shallow water) behind feet!
@@ -3317,7 +3530,7 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
           camTarget.z + Math.cos(cameraYawRef.current) * camDist;
         const desiredCamY = camTarget.y + camHeight;
 
-        const posAlpha = 1 - Math.exp(-9.0 * dt);
+        const posAlpha = 1 - Math.exp(-18.0 * dt);
         desiredCamPosVec.set(desiredCamX, desiredCamY, desiredCamZ);
         camPos.lerp(desiredCamPosVec, posAlpha);
 
@@ -3327,7 +3540,7 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
           camTarget.x - Math.sin(cameraYawRef.current) * lookAheadDist;
         const lookAheadZ =
           camTarget.z - Math.cos(cameraYawRef.current) * lookAheadDist;
-        const lookAlpha = 1 - Math.exp(-11.0 * dt);
+        const lookAlpha = 1 - Math.exp(-22.0 * dt);
         desiredCamLookVec.set(
           lookAheadX,
           camTarget.y + lookHeightOffset,
@@ -3423,6 +3636,7 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
           shieldActive: player.shieldTimer > 0,
           whirlwindActive: player.whirlwindTimer > 0,
           slowActive: player.slowTimer > 0,
+          slapAnimActive: player.slapAnimTimer > 0,
           slapsLanded: player.slapsLanded,
           standings: sortedStandings,
           events: [...state.events],

@@ -211,9 +211,18 @@ test('3D Physics: parabolic knockback arc, low air drag, elastic bounce, and pai
   const r0 = state.racers[0];
   const r1 = state.racers[1];
 
-  // Place r1 right next to r0 and slap r1
-  r1.x = r0.x + 1.2;
-  r1.z = r0.z;
+  // Place r1 right next to r0 in the center of the track and move other bots ahead so they don't block the knockback arc
+  for (let i = 2; i < state.racers.length; i++) {
+    state.racers[i].z = 35 + i * 5;
+    state.racers[i].qCooldown = 10;
+    state.racers[i].fCooldown = 10;
+  }
+  r0.x = -0.6;
+  r0.z = 5;
+  r1.x = 0.6;
+  r1.z = 5;
+  r1.qCooldown = 10;
+  r1.fCooldown = 10;
   const slapped = activateRacerSlapF(state, r0);
   assert.equal(slapped, true);
   assert.ok(r1.vy > 4.0, 'Slapped racer should be launched into an upward parabolic arc (vy > 4)');
@@ -415,7 +424,48 @@ test('Cream Pie (pie) magnetically curves toward nearby rival in forward cone an
   );
 });
 
+test('Wooden Club Slap [F] hits rivals inside the 180-degree front hemisphere and ignores rivals behind', () => {
+  const state = createInitialRaceState('bear', 'dash', 'bouncy_belly');
+  state.phase = 'racing';
+  const player = state.racers[0];
+  const frontRival = state.racers[1];
+  const backRival = state.racers[2];
 
+  // Move other bots far away
+  for (let i = 3; i < state.racers.length; i++) {
+    state.racers[i].x = 500;
+    state.racers[i].z = 500;
+  }
 
+  // Player at origin facing -Z (yaw = 0 -> forward vector is (0, -1))
+  player.x = 0;
+  player.z = 0;
+  player.yaw = 0;
 
+  // frontRival is 1.8u ahead-right (inside 180° front arc: dz = -1.5 < 0)
+  frontRival.x = 1.0;
+  frontRival.z = -1.5;
+  frontRival.knockVx = 0;
+  frontRival.knockVz = 0;
 
+  // backRival is 1.6u directly behind player (outside 180° front arc: dz = +1.6 > 0)
+  backRival.x = 0.2;
+  backRival.z = 1.6;
+  backRival.knockVx = 0;
+  backRival.knockVz = 0;
+
+  const slapped = activateRacerSlapF(state, player);
+  assert.equal(slapped, true);
+  assert.ok(
+    Math.hypot(frontRival.knockVx, frontRival.knockVz) > 8,
+    'Rival inside 180-degree front hemisphere should be hit by Wooden Club Slap'
+  );
+  assert.equal(
+    Math.hypot(backRival.knockVx, backRival.knockVz),
+    0,
+    'Rival behind the character (outside 180-degree front hemisphere) must NOT be hit'
+  );
+  const slapFx = state.shockwaves.find((sw) => sw.kind === 'slap');
+  assert.ok(slapFx, 'Slap should spawn a comic SLAP! shockwave effect');
+  assert.equal(slapFx.hitCount, 1);
+});

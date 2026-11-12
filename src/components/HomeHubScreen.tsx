@@ -264,16 +264,16 @@ export const HomeHubScreen: React.FC<HomeHubScreenProps> = ({
               loadout={playerLoadout}
             />
 
-            {/* Prev / Next Character Arrows */}
+            {/* Compact Side-Pinned Prev / Next Character Arrows */}
             <button
               type="button"
               onClick={() =>
                 onSelectCharacterByIndex(selectedCharacter.index - 1)
               }
               aria-label="Previous Character"
-              className="absolute left-2 top-1/2 -translate-y-1/2 z-20 w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-[#FFFDF9]/95 hover:bg-[#FDE047] text-[#2B2118] border-2 border-[#1A130D] flex items-center justify-center shadow-lg active:scale-95 transition-transform"
+              className="absolute left-1.5 top-[42%] -translate-y-1/2 z-20 w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-white/90 hover:bg-[#FDE047] text-[#2B2118] border border-[#1A130D] flex items-center justify-center shadow-sm active:scale-95 transition-transform"
             >
-              <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.8]" />
+              <ChevronLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.8]" />
             </button>
 
             <button
@@ -282,9 +282,9 @@ export const HomeHubScreen: React.FC<HomeHubScreenProps> = ({
                 onSelectCharacterByIndex(selectedCharacter.index + 1)
               }
               aria-label="Next Character"
-              className="absolute right-2 top-1/2 -translate-y-1/2 z-20 w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-[#FFFDF9]/95 hover:bg-[#FDE047] text-[#2B2118] border-2 border-[#1A130D] flex items-center justify-center shadow-lg active:scale-95 transition-transform"
+              className="absolute right-1.5 bottom-2 z-20 w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-white/90 hover:bg-[#FDE047] text-[#2B2118] border border-[#1A130D] flex items-center justify-center shadow-sm active:scale-95 transition-transform"
             >
-              <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.8]" />
+              <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.8]" />
             </button>
           </div>
 
