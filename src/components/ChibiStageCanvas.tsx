@@ -128,39 +128,44 @@ export const ChibiStageCanvas: React.FC<ChibiStageCanvasProps> = ({
     container.innerHTML = '';
     container.appendChild(renderer.domElement);
 
-    // 2. Scene, Studio Environment & Warm Cream Atmosphere
+    // 2. Scene, Studio Environment & Pure White Open Atmosphere
     const scene = new THREE.Scene();
-    const bgHex = 0xf8efe0;
+    const bgHex = 0xffffff;
     scene.background = new THREE.Color(bgHex);
-    scene.fog = new THREE.FogExp2(bgHex, 0.016);
+    scene.fog = new THREE.FogExp2(bgHex, 0.008);
 
     const pmremGenerator = new THREE.PMREMGenerator(renderer);
     scene.environment = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture;
-    scene.environmentIntensity = 0.38;
+    scene.environmentIntensity = 0.34;
     pmremGenerator.dispose();
 
-    // 3. Camera & OrbitControls
+    // 3. Camera & OrbitControls (Slight Zoom In/Out enabled)
     const camera = new THREE.PerspectiveCamera(32, width / height, 0.1, 120);
-    camera.position.set(0, 2.15, 6.35);
+    camera.position.set(0, 2.05, 6.15);
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = !isSoftwareGl;
     controls.dampingFactor = 0.08;
     controls.enablePan = false;
-    controls.minDistance = 3.8;
-    controls.maxDistance = 28.0;
-    controls.minPolarAngle = Math.PI * 0.2;
-    controls.maxPolarAngle = Math.PI * 0.49;
-    controls.target.set(0, 1.08, 0);
+    controls.enableZoom = true;
+    controls.zoomSpeed = 0.75;
+    controls.minDistance = 4.2;
+    controls.maxDistance = 8.8;
+    controls.minPolarAngle = Math.PI * 0.22;
+    controls.maxPolarAngle = Math.PI * 0.48;
+    controls.target.set(0, 1.05, 0);
     controls.update();
 
-    // 4. Studio 3-Point Lighting Rig
-    const hemiLight = new THREE.HemisphereLight(0xfff6e9, 0xd8c3a8, 0.9);
+    // 4. Soft Diffused White Studio Lighting Rig (Gentle, Subtle Shadows)
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.62);
+    scene.add(ambientLight);
+
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0xf1f5f9, 0.92);
     hemiLight.position.set(0, 14, 0);
     scene.add(hemiLight);
 
-    const keyLight = new THREE.DirectionalLight(0xfff5e4, 1.35);
-    keyLight.position.set(5.5, 11.5, 8.5);
+    const keyLight = new THREE.DirectionalLight(0xfffdf9, 1.15);
+    keyLight.position.set(5.2, 11.5, 8.2);
     keyLight.castShadow = !isSoftwareGl;
     keyLight.shadow.mapSize.width = 1024;
     keyLight.shadow.mapSize.height = 1024;
@@ -171,24 +176,24 @@ export const ChibiStageCanvas: React.FC<ChibiStageCanvasProps> = ({
     keyLight.shadow.camera.right = d;
     keyLight.shadow.camera.top = d;
     keyLight.shadow.camera.bottom = -d;
-    keyLight.shadow.bias = -0.0005;
+    keyLight.shadow.bias = -0.0004;
     keyLight.shadow.normalBias = 0.02;
+    keyLight.shadow.radius = 5;
     scene.add(keyLight);
 
-    const rimLight = new THREE.DirectionalLight(0xffe8cf, 0.55);
+    const rimLight = new THREE.DirectionalLight(0xf0f9ff, 0.48);
     rimLight.position.set(-6.0, 5.5, -6.0);
     scene.add(rimLight);
 
-    // 5. Minimalist Studio Floor & 16 Rounded Pedestal Blocks
+    // 5. Open Pure White Studio Floor with Soft Shadow Catcher (No Pedestals!)
     const floorGeo = new THREE.PlaneGeometry(120, 120);
     floorGeo.rotateX(-Math.PI / 2);
-    const floorMat = new THREE.MeshStandardMaterial({
-      color: 0xf4e9d8,
-      roughness: 0.95,
-      metalness: 0.0,
+    const floorMat = new THREE.ShadowMaterial({
+      opacity: 0.13,
+      color: 0x1e293b,
     });
     const floorMesh = new THREE.Mesh(floorGeo, floorMat);
-    floorMesh.position.y = -0.18;
+    floorMesh.position.y = 0.001;
     floorMesh.receiveShadow = true;
     scene.add(floorMesh);
 
@@ -198,29 +203,12 @@ export const ChibiStageCanvas: React.FC<ChibiStageCanvasProps> = ({
     const shadowTex = createContactShadowTexture();
     const rigs: CharacterRig[] = [];
     const slotGroups: THREE.Group[] = [];
-    const pedestals: THREE.Mesh[] = [];
-    const pedestalGeo = new RoundedBoxGeometry(2.55, 0.16, 2.25, 5, 0.07);
-    const pedestalMats: THREE.MeshPhysicalMaterial[] = [];
 
     CHARACTERS.forEach((spec, idx) => {
       const slotGroup = new THREE.Group();
       slotGroup.position.set(idx * SINGLE_VIEW_SPACING, 0, 0);
       carouselGroup.add(slotGroup);
       slotGroups.push(slotGroup);
-
-      const pedMat = new THREE.MeshPhysicalMaterial({
-        color: new THREE.Color('#EADBC6'),
-        roughness: 0.78,
-        metalness: 0.0,
-        clearcoat: 0.05,
-      });
-      pedestalMats.push(pedMat);
-      const pedestal = new THREE.Mesh(pedestalGeo, pedMat);
-      pedestal.position.set(0, -0.08, 0);
-      pedestal.receiveShadow = true;
-      pedestal.castShadow = !isSoftwareGl;
-      slotGroup.add(pedestal);
-      pedestals.push(pedestal);
 
       const rig = buildProceduralCharacter(spec.id, shadowTex);
       slotGroup.add(rig.rootGroup);
@@ -400,9 +388,11 @@ export const ChibiStageCanvas: React.FC<ChibiStageCanvasProps> = ({
         zoomTransitionActive = true;
       }
 
+      controls.maxDistance = st.showAllLineup ? 28.0 : 8.8;
+
       if (zoomTransitionActive) {
-        const desiredDist = st.showAllLineup ? 22.8 : 6.35;
-        const desiredTargetY = st.showAllLineup ? 1.15 : 1.08;
+        const desiredDist = st.showAllLineup ? 22.8 : 6.15;
+        const desiredTargetY = st.showAllLineup ? 1.15 : 1.05;
         controls.target.y = THREE.MathUtils.damp(controls.target.y, desiredTargetY, 7.5, dt);
         currentCamDist = camera.position.distanceTo(controls.target);
         const nextDist = THREE.MathUtils.damp(currentCamDist, desiredDist, 7.5, dt);
@@ -437,6 +427,10 @@ export const ChibiStageCanvas: React.FC<ChibiStageCanvasProps> = ({
           charPoke
         );
 
+        // Soften contact shadow on the pure white floor
+        frame.shadowOpacity *= 0.42;
+        frame.shadowScale *= 1.08;
+
         applyKinematicsToRig(
           rig,
           frame,
@@ -445,14 +439,6 @@ export const ChibiStageCanvas: React.FC<ChibiStageCanvasProps> = ({
         );
 
         rig.rootGroup.rotation.y = turntableAngle;
-
-        const targetPedestalY = isSelected && !st.showAllLineup ? -0.07 : -0.09;
-        pedestals[idx].position.y = THREE.MathUtils.damp(
-          pedestals[idx].position.y,
-          targetPedestalY,
-          8,
-          dt
-        );
       });
 
       // Animate playful mini-block confetti/dust puffs around the active character
@@ -509,8 +495,6 @@ export const ChibiStageCanvas: React.FC<ChibiStageCanvasProps> = ({
       rigs.forEach((r) => r.dispose());
       floorGeo.dispose();
       floorMat.dispose();
-      pedestalGeo.dispose();
-      pedestalMats.forEach((m) => m.dispose());
       puffGeo.dispose();
       puffMat.dispose();
       shadowTex.dispose();
@@ -521,7 +505,7 @@ export const ChibiStageCanvas: React.FC<ChibiStageCanvasProps> = ({
   return (
     <div
       ref={mountRef}
-      className="relative w-full h-full select-none overflow-hidden"
+      className="relative w-full h-full bg-white select-none overflow-hidden"
       aria-label="Interactive 3D Chibi Block Model Viewport"
     />
   );

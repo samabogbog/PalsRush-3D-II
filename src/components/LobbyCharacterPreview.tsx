@@ -1,8 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { RotateCw, Sparkles } from 'lucide-react';
+import { RotateCw, Sparkles, ZoomIn, ZoomOut } from 'lucide-react';
 import {
   AnimationPose,
   CharacterId,
@@ -34,6 +33,7 @@ export const LobbyCharacterPreview: React.FC<LobbyCharacterPreviewProps> = ({
   const [previewPose, setPreviewPose] = useState<AnimationPose>('cool');
   const [autoRotate, setAutoRotate] = useState<boolean>(true);
   const [cheerCount, setCheerCount] = useState<number>(0);
+  const zoomDeltaRef = useRef<number>(0);
 
   const stateRef = useRef<{
     character: CharacterSpec;
@@ -92,7 +92,7 @@ export const LobbyCharacterPreview: React.FC<LobbyCharacterPreviewProps> = ({
 
     const renderer = new THREE.WebGLRenderer({
       antialias: true,
-      alpha: true,
+      alpha: false,
       powerPreference: 'high-performance',
     });
     const gl = renderer.getContext();
@@ -105,7 +105,7 @@ export const LobbyCharacterPreview: React.FC<LobbyCharacterPreviewProps> = ({
 
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 0.98;
+    renderer.toneMappingExposure = 1.02;
     renderer.setPixelRatio(
       isSoftwareGl ? 1 : Math.min(window.devicePixelRatio, 2)
     );
@@ -119,89 +119,69 @@ export const LobbyCharacterPreview: React.FC<LobbyCharacterPreviewProps> = ({
     container.innerHTML = '';
     container.appendChild(renderer.domElement);
 
+    // Pure open white studio background
     const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xffffff);
 
-    // Camera framed nicely on the single pedestal character with generous headroom in landscape
+    // Camera framed on the character standing on open white ground with slight zoom in/out support
     const camera = new THREE.PerspectiveCamera(30, width / height, 0.1, 50);
-    camera.position.set(0, 1.95, 5.85);
+    camera.position.set(0, 1.85, 5.65);
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.08;
     controls.enablePan = false;
-    controls.enableZoom = false;
-    controls.minPolarAngle = Math.PI * 0.28;
+    controls.enableZoom = true;
+    controls.zoomSpeed = 0.7;
+    controls.minDistance = 3.9;
+    controls.maxDistance = 7.8;
+    controls.minPolarAngle = Math.PI * 0.26;
     controls.maxPolarAngle = Math.PI * 0.48;
-    controls.target.set(0, 1.08, 0);
+    controls.target.set(0, 1.02, 0);
     controls.update();
 
-    // Studio 3-Point Warm Arcade Lighting
-    const hemiLight = new THREE.HemisphereLight(0xfff8eb, 0xc8b294, 1.05);
+    // Soft Diffused White Studio Lighting for Gentle, Subtle Shadows
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.65);
+    scene.add(ambientLight);
+
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0xf1f5f9, 0.95);
     hemiLight.position.set(0, 10, 0);
     scene.add(hemiLight);
 
-    const keyLight = new THREE.DirectionalLight(0xfff4df, 1.45);
-    keyLight.position.set(4.2, 8.5, 6.0);
+    const keyLight = new THREE.DirectionalLight(0xfffdf9, 1.15);
+    keyLight.position.set(3.6, 8.2, 5.2);
     keyLight.castShadow = !isSoftwareGl;
-    keyLight.shadow.mapSize.width = 512;
-    keyLight.shadow.mapSize.height = 512;
+    keyLight.shadow.mapSize.width = 1024;
+    keyLight.shadow.mapSize.height = 1024;
     keyLight.shadow.camera.near = 1;
     keyLight.shadow.camera.far = 20;
-    const d = 3.2;
+    const d = 2.8;
     keyLight.shadow.camera.left = -d;
     keyLight.shadow.camera.right = d;
     keyLight.shadow.camera.top = d;
     keyLight.shadow.camera.bottom = -d;
-    keyLight.shadow.bias = -0.0005;
+    keyLight.shadow.bias = -0.0004;
+    keyLight.shadow.radius = 5;
     scene.add(keyLight);
 
-    const rimLight = new THREE.DirectionalLight(0xfde047, 0.65);
-    rimLight.position.set(-4.5, 4.5, -4.0);
-    scene.add(rimLight);
+    const fillLight = new THREE.DirectionalLight(0xf0f9ff, 0.55);
+    fillLight.position.set(-4.2, 4.8, -3.5);
+    scene.add(fillLight);
 
-    // Toy Arcade Turntable Pedestal
+    // Open White Floor with Soft Subtle Shadow Catcher (No Pedestal!)
+    const shadowFloorGeo = new THREE.PlaneGeometry(24, 24);
+    shadowFloorGeo.rotateX(-Math.PI / 2);
+    const shadowFloorMat = new THREE.ShadowMaterial({
+      opacity: 0.13,
+      color: 0x1e293b,
+    });
+    const shadowFloorMesh = new THREE.Mesh(shadowFloorGeo, shadowFloorMat);
+    shadowFloorMesh.position.y = 0.001;
+    shadowFloorMesh.receiveShadow = true;
+    scene.add(shadowFloorMesh);
+
     const turntableGroup = new THREE.Group();
     scene.add(turntableGroup);
-
-    const plinthBaseGeo = new RoundedBoxGeometry(2.35, 0.28, 2.35, 4, 0.12);
-    const plinthBaseMat = new THREE.MeshStandardMaterial({
-      color: 0x2b2118,
-      roughness: 0.45,
-      metalness: 0.08,
-    });
-    const plinthBaseMesh = new THREE.Mesh(plinthBaseGeo, plinthBaseMat);
-    plinthBaseMesh.position.y = -0.14;
-    plinthBaseMesh.receiveShadow = true;
-    turntableGroup.add(plinthBaseMesh);
-
-    const plinthTopGeo = new RoundedBoxGeometry(2.05, 0.12, 2.05, 4, 0.06);
-    const plinthTopMat = new THREE.MeshStandardMaterial({
-      color: new THREE.Color(stateRef.current.character.primaryHex),
-      roughness: 0.38,
-      metalness: 0.05,
-    });
-    const plinthTopMesh = new THREE.Mesh(plinthTopGeo, plinthTopMat);
-    plinthTopMesh.position.y = -0.02;
-    plinthTopMesh.receiveShadow = true;
-    turntableGroup.add(plinthTopMesh);
-
-    // Floating Star / Accent Corner Studs on the Pedestal
-    const studGeo = new RoundedBoxGeometry(0.22, 0.1, 0.22, 2, 0.04);
-    const studMat = new THREE.MeshStandardMaterial({
-      color: new THREE.Color(stateRef.current.character.accentHex),
-      roughness: 0.35,
-    });
-    const studOffsets = [
-      [-0.82, 0.03, -0.82],
-      [0.82, 0.03, -0.82],
-      [-0.82, 0.03, 0.82],
-      [0.82, 0.03, 0.82],
-    ];
-    for (const [sx, sy, sz] of studOffsets) {
-      const stud = new THREE.Mesh(studGeo, studMat);
-      stud.position.set(sx, sy, sz);
-      turntableGroup.add(stud);
-    }
 
     // Cache built character rigs by CharacterId so switching is 0ms instant
     const shadowTex = createContactShadowTexture();
@@ -230,14 +210,12 @@ export const LobbyCharacterPreview: React.FC<LobbyCharacterPreviewProps> = ({
       if (charChanged) {
         if (activeRig) {
           turntableGroup.remove(activeRig.rootGroup);
+          turntableGroup.remove(activeRig.contactShadow);
         }
         activeRig = ensureCharacterRig(targetSpec);
         activeCharId = targetSpec.id;
         turntableGroup.add(activeRig.rootGroup);
-
-        // Update pedestal accent colors to match the selected character
-        plinthTopMat.color.set(targetSpec.primaryHex);
-        studMat.color.set(targetSpec.accentHex);
+        turntableGroup.add(activeRig.contactShadow);
       }
 
       if (activeRig) {
@@ -264,6 +242,7 @@ export const LobbyCharacterPreview: React.FC<LobbyCharacterPreviewProps> = ({
     let stopped = false;
     let pacingTimer: ReturnType<typeof setTimeout> | null = null;
     const clock = new THREE.Clock();
+    const zoomDirVec = new THREE.Vector3();
 
     const afterDraw = () => {
       if (stopped) return;
@@ -282,6 +261,17 @@ export const LobbyCharacterPreview: React.FC<LobbyCharacterPreviewProps> = ({
       const elapsed = clock.getElapsedTime();
 
       syncSelectedCharacter();
+
+      if (zoomDeltaRef.current !== 0) {
+        const curDist = camera.position.distanceTo(controls.target);
+        const nextDist = Math.max(
+          controls.minDistance,
+          Math.min(controls.maxDistance, curDist + zoomDeltaRef.current)
+        );
+        zoomDirVec.subVectors(camera.position, controls.target).normalize();
+        camera.position.copy(controls.target).addScaledVector(zoomDirVec, nextDist);
+        zoomDeltaRef.current = 0;
+      }
 
       if (stateRef.current.pokeImpulse > 0) {
         stateRef.current.pokeImpulse = Math.max(
@@ -302,6 +292,9 @@ export const LobbyCharacterPreview: React.FC<LobbyCharacterPreviewProps> = ({
           1.05,
           stateRef.current.pokeImpulse
         );
+        // Keep the contact shadow subtle and soft on the pure white floor
+        frame.shadowOpacity *= 0.42;
+        frame.shadowScale *= 1.08;
         applyKinematicsToRig(activeRig, frame);
         animateEquipmentOnRig(activeRig, elapsed);
       }
@@ -323,71 +316,83 @@ export const LobbyCharacterPreview: React.FC<LobbyCharacterPreviewProps> = ({
         rig.dispose();
       }
       rigCache.clear();
-      plinthBaseGeo.dispose();
-      plinthBaseMat.dispose();
-      plinthTopGeo.dispose();
-      plinthTopMat.dispose();
-      studGeo.dispose();
-      studMat.dispose();
+      shadowFloorGeo.dispose();
+      shadowFloorMat.dispose();
       shadowTex.dispose();
       renderer.dispose();
     };
   }, []);
 
   return (
-    <div className="relative w-full h-full min-h-[110px] flex-1 bg-gradient-to-b from-[#2B2118] via-[#3A2C20] to-[#1E1610] border-2 sm:border-3 border-[#2B2118] rounded-2xl sm:rounded-3xl shadow-inner overflow-hidden">
-      {/* Subtle Radial Spotlight Behind the 3D Model */}
-      <div
-        className="pointer-events-none absolute inset-0 opacity-45 transition-colors duration-300"
-        style={{
-          background: `radial-gradient(circle at 50% 48%, ${character.primaryHex} 0%, transparent 68%)`,
-        }}
-      />
-
-      {/* Full-Bleed Interactive 3D Character Canvas */}
+    <div className="relative w-full h-full min-h-[110px] flex-1 bg-white border-2 sm:border-3 border-[#2B2118] rounded-2xl sm:rounded-3xl shadow-inner overflow-hidden">
+      {/* Full-Bleed Interactive 3D Character Canvas on Pure White Ground */}
       <div
         ref={mountRef}
         onClick={() => setCheerCount((c) => c + 1)}
-        title="Drag to rotate 3D model · Click to cheer!"
-        className="absolute inset-0 z-0 w-full h-full"
+        title="Drag to rotate · Scroll/Pinch to zoom · Click to cheer!"
+        className="absolute inset-0 z-0 w-full h-full bg-white"
       />
 
-      {/* Top Floating Overlay: Character Number, Name & 360° Toggle */}
+      {/* Top Floating Overlay: Character Number, Name, Zoom +/- & 360° Toggle */}
       <div className="pointer-events-none absolute top-2 inset-x-2.5 z-10 flex items-start justify-between gap-2">
-        <div className="min-w-0 bg-[#1A130D]/75 backdrop-blur-xs border border-white/15 rounded-xl px-2.5 py-1 shadow-md">
+        <div className="min-w-0 bg-white/90 backdrop-blur-xs border-2 border-[#2B2118] rounded-xl px-2.5 py-1 shadow-sm">
           <div className="flex items-center gap-1.5">
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-full bg-[#F59E0B] text-[#2B2118] text-[8px] sm:text-[9px] font-black uppercase tracking-wider">
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-full bg-[#F59E0B] text-[#2B2118] text-[9px] sm:text-[10px] font-black uppercase tracking-wider">
               <Sparkles className="w-2.5 h-2.5" />
               <span>#{character.index + 1}</span>
             </span>
-            <h3 className="text-xs sm:text-sm font-black text-[#FFFDF9] leading-tight truncate">
+            <h3 className="text-xs sm:text-sm font-black text-[#2B2118] leading-tight truncate">
               {character.name}
             </h3>
           </div>
-          <p className="hidden md:block text-[10px] font-bold text-[#FDE047] leading-snug truncate mt-0.5">
+          <p className="hidden md:block text-[10px] font-bold text-[#6E5844] leading-snug truncate mt-0.5">
             {character.accessory}
           </p>
         </div>
 
-        {/* Turntable Auto-Sway Toggle */}
-        <button
-          type="button"
-          onClick={() => setAutoRotate((prev) => !prev)}
-          title="Toggle Auto-Sway / Drag 3D Model to Rotate"
-          className={`pointer-events-auto px-2 py-1 rounded-xl border-2 text-[10px] font-black flex items-center gap-1 transition-colors shrink-0 shadow-md ${
-            autoRotate
-              ? 'bg-[#84CC16] text-[#2B2118] border-[#1A130D]'
-              : 'bg-[#1A130D]/85 text-[#F3E8D6] border-white/20 hover:bg-[#423326]'
-          }`}
-        >
-          <RotateCw className="w-3 h-3" />
-          <span>360°</span>
-        </button>
+        <div className="pointer-events-auto flex items-center gap-1 shrink-0">
+          <button
+            type="button"
+            onClick={() => {
+              zoomDeltaRef.current = -0.55;
+            }}
+            title="Zoom In"
+            aria-label="Zoom In 3D Model"
+            className="p-1.5 rounded-xl border-2 border-[#2B2118] bg-white/90 hover:bg-[#FEF3C7] text-[#2B2118] shadow-xs transition-colors cursor-pointer"
+          >
+            <ZoomIn className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              zoomDeltaRef.current = 0.55;
+            }}
+            title="Zoom Out"
+            aria-label="Zoom Out 3D Model"
+            className="p-1.5 rounded-xl border-2 border-[#2B2118] bg-white/90 hover:bg-[#FEF3C7] text-[#2B2118] shadow-xs transition-colors cursor-pointer"
+          >
+            <ZoomOut className="w-3.5 h-3.5" />
+          </button>
+          {/* Turntable Auto-Sway Toggle */}
+          <button
+            type="button"
+            onClick={() => setAutoRotate((prev) => !prev)}
+            title="Toggle Auto-Sway / Drag 3D Model to Rotate"
+            className={`px-2 py-1 rounded-xl border-2 text-[10px] font-black flex items-center gap-1 transition-colors shrink-0 shadow-xs cursor-pointer ${
+              autoRotate
+                ? 'bg-[#84CC16] text-[#2B2118] border-[#2B2118]'
+                : 'bg-white/90 text-[#2B2118] border-[#2B2118] hover:bg-[#F5EDE0]'
+            }`}
+          >
+            <RotateCw className="w-3 h-3" />
+            <span>360°</span>
+          </button>
+        </div>
       </div>
 
       {/* Bottom Floating Overlay: Pose Switcher Pills */}
       <div className="pointer-events-none absolute bottom-2 inset-x-2.5 z-10 flex items-center justify-center">
-        <div className="pointer-events-auto inline-flex items-center gap-1 bg-[#1A130D]/80 backdrop-blur-xs border border-white/15 rounded-xl p-1 shadow-lg">
+        <div className="pointer-events-auto inline-flex items-center gap-1 bg-white/90 backdrop-blur-xs border-2 border-[#2B2118] rounded-xl p-1 shadow-sm">
           {[
             { id: 'cool' as const, label: 'COOL' },
             { id: 'jump' as const, label: 'HOP' },
@@ -402,10 +407,10 @@ export const LobbyCharacterPreview: React.FC<LobbyCharacterPreviewProps> = ({
                   setPreviewPose(p.id);
                   setCheerCount((c) => c + 1);
                 }}
-                className={`px-2 py-0.5 rounded-lg text-[9px] sm:text-[10px] font-black border transition-colors ${
+                className={`px-2.5 py-0.5 rounded-lg text-[10px] sm:text-[11px] font-black border transition-colors cursor-pointer ${
                   active
-                    ? 'bg-[#FDE047] text-[#2B2118] border-[#1A130D] shadow'
-                    : 'bg-transparent text-[#F3E8D6] border-transparent hover:bg-white/10'
+                    ? 'bg-[#FDE047] text-[#2B2118] border-[#2B2118] shadow-2xs'
+                    : 'bg-transparent text-[#5A4635] border-transparent hover:bg-[#F5EDE0]'
                 }`}
               >
                 {p.label}

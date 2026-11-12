@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+@theme {
+  --font-sans: 'Boogaloo', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Boogaloo', system-ui, -apple-system, sans-serif;
+  --font-display: 'Boogaloo', system-ui, -apple-system, sans-serif;
+}
+
 @layer base {
   html,
   body,
@@ -17,25 +23,33 @@
     -webkit-user-select: none;
     -webkit-touch-callout: none;
     -webkit-tap-highlight-color: transparent;
+    font-family: 'Boogaloo', system-ui, -apple-system, sans-serif;
+  }
+
+  body,
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  button,
+  input,
+  select,
+  textarea,
+  code,
+  pre,
+  .font-mono,
+  .font-sans {
+    font-family: 'Boogaloo', system-ui, -apple-system, sans-serif !important;
+    letter-spacing: 0.025em;
+    font-variant-numeric: tabular-nums;
   }
 
   body {
-    font-family: 'Fredoka', 'Nunito', -apple-system, BlinkMacSystemFont, sans-serif;
-    font-weight: 600;
-    letter-spacing: 0.01em;
     background-color: #2b2118;
     color: #2b2118;
     -webkit-font-smoothing: antialiased;
-  }
-
-  h1, h2, h3, button {
-    font-family: 'Fredoka', 'Nunito', sans-serif;
-    font-weight: 700;
-  }
-
-  code, pre, .font-mono {
-    font-family: 'JetBrains Mono', monospace;
-    font-variant-numeric: tabular-nums;
   }
 }
 

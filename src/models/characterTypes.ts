@@ -35,7 +35,7 @@ export type PassiveSkillId =
 // Alias for backward compatibility
 export type SkillId = ActiveSkillId;
 
-export type ItemId = 'glove' | 'honey' | 'pie' | 'pepper' | 'magnet';
+export type ItemId = 'ice_bomb' | 'honey' | 'pie' | 'pepper' | 'magnet';
 
 export interface ActiveSkillSpec {
   id: ActiveSkillId;
@@ -179,25 +179,27 @@ export interface ItemSpec {
 }
 
 export const ITEMS: Record<ItemId, ItemSpec> = {
-  glove: {
-    id: 'glove',
-    name: 'Boing Boxing Glove',
-    shortLabel: 'Boxing Glove',
-    description: 'Lunges forward & bonks the nearest rival sideways!',
-    colorHex: '#EF4444',
+  ice_bomb: {
+    id: 'ice_bomb',
+    name: 'Frost Ice Bomb',
+    shortLabel: 'Ice Bomb',
+    description:
+      'Lobs a freezing ice orb ahead that bursts and freezes all rivals in the blast zone for 2.0s!',
+    colorHex: '#38BDF8',
   },
   honey: {
     id: 'honey',
     name: 'Sticky Honey Trap',
     shortLabel: 'Honey Trap',
-    description: 'Drops a gooey puddle behind you that slows & spins rivals!',
+    description: 'Drops a gooey puddle behind you that stops & heavily slows rivals!',
     colorHex: '#F59E0B',
   },
   pie: {
     id: 'pie',
     name: 'Cream Pie Toss',
     shortLabel: 'Cream Pie',
-    description: 'Lobs a splat pie forward to wobble & slow the leader ahead!',
+    description:
+      'Lobs a magnetically curving pie ahead that pulls toward nearby rivals to stun & slow them!',
     colorHex: '#F472B6',
   },
   pepper: {
@@ -211,12 +213,12 @@ export const ITEMS: Record<ItemId, ItemSpec> = {
     id: 'magnet',
     name: 'Dizzy Magnet Pull',
     shortLabel: 'Magnet Pull',
-    description: 'Zips you forward while tugging the rival ahead backward!',
+    description: 'Zips you forward while stunning & slowing the rival ahead!',
     colorHex: '#6366F1',
   },
 };
 
-export const ITEM_LIST: ItemId[] = ['glove', 'honey', 'pie', 'pepper', 'magnet'];
+export const ITEM_LIST: ItemId[] = ['ice_bomb', 'honey', 'pie', 'pepper', 'magnet'];
 
 export interface CharacterSpec {
   id: CharacterId;

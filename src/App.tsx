@@ -20,7 +20,11 @@ import {
 } from './models/equipmentTypes';
 import { ChibiStageCanvas } from './components/ChibiStageCanvas';
 import { ControlDock } from './components/ControlDock';
-import { RaceGameCanvas, RaceHudSnapshot } from './components/RaceGameCanvas';
+import {
+  RaceGameCanvas,
+  RaceHudSnapshot,
+  ReplayControlAction,
+} from './components/RaceGameCanvas';
 import { RaceHudOverlay } from './components/RaceHudOverlay';
 import {
   DungeonBrawlerCanvas,
@@ -103,6 +107,10 @@ export default function App() {
     type: 'q' | 'e' | 'f' | 'jump' | null;
     seq: number;
   }>({ type: null, seq: 0 });
+  const [externalReplayTrigger, setExternalReplayTrigger] = useState<{
+    action: ReplayControlAction | null;
+    seq: number;
+  }>({ action: null, seq: 0 });
   const [externalCombatTrigger, setExternalCombatTrigger] = useState<{
     type: 'atk' | 'q' | 'e' | 'jump' | null;
     seq: number;
@@ -286,6 +294,7 @@ export default function App() {
 
   const [hudSnapshot, setHudSnapshot] = useState<RaceHudSnapshot>(() => ({
     phase: 'countdown',
+    allFinished: false,
     countdownSec: 3.0,
     elapsedRaceSec: 0,
     playerRank: 1,
@@ -316,6 +325,17 @@ export default function App() {
     })),
     events: [],
     bannerCallout: null,
+    replay: {
+      isActive: false,
+      isPlaying: false,
+      currentTimeSec: 0,
+      durationSec: 1,
+      speed: 1,
+      target: 'leader',
+      activeFocusRacerId: CHARACTERS[0].id,
+      activeLeaderId: CHARACTERS[0].id,
+      hasReplayData: false,
+    },
   }));
 
   const [combatHudSnapshot, setCombatHudSnapshot] =
@@ -395,6 +415,13 @@ export default function App() {
   const handleTriggerRaceAction = useCallback(
     (type: 'q' | 'e' | 'f' | 'jump') => {
       setExternalActionTrigger((prev) => ({ type, seq: prev.seq + 1 }));
+    },
+    []
+  );
+
+  const handleTriggerReplayAction = useCallback(
+    (action: ReplayControlAction) => {
+      setExternalReplayTrigger((prev) => ({ action, seq: prev.seq + 1 }));
     },
     []
   );
@@ -587,6 +614,7 @@ export default function App() {
                 }
                 onLaunchCombatMode={handleLaunchCombatMode}
                 onTriggerAction={handleTriggerRaceAction}
+                onReplayAction={handleTriggerReplayAction}
                 onJoystickChange={handleJoystickChange}
                 spectatedRacerId={spectatedRacerId}
                 onSelectSpectatedRacer={setSpectatedRacerId}
@@ -604,6 +632,7 @@ export default function App() {
               raceSessionKey={raceSessionKey}
               isLobbyOpen={isRaceLobbyOpen}
               externalActionTrigger={externalActionTrigger}
+              externalReplayTrigger={externalReplayTrigger}
               joystickInputRef={joystickInputRef}
               spectatedRacerId={spectatedRacerId}
               onHudUpdate={setHudSnapshot}
@@ -660,6 +689,7 @@ export default function App() {
               }
               onLaunchCombatMode={handleLaunchCombatMode}
               onTriggerAction={handleTriggerRaceAction}
+              onReplayAction={handleTriggerReplayAction}
               onJoystickChange={handleJoystickChange}
               spectatedRacerId={spectatedRacerId}
               onSelectSpectatedRacer={setSpectatedRacerId}

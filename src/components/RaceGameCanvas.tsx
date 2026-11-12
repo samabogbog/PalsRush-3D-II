@@ -25,6 +25,7 @@ import {
   activateRacerSlapF,
   BOOST_PADS,
   createInitialRaceState,
+  finishAllRemainingRacers,
   PlayerControlInput,
   RaceSimulationState,
   RIVER_STEPPING_STONES,
@@ -39,8 +40,83 @@ import {
   TURNTABLES,
 } from '../game/raceEngine';
 
+export type ReplayCameraTarget = 'leader' | CharacterId;
+
+export type ReplayControlAction =
+  | { type: 'start_replay'; target?: ReplayCameraTarget }
+  | { type: 'stop_replay' }
+  | { type: 'toggle_play' }
+  | { type: 'restart' }
+  | { type: 'seek'; timeSec: number }
+  | { type: 'set_speed'; speed: number }
+  | { type: 'set_target'; target: ReplayCameraTarget }
+  | { type: 'finish_all_racers' };
+
+export interface ReplayRacerPose {
+  id: CharacterId;
+  x: number;
+  y: number;
+  z: number;
+  groundY: number;
+  vx: number;
+  vy: number;
+  vz: number;
+  knockVx: number;
+  knockVz: number;
+  yaw: number;
+  pose: RaceSimulationState['racers'][0]['pose'];
+  rank: number;
+  totalProgress: number;
+  furthestCheckpointDist: number;
+  finished: boolean;
+  finishTimeSec: number | null;
+  shieldTimer: number;
+  whirlwindTimer: number;
+  freezeTimer?: number;
+  dashTimer: number;
+  stunTimer: number;
+  slapAnimTimer: number;
+  respawnBlinkTimer: number;
+  pokeImpulse: number;
+}
+
+export interface ReplayKeyframe {
+  timeSec: number;
+  leaderId: CharacterId;
+  racers: ReplayRacerPose[];
+  droppedTraps: { x: number; y: number; z: number; radius: number }[];
+  pieProjectiles: {
+    x: number;
+    y: number;
+    z: number;
+    kind?: 'pie' | 'ice_bomb';
+  }[];
+  shockwaves: {
+    x: number;
+    y: number;
+    z: number;
+    maxRadius: number;
+    age: number;
+    maxAge: number;
+    colorHex: string;
+  }[];
+}
+
+export interface RaceHudReplayInfo {
+  isActive: boolean;
+  isPlaying: boolean;
+  currentTimeSec: number;
+  durationSec: number;
+  speed: number;
+  target: ReplayCameraTarget;
+  activeFocusRacerId: CharacterId;
+  activeLeaderId: CharacterId;
+  hasReplayData: boolean;
+}
+
 export interface RaceHudSnapshot {
   phase: RaceSimulationState['phase'];
+  allFinished: boolean;
   countdownSec: number;
   elapsedRaceSec: number;
   playerRank: number;
@@ -71,6 +147,7 @@ export interface RaceHudSnapshot {
   }[];
   events: RaceSimulationState['events'];
   bannerCallout: RaceSimulationState['bannerCallout'];
+  replay: RaceHudReplayInfo;
 }
 
 export interface RaceGameCanvasProps {
@@ -83,6 +160,10 @@ export interface RaceGameCanvasProps {
   isLobbyOpen: boolean;
   externalActionTrigger: {
     type: 'q' | 'e' | 'f' | 'jump' | null;
+    seq: number;
+  };
+  externalReplayTrigger?: {
+    action: ReplayControlAction | null;
     seq: number;
   };
   joystickInputRef?: React.MutableRefObject<{ x: number; y: number }>;
@@ -1534,6 +1615,7 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
   raceSessionKey,
   isLobbyOpen,
   externalActionTrigger,
+  externalReplayTrigger,
   joystickInputRef,
   spectatedRacerId,
   onHudUpdate,
@@ -1558,6 +1640,116 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
   const playerLoadoutRef = useRef<EquippedLoadout | undefined>(playerLoadout);
   const playerLoadoutKeyRef = useRef<string>(JSON.stringify(playerLoadout || {}));
   const reportedFinishSessionRef = useRef<number>(0);
+
+  // Replay recording & playback buffers
+  const replayFramesRef = useRef<ReplayKeyframe[]>([]);
+  const lastRecordedReplaySecRef = useRef<number>(-1);
+  const replayStateRef = useRef<{
+    isActive: boolean;
+    isPlaying: boolean;
+    currentTimeSec: number;
+    speed: number;
+    target: ReplayCameraTarget;
+  }>({
+    isActive: false,
+    isPlaying: true,
+    currentTimeSec: 0,
+    speed: 1,
+    target: 'leader',
+  });
+
+  const recordReplayKeyframe = (state: RaceSimulationState) => {
+    const leader =
+      state.racers.find((r) => r.rank === 1) ?? state.racers[0];
+    replayFramesRef.current.push({
+      timeSec: state.elapsedRaceSec,
+      leaderId: leader.id,
+      racers: state.racers.map((r) => ({
+        id: r.id,
+        x: r.x,
+        y: r.y,
+        z: r.z,
+        groundY: r.groundY,
+        vx: r.vx,
+        vy: r.vy,
+        vz: r.vz,
+        knockVx: r.knockVx,
+        knockVz: r.knockVz,
+        yaw: r.yaw,
+        pose: r.pose,
+        rank: r.rank,
+        totalProgress: r.totalProgress,
+        furthestCheckpointDist: r.furthestCheckpointDist,
+        finished: r.finished,
+        finishTimeSec: r.finishTimeSec,
+        shieldTimer: r.shieldTimer,
+        whirlwindTimer: r.whirlwindTimer,
+        freezeTimer: r.freezeTimer,
+        dashTimer: r.dashTimer,
+        stunTimer: r.stunTimer,
+        slapAnimTimer: r.slapAnimTimer,
+        respawnBlinkTimer: r.respawnBlinkTimer,
+        pokeImpulse: r.pokeImpulse,
+      })),
+      droppedTraps: state.droppedTraps.map((t) => ({
+        x: t.x,
+        y: t.y,
+        z: t.z,
+        radius: t.radius,
+      })),
+      pieProjectiles: state.pieProjectiles.map((p) => ({
+        x: p.x,
+        y: p.y,
+        z: p.z,
+        kind: p.kind,
+      })),
+      shockwaves: state.shockwaves.map((s) => ({
+        x: s.x,
+        y: s.y,
+        z: s.z,
+        maxRadius: s.maxRadius,
+        age: s.age,
+        maxAge: s.maxAge,
+        colorHex: s.colorHex,
+      })),
+    });
+    lastRecordedReplaySecRef.current = state.elapsedRaceSec;
+  };
+
+  const fastForwardCompleteAllRacers = () => {
+    const state = simStateRef.current;
+    if (state.phase === 'countdown') {
+      state.phase = 'racing';
+      state.countdownSec = 0;
+    }
+    if (!state.allFinished) {
+      const idleInput: PlayerControlInput = {
+        moveForward: 1,
+        moveRight: 0,
+        cameraYaw: cameraYawRef.current,
+        jumpRequested: false,
+        skillQRequested: false,
+        itemERequested: false,
+        slapFRequested: false,
+      };
+      let guard = 0;
+      while (!state.allFinished && guard < 420) {
+        stepRaceSimulation(state, 0.065, idleInput);
+        recordReplayKeyframe(state);
+        guard++;
+      }
+      if (!state.allFinished) {
+        finishAllRemainingRacers(state);
+        recordReplayKeyframe(state);
+      }
+    } else if (
+      replayFramesRef.current.length === 0 ||
+      replayFramesRef.current[replayFramesRef.current.length - 1].timeSec <
+        state.elapsedRaceSec
+    ) {
+      recordReplayKeyframe(state);
+    }
+  };
 
   const keysDownRef = useRef<Set<string>>(new Set());
   const cameraYawRef = useRef<number>(0);
@@ -1618,6 +1810,49 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
       pendingActionsRef.current.jump = true;
   }, [externalActionTrigger]);
 
+  useEffect(() => {
+    const act = externalReplayTrigger?.action;
+    if (!act) return;
+    const rep = replayStateRef.current;
+    if (act.type === 'finish_all_racers') {
+      fastForwardCompleteAllRacers();
+    } else if (act.type === 'start_replay') {
+      fastForwardCompleteAllRacers();
+      rep.isActive = true;
+      rep.isPlaying = true;
+      rep.currentTimeSec = 0;
+      rep.speed = 1;
+      if (act.target) {
+        rep.target = act.target;
+      }
+    } else if (act.type === 'stop_replay') {
+      rep.isActive = false;
+      rep.isPlaying = false;
+    } else if (act.type === 'toggle_play') {
+      const totalDur =
+        replayFramesRef.current.length > 0
+          ? replayFramesRef.current[replayFramesRef.current.length - 1].timeSec
+          : simStateRef.current.elapsedRaceSec;
+      if (!rep.isPlaying && rep.currentTimeSec >= Math.max(0.1, totalDur - 0.05)) {
+        rep.currentTimeSec = 0;
+      }
+      rep.isPlaying = !rep.isPlaying;
+    } else if (act.type === 'restart') {
+      rep.currentTimeSec = 0;
+      rep.isPlaying = true;
+    } else if (act.type === 'seek') {
+      const totalDur =
+        replayFramesRef.current.length > 0
+          ? replayFramesRef.current[replayFramesRef.current.length - 1].timeSec
+          : simStateRef.current.elapsedRaceSec;
+      rep.currentTimeSec = Math.max(0, Math.min(totalDur, act.timeSec));
+    } else if (act.type === 'set_speed') {
+      rep.speed = act.speed;
+    } else if (act.type === 'set_target') {
+      rep.target = act.target;
+    }
+  }, [externalReplayTrigger]);
+
   // Reset race state when trackId, character, skills, or session key changes
   useEffect(() => {
     setActiveTrack(trackId);
@@ -1636,6 +1871,16 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
     cameraPitchVelRef.current = 0;
     simStateRef.current = fresh;
     reportedFinishSessionRef.current = 0;
+    replayFramesRef.current = [];
+    lastRecordedReplaySecRef.current = -1;
+    replayStateRef.current = {
+      isActive: false,
+      isPlaying: true,
+      currentTimeSec: 0,
+      speed: 1,
+      target: 'leader',
+    };
+    recordReplayKeyframe(fresh);
   }, [
     trackId,
     playerCharacterId,
@@ -2196,6 +2441,7 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
         rig: CharacterRig;
         shieldBubble: THREE.Mesh;
         whirlwindRing: THREE.Mesh;
+        freezeBlock: THREE.Mesh;
         playerMarker: THREE.Mesh | null;
       }
     > = new Map();
@@ -2285,6 +2531,23 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
         whirlwindRing.visible = false;
         wrapper.add(whirlwindRing);
 
+        // 3D Translucent Ice Cube encasement when hit by Frost Ice Bomb!
+        const freezeBlock = new THREE.Mesh(
+          new RoundedBoxGeometry(1.45, 1.85, 1.45, 3, 0.14),
+          new THREE.MeshStandardMaterial({
+            color: '#7DD3FC',
+            emissive: '#0284C7',
+            emissiveIntensity: 0.3,
+            transparent: true,
+            opacity: 0.56,
+            roughness: 0.12,
+            metalness: 0.15,
+          })
+        );
+        freezeBlock.position.y = 0.92;
+        freezeBlock.visible = false;
+        wrapper.add(freezeBlock);
+
         let playerMarker: THREE.Mesh | null = null;
         if (r.isPlayer) {
           playerMarker = new THREE.Mesh(
@@ -2307,6 +2570,7 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
           rig,
           shieldBubble,
           whirlwindRing,
+          freezeBlock,
           playerMarker,
         });
       });
@@ -2536,8 +2800,116 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
       pendingActionsRef.current.e = false;
       pendingActionsRef.current.f = false;
 
-      if (!isLobbyOpenRef.current) {
+      const rep = replayStateRef.current;
+
+      if (!isLobbyOpenRef.current && !rep.isActive) {
+        const wasAllFinished = state.allFinished;
         stepRaceSimulation(state, dt, input);
+        if (
+          (state.phase === 'racing' ||
+            (state.phase === 'finished' && !wasAllFinished)) &&
+          (state.elapsedRaceSec - lastRecordedReplaySecRef.current >= 0.062 ||
+            state.allFinished !== wasAllFinished)
+        ) {
+          recordReplayKeyframe(state);
+        }
+      }
+
+      const frames = replayFramesRef.current;
+      const totalReplayDuration =
+        frames.length > 0
+          ? frames[frames.length - 1].timeSec
+          : state.elapsedRaceSec;
+
+      if (rep.isActive && frames.length > 0) {
+        if (rep.isPlaying) {
+          rep.currentTimeSec += dt * rep.speed;
+          if (rep.currentTimeSec >= totalReplayDuration) {
+            rep.currentTimeSec = totalReplayDuration;
+            rep.isPlaying = false;
+          }
+        }
+      }
+
+      // Interpolate Replay Frame if Replay Mode is Active
+      let activeRenderRacers: ReplayRacerPose[] = state.racers;
+      let activeDroppedTraps: {
+        x: number;
+        y: number;
+        z: number;
+        radius: number;
+      }[] = state.droppedTraps;
+      let activePieProjectiles: {
+        x: number;
+        y: number;
+        z: number;
+        kind?: 'pie' | 'ice_bomb';
+      }[] = state.pieProjectiles;
+      let activeShockwaves: {
+        x: number;
+        y: number;
+        z: number;
+        maxRadius: number;
+        age: number;
+        maxAge: number;
+        colorHex: string;
+      }[] = state.shockwaves;
+      let activeSceneTimeSec = state.elapsedRaceSec;
+      let activeLeaderId: CharacterId =
+        (state.racers.find((r) => r.rank === 1) ?? state.racers[0]).id;
+
+      if (rep.isActive && frames.length > 0) {
+        const t = rep.currentTimeSec;
+        activeSceneTimeSec = t;
+        // Binary search bracketing keyframes
+        let low = 0;
+        let high = frames.length - 1;
+        while (low < high - 1) {
+          const mid = (low + high) >> 1;
+          if (frames[mid].timeSec <= t) {
+            low = mid;
+          } else {
+            high = mid;
+          }
+        }
+        const kf0 = frames[low];
+        const kf1 = frames[high];
+        const span = Math.max(0.0001, kf1.timeSec - kf0.timeSec);
+        const alpha = Math.max(0, Math.min(1, (t - kf0.timeSec) / span));
+
+        activeLeaderId = alpha < 0.5 ? kf0.leaderId : kf1.leaderId;
+        activeDroppedTraps = kf0.droppedTraps;
+        activePieProjectiles = kf0.pieProjectiles;
+        activeShockwaves = kf0.shockwaves;
+
+        activeRenderRacers = kf0.racers.map((r0, idx) => {
+          const r1 = kf1.racers[idx] ?? r0;
+          let yawDiff = r1.yaw - r0.yaw;
+          while (yawDiff > Math.PI) yawDiff -= Math.PI * 2;
+          while (yawDiff < -Math.PI) yawDiff += Math.PI * 2;
+          return {
+            ...r0,
+            x: r0.x + (r1.x - r0.x) * alpha,
+            y: r0.y + (r1.y - r0.y) * alpha,
+            z: r0.z + (r1.z - r0.z) * alpha,
+            groundY: r0.groundY + (r1.groundY - r0.groundY) * alpha,
+            vx: r0.vx + (r1.vx - r0.vx) * alpha,
+            vy: r0.vy + (r1.vy - r0.vy) * alpha,
+            vz: r0.vz + (r1.vz - r0.vz) * alpha,
+            knockVx: r0.knockVx + (r1.knockVx - r0.knockVx) * alpha,
+            knockVz: r0.knockVz + (r1.knockVz - r0.knockVz) * alpha,
+            yaw: r0.yaw + yawDiff * alpha,
+            pose: alpha < 0.5 ? r0.pose : r1.pose,
+            rank: alpha < 0.5 ? r0.rank : r1.rank,
+            totalProgress:
+              r0.totalProgress + (r1.totalProgress - r0.totalProgress) * alpha,
+            furthestCheckpointDist:
+              r0.furthestCheckpointDist +
+              (r1.furthestCheckpointDist - r0.furthestCheckpointDist) * alpha,
+            finished: alpha < 0.5 ? r0.finished : r1.finished,
+            finishTimeSec: alpha < 0.5 ? r0.finishTimeSec : r1.finishTimeSec,
+          };
+        });
       }
 
       const elapsed = now / 1000;
@@ -2553,14 +2925,14 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
 
       // Update Turntable Visual Rotations
       for (const tm of turntableMeshes) {
-        tm.group.rotation.y = state.elapsedRaceSec * tm.spec.angularSpeed;
+        tm.group.rotation.y = activeSceneTimeSec * tm.spec.angularSpeed;
       }
 
       // Update Rolling Boulders & Beach Balls
       for (const bm of boulderMeshes) {
         const b = bm.spec;
         const offset =
-          Math.sin(state.elapsedRaceSec * b.speed + b.phase) * b.sweepHalfWidth;
+          Math.sin(activeSceneTimeSec * b.speed + b.phase) * b.sweepHalfWidth;
         bm.mesh.position.set(
           b.centerX + b.rightX * offset,
           b.centerY + b.radius,
@@ -2574,7 +2946,7 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
       for (const box of state.itemBoxes) {
         const mesh = itemBoxMeshes.get(box.id);
         if (mesh) {
-          mesh.visible = box.respawnTimer <= 0;
+          mesh.visible = rep.isActive ? true : box.respawnTimer <= 0;
           if (mesh.visible) {
             mesh.rotation.y = elapsed * 2.4 + box.x;
             mesh.rotation.x = Math.sin(elapsed * 3.0 + box.z) * 0.25;
@@ -2588,7 +2960,7 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
       while (dynamicEffectsGroup.children.length > 0) {
         dynamicEffectsGroup.remove(dynamicEffectsGroup.children[0]);
       }
-      for (const trap of state.droppedTraps) {
+      for (const trap of activeDroppedTraps) {
         const tMesh = new THREE.Mesh(
           new THREE.CylinderGeometry(trap.radius, trap.radius, 0.14, 18),
           new THREE.MeshStandardMaterial({ color: '#F59E0B', roughness: 0.2 })
@@ -2596,15 +2968,32 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
         tMesh.position.set(trap.x, trap.y + 0.06, trap.z);
         dynamicEffectsGroup.add(tMesh);
       }
-      for (const pie of state.pieProjectiles) {
-        const pMesh = new THREE.Mesh(
-          new RoundedBoxGeometry(0.75, 0.35, 0.75, 3, 0.12),
-          new THREE.MeshStandardMaterial({ color: '#F472B6', roughness: 0.4 })
-        );
-        pMesh.position.set(pie.x, pie.y, pie.z);
-        dynamicEffectsGroup.add(pMesh);
+      for (const pie of activePieProjectiles) {
+        if (pie.kind === 'ice_bomb') {
+          const iceMesh = new THREE.Mesh(
+            new THREE.OctahedronGeometry(0.55, 1),
+            new THREE.MeshStandardMaterial({
+              color: '#38BDF8',
+              emissive: '#0284C7',
+              emissiveIntensity: 0.45,
+              roughness: 0.15,
+              metalness: 0.2,
+            })
+          );
+          iceMesh.position.set(pie.x, pie.y, pie.z);
+          iceMesh.rotation.set(elapsed * 5.0, elapsed * 6.5, 0);
+          dynamicEffectsGroup.add(iceMesh);
+        } else {
+          const pMesh = new THREE.Mesh(
+            new RoundedBoxGeometry(0.75, 0.35, 0.75, 3, 0.12),
+            new THREE.MeshStandardMaterial({ color: '#F472B6', roughness: 0.4 })
+          );
+          pMesh.position.set(pie.x, pie.y, pie.z);
+          pMesh.rotation.y = elapsed * 6.0;
+          dynamicEffectsGroup.add(pMesh);
+        }
       }
-      for (const sw of state.shockwaves) {
+      for (const sw of activeShockwaves) {
         const progress = sw.age / sw.maxAge;
         const radius = 0.6 + (sw.maxRadius - 0.6) * progress;
         const ring = new THREE.Mesh(
@@ -2622,15 +3011,27 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
       }
 
       // Update all 8 Racer Rigs, Procedural Chibi Kinematics & Cute Footstep Dust/Splash Puffs!
-      const playerRef = state.racers[0];
-      const cameraFocusRacer =
-        (state.phase === 'finished' &&
-          spectatedRacerIdRef.current &&
-          state.racers.find((r) => r.id === spectatedRacerIdRef.current)) ||
-        playerRef;
+      const playerRef = activeRenderRacers[0];
+      let cameraFocusRacer: ReplayRacerPose = playerRef;
+      if (rep.isActive) {
+        if (rep.target === 'leader') {
+          cameraFocusRacer =
+            activeRenderRacers.find((r) => r.id === activeLeaderId) ||
+            activeRenderRacers.find((r) => r.rank === 1) ||
+            playerRef;
+        } else {
+          cameraFocusRacer =
+            activeRenderRacers.find((r) => r.id === rep.target) || playerRef;
+        }
+      } else if (state.phase === 'finished' && spectatedRacerIdRef.current) {
+        cameraFocusRacer =
+          activeRenderRacers.find(
+            (r) => r.id === spectatedRacerIdRef.current
+          ) || playerRef;
+      }
 
-      for (let i = 0; i < state.racers.length; i++) {
-        const r = state.racers[i];
+      for (let i = 0; i < activeRenderRacers.length; i++) {
+        const r = activeRenderRacers[i];
         const vis = racerVisuals.get(r.id);
         if (!vis) continue;
 
@@ -2708,8 +3109,13 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
             ? Math.max(0.85, Math.min(1.55, speedMag / 9.8))
             : 1.0;
 
+        const effectiveAnimDt = rep.isActive
+          ? rep.isPlaying
+            ? dt * rep.speed
+            : 0
+          : dt;
         // Accumulate continuous animation phase per racer so changing speed never causes phase-jump shaking!
-        stepInfo.animTime += dt * animSpeed;
+        stepInfo.animTime += effectiveAnimDt * animSpeed;
 
         const frame = computeCharacterKinematics(
           r.pose,
@@ -2755,7 +3161,11 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
           !cameraFocusRacer ||
           Math.hypot(r.x - cameraFocusRacer.x, r.z - cameraFocusRacer.z) < 42;
 
-        if (isNearCamera && !isLobbyOpenRef.current) {
+        if (
+          isNearCamera &&
+          !isLobbyOpenRef.current &&
+          (!rep.isActive || rep.isPlaying)
+        ) {
           const rSample = sampleTrackAtDistance(r.furthestCheckpointDist);
           const inWater = rSample.isShallowWater;
 
@@ -2779,7 +3189,7 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
 
           // Rhythmic alternating left/right footstep puffs behind the heels while running
           if (!isAirborneNow && speedMag > 1.6) {
-            stepInfo.timer -= dt;
+            stepInfo.timer -= effectiveAnimDt;
             const interval = r.id === cameraFocusRacer?.id ? 0.075 : 0.13;
             if (stepInfo.timer <= 0) {
               stepInfo.timer = interval;
@@ -2820,6 +3230,11 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
           vis.whirlwindRing.rotation.z = elapsed * 14;
         }
 
+        vis.freezeBlock.visible = (r.freezeTimer ?? 0) > 0;
+        if (vis.freezeBlock.visible) {
+          vis.freezeBlock.position.y = airOffset + 0.92;
+        }
+
         if (vis.playerMarker) {
           vis.playerMarker.position.y =
             airOffset + 2.15 + Math.sin(elapsed * 6.0) * 0.12;
@@ -2850,25 +3265,39 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
         puff.mesh.scale.setScalar(Math.max(0.01, scaleCurve));
       }
 
-      // 3rd-Person Chase Camera tracking Player or Spectated Racer 3D Position & Elevation (x, y, z)
+      // 3rd-Person Chase Camera vs High & Wide Broadcast Replay/Spectator Camera
       const player = state.racers[0];
       const camTarget = cameraFocusRacer || player;
+      const isWideBroadcastCam =
+        rep.isActive ||
+        (state.phase === 'finished' && spectatedRacerIdRef.current !== null);
+
+      // Smoothly transition FOV between standard gameplay (50°) and Wide Broadcast Replay (68°)
+      const desiredFov = isWideBroadcastCam ? 68 : 50;
+      if (Math.abs(camera.fov - desiredFov) > 0.05) {
+        camera.fov += (desiredFov - camera.fov) * Math.min(1, dt * 7.5);
+        camera.updateProjectionMatrix();
+      }
+
       if (camTarget) {
-        // When spectating another racer after finishing, gently auto-align camera behind their heading if not manually dragging
+        // In Replay or Spectator Mode, gently auto-align camera behind target racer's heading if not manually dragging
         if (
-          state.phase === 'finished' &&
-          !camTarget.isPlayer &&
+          (rep.isActive ||
+            (state.phase === 'finished' && camTarget.id !== player.id)) &&
           activeDragPointers.size === 0 &&
           document.pointerLockElement !== domElem
         ) {
           let yawDiff = camTarget.yaw - targetCameraYawRef.current;
           while (yawDiff > Math.PI) yawDiff -= Math.PI * 2;
           while (yawDiff < -Math.PI) yawDiff += Math.PI * 2;
-          targetCameraYawRef.current += yawDiff * Math.min(1, dt * 3.6);
+          targetCameraYawRef.current += yawDiff * Math.min(1, dt * 4.2);
         }
 
-        const camDist = 8.4;
-        const camHeight = 3.8 + cameraPitchRef.current * 4.4;
+        // High & Wide Aerial Broadcast Camera during Replay vs Standard Gameplay Chase Camera
+        const camDist = isWideBroadcastCam ? 15.2 : 8.4;
+        const camHeight = isWideBroadcastCam
+          ? 9.4 + cameraPitchRef.current * 5.8
+          : 3.8 + cameraPitchRef.current * 4.4;
         const desiredCamX =
           camTarget.x + Math.sin(cameraYawRef.current) * camDist;
         const desiredCamZ =
@@ -2879,12 +3308,18 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
         desiredCamPosVec.set(desiredCamX, desiredCamY, desiredCamZ);
         camPos.lerp(desiredCamPosVec, posAlpha);
 
+        const lookAheadDist = isWideBroadcastCam ? 5.2 : 3.0;
+        const lookHeightOffset = isWideBroadcastCam ? 0.85 : 1.25;
         const lookAheadX =
-          camTarget.x - Math.sin(cameraYawRef.current) * 3.0;
+          camTarget.x - Math.sin(cameraYawRef.current) * lookAheadDist;
         const lookAheadZ =
-          camTarget.z - Math.cos(cameraYawRef.current) * 3.0;
+          camTarget.z - Math.cos(cameraYawRef.current) * lookAheadDist;
         const lookAlpha = 1 - Math.exp(-11.0 * dt);
-        desiredCamLookVec.set(lookAheadX, camTarget.y + 1.25, lookAheadZ);
+        desiredCamLookVec.set(
+          lookAheadX,
+          camTarget.y + lookHeightOffset,
+          lookAheadZ
+        );
         camLook.lerp(desiredCamLookVec, lookAlpha);
 
         camera.position.copy(camPos);
@@ -2924,28 +3359,41 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
         lastHudEmitTime = now;
         const sortedStandings = [...state.racers]
           .sort((a, b) => a.rank - b.rank)
-          .map((r) => ({
-            id: r.id,
-            name: r.spec.name,
-            shortName: r.spec.shortName,
-            primaryHex: r.spec.primaryHex,
-            isPlayer: r.isPlayer,
-            rank: r.rank,
-            finished: r.finished,
-            finishTimeSec: r.finishTimeSec,
-            progressPercent: Math.min(
-              100,
-              Math.round((r.totalProgress / TOTAL_TRACK_LENGTH) * 100)
-            ),
-            x: r.x,
-            z: r.z,
-            yaw: r.yaw,
-          }));
+          .map((r) => {
+            const repPose = rep.isActive
+              ? activeRenderRacers.find((rr) => rr.id === r.id)
+              : null;
+            return {
+              id: r.id,
+              name: r.spec.name,
+              shortName: r.spec.shortName,
+              primaryHex: r.spec.primaryHex,
+              isPlayer: r.isPlayer,
+              rank: repPose ? repPose.rank : r.rank,
+              finished: r.finished,
+              finishTimeSec: r.finishTimeSec,
+              progressPercent: Math.min(
+                100,
+                Math.round(
+                  ((repPose ? repPose.totalProgress : r.totalProgress) /
+                    TOTAL_TRACK_LENGTH) *
+                    100
+                )
+              ),
+              x: repPose ? repPose.x : r.x,
+              z: repPose ? repPose.z : r.z,
+              yaw: repPose ? repPose.yaw : r.yaw,
+            };
+          })
+          .sort((a, b) => a.rank - b.rank);
 
-        const playerSeg = sampleTrackAtDistance(player.furthestCheckpointDist);
+        const focusSpecSample = sampleTrackAtDistance(
+          cameraFocusRacer.furthestCheckpointDist
+        );
 
         onHudUpdateRef.current({
           phase: state.phase,
+          allFinished: state.allFinished,
           countdownSec: state.countdownSec,
           elapsedRaceSec: state.elapsedRaceSec,
           playerRank: player.rank,
@@ -2953,8 +3401,8 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
             100,
             Math.round((player.totalProgress / TOTAL_TRACK_LENGTH) * 100)
           ),
-          zoneName: playerSeg.zoneName,
-          elevationMeters: Math.round(player.y * 2),
+          zoneName: focusSpecSample.zoneName,
+          elevationMeters: Math.round(cameraFocusRacer.y * 2),
           qCooldown: player.qCooldown,
           fCooldown: player.fCooldown,
           heldItem: player.heldItem,
@@ -2966,6 +3414,17 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
           standings: sortedStandings,
           events: [...state.events],
           bannerCallout: state.bannerCallout ? { ...state.bannerCallout } : null,
+          replay: {
+            isActive: rep.isActive,
+            isPlaying: rep.isPlaying,
+            currentTimeSec: rep.currentTimeSec,
+            durationSec: Math.max(0.1, totalReplayDuration),
+            speed: rep.speed,
+            target: rep.target,
+            activeFocusRacerId: cameraFocusRacer.id,
+            activeLeaderId,
+            hasReplayData: frames.length > 1,
+          },
         });
       }
 

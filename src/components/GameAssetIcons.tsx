@@ -56,7 +56,7 @@ export const PASSIVE_SKILL_ICON_PATHS: Record<PassiveSkillId, string> = {
 };
 
 export const PRANK_ITEM_ICON_PATHS: Record<ItemId, string> = {
-  glove: '/assets/game/icons/item_glove.png',
+  ice_bomb: '/assets/game/icons/item_ice_bomb.png',
   honey: '/assets/game/icons/item_honey.png',
   pie: '/assets/game/icons/item_pie.png',
   pepper: '/assets/game/icons/item_pepper.png',
@@ -141,7 +141,7 @@ const PASSIVE_COLOR_MAP: Record<PassiveSkillId, { bg: string; code: string }> = 
 };
 
 const ITEM_COLOR_MAP: Record<ItemId, { bg: string; code: string }> = {
-  glove: { bg: '#EF4444', code: 'GLV' },
+  ice_bomb: { bg: '#38BDF8', code: 'ICE' },
   honey: { bg: '#F59E0B', code: 'HNY' },
   pie: { bg: '#F472B6', code: 'PIE' },
   pepper: { bg: '#EA580C', code: 'PEP' },
@@ -275,6 +275,41 @@ export const PrankItemEmblem: React.FC<{
 
   const spec = ITEM_COLOR_MAP[itemId];
 
+  if (itemId === 'ice_bomb') {
+    return (
+      <svg
+        width={size}
+        height={size}
+        viewBox="0 0 48 48"
+        fill="none"
+        role="img"
+        aria-label="Frost Ice Bomb"
+        className={`shrink-0 drop-shadow-xs select-none ${className}`}
+      >
+        <circle
+          cx="24"
+          cy="25"
+          r="17"
+          fill="#38BDF8"
+          stroke="#2B2118"
+          strokeWidth="3.5"
+        />
+        <polygon
+          points="24,6 29,15 39,13 33,22 42,27 32,31 35,40 24,35 13,40 16,31 6,27 15,22 9,13 19,15"
+          fill="#BAE6FD"
+          stroke="#2B2118"
+          strokeWidth="2.8"
+          strokeLinejoin="round"
+        />
+        <polygon
+          points="24,12 28,20 36,24 28,28 24,36 20,28 12,24 20,20"
+          fill="#FFFDF9"
+        />
+        <circle cx="19" cy="19" r="3" fill="#FFFDF9" />
+      </svg>
+    );
+  }
+
   if (!missing) {
     return (
       <img
@@ -403,7 +438,7 @@ export const ArcadeRankShield: React.FC<{
         fill={palette.text}
         fontSize="16"
         fontWeight="900"
-        fontFamily="monospace"
+        fontFamily="Boogaloo, sans-serif"
       >
         {rank}
         <tspan fontSize="9" dy="-5">
@@ -599,7 +634,7 @@ export const VisualImageCard: React.FC<{
             className="w-14 h-14 object-contain drop-shadow-lg -rotate-6"
           />
           <img
-            src={PRANK_ITEM_ICON_PATHS.glove}
+            src={ACTIVE_SKILL_ICON_PATHS.quake}
             alt="Clash"
             className="w-11 h-11 object-contain drop-shadow-lg z-10"
           />

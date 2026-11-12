@@ -1136,6 +1136,7 @@ export interface DroppedTrap {
 export interface PieProjectile {
   id: string;
   ownerId: CharacterId;
+  kind?: 'pie' | 'ice_bomb';
   x: number;
   y: number;
   z: number;
@@ -1370,6 +1371,7 @@ export interface RacerState {
   dashTimer: number;
   shieldTimer: number;
   whirlwindTimer: number;
+  freezeTimer: number;
   stunTimer: number;
   slowTimer: number;
   respawnBlinkTimer: number;
@@ -1402,6 +1404,7 @@ export interface RaceEventLog {
 
 export interface RaceSimulationState {
   phase: 'lobby' | 'countdown' | 'racing' | 'finished';
+  allFinished: boolean;
   countdownSec: number;
   elapsedRaceSec: number;
   racers: RacerState[];
@@ -1485,6 +1488,7 @@ export function createInitialRaceState(
       dashTimer: 0,
       shieldTimer: 0,
       whirlwindTimer: 0,
+      freezeTimer: 0,
       stunTimer: 0,
       slowTimer: 0,
       respawnBlinkTimer: 0,
@@ -1500,6 +1504,7 @@ export function createInitialRaceState(
 
   return {
     phase: 'countdown',
+    allFinished: false,
     countdownSec: 3.0,
     elapsedRaceSec: 0,
     racers,
@@ -1728,6 +1733,7 @@ export function activateRacerItemE(
     state.pieProjectiles.push({
       id: `pie_${Date.now()}_${racer.id}`,
       ownerId: racer.id,
+      kind: 'pie',
       x: racer.x + fwdX * 1.3,
       y: racer.y + 0.9,
       z: racer.z + fwdZ * 1.3,
@@ -1742,41 +1748,30 @@ export function activateRacerItemE(
         '#F472B6'
       );
     }
-  } else if (item === 'glove') {
-    racer.vx += fwdX * 9.0;
-    racer.vz += fwdZ * 9.0;
-    let bestTarget: RacerState | null = null;
-    let bestDist = 4.6;
-    for (const other of state.racers) {
-      if (other.id === racer.id || other.finished) continue;
-      const d = Math.hypot(other.x - racer.x, other.z - racer.z);
-      if (d < bestDist) {
-        bestDist = d;
-        bestTarget = other;
-      }
+  } else if (item === 'ice_bomb') {
+    state.pieProjectiles.push({
+      id: `ice_${Date.now()}_${racer.id}`,
+      ownerId: racer.id,
+      kind: 'ice_bomb',
+      x: racer.x + fwdX * 1.4,
+      y: racer.y + 0.95,
+      z: racer.z + fwdZ * 1.4,
+      vx: fwdX * 25.0,
+      vz: fwdZ * 25.0,
+      ttl: 1.35,
+    });
+    if (racer.isPlayer) {
+      state.bannerCallout = {
+        text: 'FROST ICE BOMB LOBBED!',
+        colorHex: '#38BDF8',
+        ttl: 1.2,
+      };
     }
-    if (bestTarget) {
-      const proj = projectPointToTrack(
-        bestTarget.x,
-        bestTarget.z,
-        bestTarget.furthestCheckpointDist
-      );
-      const sideSign = proj.lateralOffset >= 0 ? 1 : -1;
-      applyBallisticKnockback(
-        bestTarget,
-        proj.rightX * sideSign,
-        proj.rightZ * sideSign,
-        14.8,
-        7.2,
-        0.58
-      );
-      racer.slapsLanded += 1;
-      pushEvent(
-        state,
-        `🥊 ${racer.spec.shortName} bonked ${bestTarget.spec.shortName} sideways!`,
-        '#EF4444'
-      );
-    }
+    pushEvent(
+      state,
+      `❄️ ${racer.spec.shortName} lobbed a Frost Ice Bomb ahead!`,
+      '#38BDF8'
+    );
   } else if (item === 'magnet') {
     let targetAhead: RacerState | null = null;
     let bestAheadDelta = Infinity;
@@ -1791,7 +1786,9 @@ export function activateRacerItemE(
     racer.dashTimer = Math.max(racer.dashTimer, 1.45 * luckyMult);
     if (targetAhead) {
       if (targetAhead.shieldTimer <= 0) {
-        targetAhead.slowTimer = Math.max(targetAhead.slowTimer, 1.9);
+        // 2x item debuff duration on Magnet Pull (slow 1.9 -> 3.8s + 0.9s stun)
+        targetAhead.stunTimer = Math.max(targetAhead.stunTimer, 0.9);
+        targetAhead.slowTimer = Math.max(targetAhead.slowTimer, 3.8);
         targetAhead.pokeImpulse = 1.0;
       }
       pushEvent(
@@ -1933,7 +1930,10 @@ export function stepRaceSimulation(
     return;
   }
 
-  state.elapsedRaceSec += clampedDt;
+  // Stop the race timer once all racers have crossed the finish line!
+  if (!state.allFinished) {
+    state.elapsedRaceSec += clampedDt;
+  }
 
   // Update Item Box respawn timers
   for (const box of state.itemBoxes) {
@@ -1950,32 +1950,144 @@ export function stepRaceSimulation(
     }
   }
 
-  // Update Cream Pie Projectiles
+  // Update Cream Pie & Frost Ice Bomb Projectiles
   for (let i = state.pieProjectiles.length - 1; i >= 0; i--) {
     const pie = state.pieProjectiles[i];
+    const isIceBomb = pie.kind === 'ice_bomb';
+    const speed = Math.hypot(pie.vx, pie.vz) || 26.0;
+    const curDirX = pie.vx / speed;
+    const curDirZ = pie.vz / speed;
+
+    // Soft magnetic attraction toward nearby rival characters within a forward cone
+    let bestTarget: RacerState | null = null;
+    let bestScore = Infinity;
+    const maxSeekDist = isIceBomb ? 15.0 : 14.0;
+    const minForwardDot = isIceBomb ? 0.35 : 0.42;
+
+    for (const r of state.racers) {
+      if (r.id === pie.ownerId || r.finished) continue;
+      const toRx = r.x - pie.x;
+      const toRz = r.z - pie.z;
+      const dist = Math.hypot(toRx, toRz);
+      if (dist < 0.05 || dist > maxSeekDist) continue;
+      const dot = (toRx / dist) * curDirX + (toRz / dist) * curDirZ;
+      const requiredDot = dist < 3.5 ? 0.18 : minForwardDot;
+      if (dot >= requiredDot) {
+        const score = dist * (1.35 - dot * 0.5);
+        if (score < bestScore) {
+          bestScore = score;
+          bestTarget = r;
+        }
+      }
+    }
+
+    if (bestTarget) {
+      const toRx = bestTarget.x - pie.x;
+      const toRz = bestTarget.z - pie.z;
+      const dist = Math.hypot(toRx, toRz);
+      const desiredYaw = Math.atan2(toRx, toRz);
+      const currentYaw = Math.atan2(pie.vx, pie.vz);
+      let angleDiff = desiredYaw - currentYaw;
+      while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+      while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+
+      const proximityBoost =
+        dist < 5.5 ? 1.0 + ((5.5 - dist) / 5.5) * 0.65 : 1.0;
+      const baseTurnRate = isIceBomb ? 2.6 : 3.6;
+      const maxStepAngle = baseTurnRate * proximityBoost * clampedDt;
+      const turnStep = Math.max(
+        -maxStepAngle,
+        Math.min(maxStepAngle, angleDiff)
+      );
+      const nextYaw = currentYaw + turnStep;
+      pie.vx = Math.sin(nextYaw) * speed;
+      pie.vz = Math.cos(nextYaw) * speed;
+    }
+
     pie.x += pie.vx * clampedDt;
     pie.z += pie.vz * clampedDt;
     const pieProj = projectPointToTrack(pie.x, pie.z);
     pie.y = pieProj.closestY + 0.85;
     pie.ttl -= clampedDt;
-    let hit = false;
-    for (const r of state.racers) {
-      if (r.id === pie.ownerId || r.finished) continue;
-      if (Math.hypot(r.x - pie.x, r.z - pie.z) < 1.35) {
-        hit = true;
-        if (r.shieldTimer > 0) {
-          r.shieldTimer = 0;
-        } else {
-          r.stunTimer = Math.max(r.stunTimer, 0.75);
-          r.slowTimer = Math.max(r.slowTimer, 2.0);
-          r.pokeImpulse = 1.2;
-          pushEvent(state, `🥧 ${r.spec.shortName} got splatted by a Cream Pie!`, '#F472B6');
+
+    if (isIceBomb) {
+      let shouldDetonate = pie.ttl <= 0;
+      if (!shouldDetonate) {
+        for (const r of state.racers) {
+          if (r.id === pie.ownerId || r.finished) continue;
+          const d = Math.hypot(r.x - pie.x, r.z - pie.z);
+          if (d < 1.85 || (pie.ttl < 0.95 && d < 3.6)) {
+            shouldDetonate = true;
+            break;
+          }
         }
-        break;
       }
-    }
-    if (hit || pie.ttl <= 0) {
-      state.pieProjectiles.splice(i, 1);
+
+      if (shouldDetonate) {
+        const blastRadius = 4.5;
+        state.shockwaves.push({
+          id: `ice_blast_${Date.now()}_${Math.random()}`,
+          x: pie.x,
+          y: pie.y - 0.5,
+          z: pie.z,
+          colorHex: '#38BDF8',
+          age: 0,
+          maxAge: 0.65,
+          maxRadius: blastRadius,
+        });
+        let frozenCount = 0;
+        for (const r of state.racers) {
+          if (r.id === pie.ownerId || r.finished) continue;
+          if (Math.hypot(r.x - pie.x, r.z - pie.z) <= blastRadius) {
+            if (r.shieldTimer > 0) {
+              r.shieldTimer = 0;
+            } else {
+              r.freezeTimer = Math.max(r.freezeTimer, 2.0);
+              r.stunTimer = Math.max(r.stunTimer, 2.0);
+              r.slowTimer = Math.max(r.slowTimer, 4.0);
+              r.vx = 0;
+              r.vz = 0;
+              r.knockVx = 0;
+              r.knockVz = 0;
+              r.pokeImpulse = 1.25;
+              frozenCount++;
+            }
+          }
+        }
+        if (frozenCount > 0) {
+          pushEvent(
+            state,
+            `❄️ Frost Ice Bomb froze ${frozenCount} rival${frozenCount > 1 ? 's' : ''} solid for 2.0s!`,
+            '#38BDF8'
+          );
+        }
+        state.pieProjectiles.splice(i, 1);
+      }
+    } else {
+      let hit = false;
+      for (const r of state.racers) {
+        if (r.id === pie.ownerId || r.finished) continue;
+        if (Math.hypot(r.x - pie.x, r.z - pie.z) < 1.55) {
+          hit = true;
+          if (r.shieldTimer > 0) {
+            r.shieldTimer = 0;
+          } else {
+            // 2x item debuff duration (stun 0.75 -> 1.5s, slow 2.0 -> 4.0s)
+            r.stunTimer = Math.max(r.stunTimer, 1.5);
+            r.slowTimer = Math.max(r.slowTimer, 4.0);
+            r.pokeImpulse = 1.2;
+            pushEvent(
+              state,
+              `🥧 ${r.spec.shortName} got splatted by a Cream Pie!`,
+              '#F472B6'
+            );
+          }
+          break;
+        }
+      }
+      if (hit || pie.ttl <= 0) {
+        state.pieProjectiles.splice(i, 1);
+      }
     }
   }
 
@@ -1986,6 +2098,7 @@ export function stepRaceSimulation(
     r.dashTimer = Math.max(0, r.dashTimer - clampedDt);
     r.shieldTimer = Math.max(0, r.shieldTimer - clampedDt);
     r.whirlwindTimer = Math.max(0, r.whirlwindTimer - clampedDt);
+    r.freezeTimer = Math.max(0, r.freezeTimer - clampedDt);
     r.slowTimer = Math.max(0, r.slowTimer - clampedDt);
     r.respawnBlinkTimer = Math.max(0, r.respawnBlinkTimer - clampedDt);
     r.landingBoostTimer = Math.max(0, r.landingBoostTimer - clampedDt);
@@ -1994,7 +2107,13 @@ export function stepRaceSimulation(
     r.pokeImpulse = Math.max(0, r.pokeImpulse - clampedDt * 2.2);
 
     const stunRecoveryRate = r.passiveSkillId === 'nimble_paws' ? 1.35 : 1.0;
-    r.stunTimer = Math.max(0, r.stunTimer - clampedDt * stunRecoveryRate);
+    if (r.freezeTimer > 0) {
+      r.stunTimer = Math.max(r.stunTimer, r.freezeTimer);
+      r.vx = 0;
+      r.vz = 0;
+    } else {
+      r.stunTimer = Math.max(0, r.stunTimer - clampedDt * stunRecoveryRate);
+    }
 
     if (r.finished) {
       r.pose = 'jump';
@@ -2091,7 +2210,12 @@ export function stepRaceSimulation(
           Math.hypot(r.x - trap.x, r.z - trap.z) < trap.radius
         ) {
           inSlime = true;
-          r.slowTimer = Math.max(r.slowTimer, 1.1);
+          // 2x Honey Trap debuff duration (slow 1.1 -> 2.2s + 0.7s sticky stop)
+          r.slowTimer = Math.max(r.slowTimer, 2.2);
+          if (r.hazardCooldown <= 0 && r.shieldTimer <= 0) {
+            r.stunTimer = Math.max(r.stunTimer, 0.7);
+            r.hazardCooldown = 1.2;
+          }
           break;
         }
       }
@@ -2267,10 +2391,13 @@ export function stepRaceSimulation(
         }
       }
 
-      // Rubber-banding so bots stay competitive across the 2:45 min race
+      // Rubber-banding so bots stay competitive across the 2:45 min race,
+      // and brisk finish sprint once the player has already crossed the line
       const playerRacer = state.racers[0];
       const diffFromPlayer = playerRacer.totalProgress - r.totalProgress;
-      if (diffFromPlayer > 35) {
+      if (playerRacer.finished) {
+        topSpeed *= 1.45;
+      } else if (diffFromPlayer > 35) {
         topSpeed *= 1.12;
       } else if (diffFromPlayer < -40) {
         topSpeed *= 0.92;
@@ -2774,4 +2901,89 @@ export function stepRaceSimulation(
   sorted.forEach((r, idx) => {
     r.rank = idx + 1;
   });
+
+  // When every racer has crossed the finish line, lock the race timer and mark allFinished = true
+  if (!state.allFinished && state.racers.every((r) => r.finished)) {
+    state.allFinished = true;
+    state.phase = 'finished';
+    const maxFinishTime = Math.max(
+      state.elapsedRaceSec,
+      ...state.racers.map((r) => r.finishTimeSec ?? 0)
+    );
+    state.elapsedRaceSec = maxFinishTime;
+    pushEvent(
+      state,
+      '🏆 All 8 Racers Finished! Timer Stopped & Replay Ready!',
+      '#FDE047'
+    );
+    state.bannerCallout = {
+      text: 'ALL RACERS FINISHED! FINAL STANDINGS!',
+      colorHex: '#FDE047',
+      ttl: 3.5,
+    };
+  }
 }
+
+/**
+ * Finishes any remaining racers by computing their estimated finish times from their remaining
+ * track distance, placing them at the finish plaza, and locking the race timer.
+ */
+export function finishAllRemainingRacers(state: RaceSimulationState): void {
+  const finishSample = sampleTrackAtDistance(4.0);
+  const finishYaw = Math.atan2(-finishSample.dirX, -finishSample.dirZ);
+
+  const unfinished = state.racers
+    .filter((r) => !r.finished)
+    .sort((a, b) => b.totalProgress - a.totalProgress);
+
+  let lastFinishTime = Math.max(
+    state.elapsedRaceSec,
+    ...state.racers.map((r) => r.finishTimeSec ?? 0)
+  );
+
+  unfinished.forEach((r, idx) => {
+    const remainingDist = Math.max(1, TOTAL_TRACK_LENGTH - r.totalProgress);
+    const estAddSec = Math.max(0.45 + idx * 0.35, remainingDist / 14.5);
+    const finishSec = Math.max(lastFinishTime + 0.32, state.elapsedRaceSec + estAddSec);
+    lastFinishTime = finishSec;
+
+    r.finished = true;
+    r.finishTimeSec = finishSec;
+    r.totalProgress = TOTAL_TRACK_LENGTH + 10 - idx * 0.1;
+    r.furthestCheckpointDist = TOTAL_TRACK_LENGTH;
+    const latOffset = ((r.rank - 1) % 4 - 1.5) * 1.65;
+    r.x = finishSample.x + finishSample.rightX * latOffset;
+    r.y = finishSample.y;
+    r.z = finishSample.z + finishSample.rightZ * latOffset;
+    r.groundY = finishSample.y;
+    r.yaw = finishYaw;
+    r.vx = 0;
+    r.vy = 0;
+    r.vz = 0;
+    r.knockVx = 0;
+    r.knockVz = 0;
+    r.pose = 'jump';
+  });
+
+  const sorted = [...state.racers].sort(
+    (a, b) => (a.finishTimeSec ?? 9999) - (b.finishTimeSec ?? 9999)
+  );
+  sorted.forEach((r, idx) => {
+    r.rank = idx + 1;
+  });
+
+  state.elapsedRaceSec = lastFinishTime;
+  state.allFinished = true;
+  state.phase = 'finished';
+  pushEvent(
+    state,
+    '🏆 All 8 Racers Finished! Timer Stopped & Replay Ready!',
+    '#FDE047'
+  );
+  state.bannerCallout = {
+    text: 'ALL RACERS FINISHED! FINAL STANDINGS!',
+    colorHex: '#FDE047',
+    ttl: 3.5,
+  };
+}
+

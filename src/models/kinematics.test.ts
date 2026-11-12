@@ -14,6 +14,7 @@ import {
   activateRacerSkillQ,
   activateRacerSlapF,
   activateRacerItemE,
+  finishAllRemainingRacers,
   stepRaceSimulation,
   TOTAL_TRACK_LENGTH,
   TRACK_SEGMENTS,
@@ -267,6 +268,150 @@ test('3D Physics: parabolic knockback arc, low air drag, elastic bounce, and pai
     'Colliding racers should exchange opposite elastic velocity impulses'
   );
 });
+
+test('allFinished stops elapsedRaceSec timer and locks in all 8 racers finish times', () => {
+  const state = createInitialRaceState('bear', 'dash', 'bouncy_belly');
+  state.phase = 'racing';
+  state.elapsedRaceSec = 95.4;
+
+  assert.equal(state.allFinished, false);
+  finishAllRemainingRacers(state);
+
+  assert.equal(state.allFinished, true, 'allFinished should be true once all 8 racers finish');
+  assert.equal(state.phase, 'finished', 'race phase should transition to finished');
+  assert.ok(
+    state.racers.every((r) => r.finished && r.finishTimeSec !== null && r.finishTimeSec > 0),
+    'every racer should be marked finished with a valid finishTimeSec'
+  );
+
+  const lockedElapsed = state.elapsedRaceSec;
+  stepRaceSimulation(state, 1.0, {
+    moveForward: 0,
+    moveRight: 0,
+    cameraYaw: 0,
+    jumpRequested: false,
+    skillQRequested: false,
+    itemERequested: false,
+    slapFRequested: false,
+  });
+  assert.equal(
+    state.elapsedRaceSec,
+    lockedElapsed,
+    'elapsedRaceSec timer must remain stopped after all racers have finished'
+  );
+});
+
+test('Frost Ice Bomb (ice_bomb) replaces glove and freezes all rivals in blast zone for 2.0 seconds', () => {
+  assert.ok('ice_bomb' in ITEMS, 'ITEMS should contain ice_bomb');
+  assert.ok(!('glove' in ITEMS), 'ITEMS should no longer contain glove');
+
+  const state = createInitialRaceState('bear', 'dash', 'bouncy_belly');
+  state.phase = 'racing';
+  const player = state.racers[0];
+  const r1 = state.racers[1];
+  const r2 = state.racers[2];
+
+  // Align player facing -Z (yaw = 0) and place two rivals 3.0u ahead within the blast zone
+  player.x = 0;
+  player.z = 0;
+  player.yaw = 0;
+  r1.x = -0.8;
+  r1.z = -3.0;
+  r2.x = 0.9;
+  r2.z = -3.2;
+
+  player.heldItem = 'ice_bomb';
+  const used = activateRacerItemE(state, player);
+  assert.equal(used, true);
+  assert.equal(state.pieProjectiles.length, 1);
+  assert.equal(state.pieProjectiles[0].kind, 'ice_bomb');
+
+  // Step 2 frames so the ice bomb reaches the rivals and detonates
+  for (let step = 0; step < 3; step++) {
+    stepRaceSimulation(state, 0.04, {
+      moveForward: 0,
+      moveRight: 0,
+      cameraYaw: 0,
+      jumpRequested: false,
+      skillQRequested: false,
+      itemERequested: false,
+      slapFRequested: false,
+    });
+  }
+
+  assert.ok(r1.freezeTimer >= 1.85, `expected r1 frozen ~2.0s, got ${r1.freezeTimer}`);
+  assert.ok(r2.freezeTimer >= 1.85, `expected r2 frozen ~2.0s, got ${r2.freezeTimer}`);
+  assert.ok(r1.stunTimer >= 1.85, 'frozen rival should also have stunTimer >= 1.85s');
+  assert.ok(r1.slowTimer >= 3.8, 'frozen rival should have 2x slowTimer');
+});
+
+test('Cream Pie (pie) magnetically curves toward nearby rival in forward cone and applies 2x debuff', () => {
+  const state = createInitialRaceState('bear', 'dash', 'bouncy_belly');
+  state.phase = 'racing';
+  const player = state.racers[0];
+  const targetRival = state.racers[1];
+
+  // Move other bots far away so only targetRival is in the cone
+  for (let i = 2; i < state.racers.length; i++) {
+    state.racers[i].x = 500;
+    state.racers[i].z = 500;
+  }
+
+  player.x = 0;
+  player.z = 0;
+  player.yaw = 0; // throws straight along -Z (vx = 0, vz = -26)
+
+  // Place rival slightly off-axis (+2.1u right, 7.5u ahead) inside the forward magnetic attraction cone
+  targetRival.x = 2.1;
+  targetRival.z = -7.5;
+
+  player.heldItem = 'pie';
+  activateRacerItemE(state, player);
+  assert.equal(state.pieProjectiles.length, 1);
+  assert.ok(Math.abs(state.pieProjectiles[0].vx) < 1e-6);
+
+  stepRaceSimulation(state, 0.04, {
+    moveForward: 0,
+    moveRight: 0,
+    cameraYaw: 0,
+    jumpRequested: false,
+    skillQRequested: false,
+    itemERequested: false,
+    slapFRequested: false,
+  });
+
+  // Verify the pie's velocity curved toward +X (toward targetRival)
+  assert.ok(
+    state.pieProjectiles[0].vx > 1.5,
+    `expected pie vx to curve positively toward rival, got ${state.pieProjectiles[0].vx}`
+  );
+
+  // Advance until the pie hits targetRival and verify 2x stun (1.5s) and 2x slow (4.0s)
+  for (let step = 0; step < 12 && state.pieProjectiles.length > 0; step++) {
+    targetRival.x = 2.1;
+    targetRival.z = -7.5;
+    stepRaceSimulation(state, 0.03, {
+      moveForward: 0,
+      moveRight: 0,
+      cameraYaw: 0,
+      jumpRequested: false,
+      skillQRequested: false,
+      itemERequested: false,
+      slapFRequested: false,
+    });
+  }
+
+  assert.ok(
+    targetRival.stunTimer >= 1.35,
+    `expected 2x pie stunTimer (~1.5s), got ${targetRival.stunTimer}`
+  );
+  assert.ok(
+    targetRival.slowTimer >= 3.85,
+    `expected 2x pie slowTimer (~4.0s), got ${targetRival.slowTimer}`
+  );
+});
+
+
 
 
 
