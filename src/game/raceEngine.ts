@@ -13,7 +13,13 @@ import {
 } from '../models/characterTypes';
 import { cuteAudio } from '../utils/cuteAudioEngine';
 
-export type TrackId = 'woodland' | 'snow_glacier';
+export type TrackId = 'woodland' | 'snow_glacier' | 'space_odyssey';
+
+export const TRACK_ID_LIST: TrackId[] = [
+  'snow_glacier',
+  'woodland',
+  'space_odyssey',
+];
 
 export interface TrackMetadata {
   id: TrackId;
@@ -49,6 +55,17 @@ export const TRACK_CATALOG: Record<TrackId, TrackMetadata> = {
     secondaryHex: '#818CF8',
     lengthLabel: '1,845m',
     features: ['Ice Palace & Igloos', 'Crystal Sky Bridge', 'Arctic Iceberg Hop'],
+  },
+  space_odyssey: {
+    id: 'space_odyssey',
+    name: 'Cosmic Nebula Circuit',
+    thaiName: 'สนามอวกาศเนบิวลาเรืองแสง (Cosmic Nebula)',
+    subtitle: 'Starlight Spaceport • Rainbow Warp Bridge • Zero-G Asteroid Hop • Cyber Ring Chute',
+    badgeText: 'COSMIC SPACE',
+    accentHex: '#F472B6',
+    secondaryHex: '#38BDF8',
+    lengthLabel: '1,880m',
+    features: ['Rainbow Hyper-Light Bridge', 'Zero-G Asteroid Belt Hop', 'Neon Ring Warp Tunnel'],
   },
 };
 
@@ -722,6 +739,309 @@ export const SNOW_TRACK_CONTROL_POINTS: TrackWaypoint[] = [
   },
 ];
 
+/**
+ * 28 Control Points defining the dazzling Space & Neon Nebula Grand Circuit (~1,880u):
+ * "Cosmic Nebula Circuit" — featuring Starlight Spaceport Launchpad, Liquid Stardust Plasma Ford,
+ * Cyber Neon Ring Ascent, Rainbow Hyper-Light Skybridge, Supernova Warp Speed Chute,
+ * Zero-G Asteroid Void (hop across glowing 3D asteroids!), Pulsar Crystal Tunnel, and Cosmic Final Warp!
+ */
+export const SPACE_TRACK_CONTROL_POINTS: TrackWaypoint[] = [
+  // 0..1: Starlight Spaceport Launchpad
+  {
+    x: 0,
+    y: 0.0,
+    z: 18,
+    width: 11.6,
+    zoneName: 'Starlight Spaceport Launchpad',
+    surfaceType: 'packed_snow',
+    borderType: 'wood_fence',
+  },
+  {
+    x: 0,
+    y: 0.0,
+    z: -48,
+    width: 11.2,
+    zoneName: 'Nebula Orbital Promenade',
+    surfaceType: 'packed_snow',
+    borderType: 'wood_fence',
+  },
+
+  // 2..3: Liquid Stardust Plasma Stream (Shallow Plasma Ford)
+  {
+    x: 34,
+    y: 0.0,
+    z: -114,
+    width: 11.4,
+    zoneName: 'Stardust Plasma Stream (Wade Through!)',
+    surfaceType: 'shallow_water',
+    borderType: 'bush_hedge',
+    isShallowWater: true,
+  },
+  {
+    x: -30,
+    y: 0.8,
+    z: -176,
+    width: 11.0,
+    zoneName: 'Stardust Plasma Stream (Wade Through!)',
+    surfaceType: 'shallow_water',
+    borderType: 'bush_hedge',
+    isShallowWater: true,
+  },
+
+  // 4..6: Cyber Neon Ring Ascent & Galactic Observatory Spire
+  {
+    x: 32,
+    y: 5.8,
+    z: -240,
+    width: 10.2,
+    zoneName: 'Cyber Neon Ring Ascent',
+    surfaceType: 'cobble',
+    borderType: 'bush_hedge',
+  },
+  {
+    x: 104,
+    y: 10.8,
+    z: -284,
+    width: 10.0,
+    zoneName: 'Galactic Observatory Spire',
+    surfaceType: 'brick',
+    borderType: 'wood_fence',
+  },
+  {
+    x: 172,
+    y: 14.5,
+    z: -256,
+    width: 9.8,
+    zoneName: 'Starlight Command Deck',
+    surfaceType: 'ice',
+    borderType: 'wood_fence',
+  },
+
+  // 7..9: Rainbow Hyper-Light Skybridge (High Altitude Neon Energy Planks!)
+  {
+    x: 222,
+    y: 16.0,
+    z: -194,
+    width: 8.0,
+    zoneName: 'Rainbow Hyper-Light Skybridge',
+    surfaceType: 'wood_plank',
+    borderType: 'wood_fence',
+    isPlankBridge: true,
+    isHighBridge: true,
+  },
+  {
+    x: 256,
+    y: 16.5,
+    z: -118,
+    width: 7.8,
+    zoneName: 'Rainbow Hyper-Light Skybridge',
+    surfaceType: 'wood_plank',
+    borderType: 'wood_fence',
+    isPlankBridge: true,
+    isHighBridge: true,
+  },
+  {
+    x: 230,
+    y: 15.0,
+    z: -42,
+    width: 8.0,
+    zoneName: 'Rainbow Hyper-Light Skybridge',
+    surfaceType: 'wood_plank',
+    borderType: 'wood_fence',
+    isPlankBridge: true,
+    isHighBridge: true,
+  },
+
+  // 10..12: Supernova Warp Speed Chute (High-Speed Glowing Cyber Chute!)
+  {
+    x: 172,
+    y: 11.2,
+    z: 18,
+    width: 10.8,
+    zoneName: 'Supernova Warp Speed Chute',
+    surfaceType: 'ice',
+    borderType: 'wood_fence',
+    isDownhillSlope: true,
+  },
+  {
+    x: 206,
+    y: 6.6,
+    z: 90,
+    width: 11.0,
+    zoneName: 'Supernova Warp Speed Chute',
+    surfaceType: 'ice',
+    borderType: 'bush_hedge',
+    isDownhillSlope: true,
+  },
+  {
+    x: 248,
+    y: 2.6,
+    z: 154,
+    width: 10.6,
+    zoneName: 'Saturn Ring Gravity Slalom',
+    surfaceType: 'packed_snow',
+    borderType: 'bush_hedge',
+    isDownhillSlope: true,
+  },
+
+  // 13..14: Andromeda Nebula Bend approaching Zero-G Asteroid Void
+  {
+    x: 186,
+    y: 1.0,
+    z: 218,
+    width: 10.2,
+    zoneName: 'Andromeda Nebula Bend',
+    surfaceType: 'cobble',
+    borderType: 'bush_hedge',
+  },
+  {
+    x: 96,
+    y: 0.4,
+    z: 232,
+    width: 9.8,
+    zoneName: 'Asteroid Belt Outer Rim',
+    surfaceType: 'brick',
+    borderType: 'wood_fence',
+  },
+
+  // 15..17: Zero-G Cosmic Void — Hop Across Glowing 3D Asteroids!
+  {
+    x: 26,
+    y: 0.35,
+    z: 228,
+    width: 9.2,
+    zoneName: 'Zero-G Void (Hop the Glowing Asteroids!)',
+    surfaceType: 'deep_water',
+    borderType: 'none',
+    isDeepWaterHazard: true,
+    isBridgeOverWater: true,
+  },
+  {
+    x: -16,
+    y: 0.35,
+    z: 228,
+    width: 9.2,
+    zoneName: 'Zero-G Void (Hop the Glowing Asteroids!)',
+    surfaceType: 'deep_water',
+    borderType: 'none',
+    isDeepWaterHazard: true,
+    isBridgeOverWater: true,
+  },
+  {
+    x: -58,
+    y: 0.35,
+    z: 228,
+    width: 9.2,
+    zoneName: 'Zero-G Void (Hop the Glowing Asteroids!)',
+    surfaceType: 'deep_water',
+    borderType: 'none',
+    isDeepWaterHazard: true,
+    isBridgeOverWater: true,
+  },
+
+  // 18..21: Pulsar Crystal Tunnel & Starship Hyperdrive Viaduct
+  {
+    x: -112,
+    y: 0.8,
+    z: 224,
+    width: 10.0,
+    zoneName: 'Lunar Crater Promenade',
+    surfaceType: 'packed_snow',
+    borderType: 'wood_fence',
+  },
+  {
+    x: -168,
+    y: 4.2,
+    z: 238,
+    width: 10.4,
+    zoneName: 'Pulsar Neon Crystal Tunnel',
+    surfaceType: 'ice',
+    borderType: 'bush_hedge',
+  },
+  {
+    x: -224,
+    y: 8.2,
+    z: 184,
+    width: 10.0,
+    zoneName: 'Quantum Cyber-Brick Climb',
+    surfaceType: 'brick',
+    borderType: 'bush_hedge',
+  },
+  {
+    x: -236,
+    y: 12.2,
+    z: 106,
+    width: 8.0,
+    zoneName: 'Starship Hyperdrive Viaduct',
+    surfaceType: 'wood_plank',
+    borderType: 'wood_fence',
+    isPlankBridge: true,
+    isHighBridge: true,
+  },
+
+  // 22..24: Meteor Shower Gravity Chute
+  {
+    x: -188,
+    y: 8.6,
+    z: 36,
+    width: 10.6,
+    zoneName: 'Meteor Shower Gravity Chute',
+    surfaceType: 'brick',
+    borderType: 'wood_fence',
+    isDownhillSlope: true,
+  },
+  {
+    x: -220,
+    y: 4.0,
+    z: -42,
+    width: 10.8,
+    zoneName: 'Neon Cyberlight Speedway',
+    surfaceType: 'ice',
+    borderType: 'bush_hedge',
+    isDownhillSlope: true,
+  },
+  {
+    x: -168,
+    y: 0.6,
+    z: -106,
+    width: 10.4,
+    zoneName: 'Alien Crystal Canyon',
+    surfaceType: 'packed_snow',
+    borderType: 'bush_hedge',
+  },
+
+  // 25..27: Glowing Nebula Lagoon + Cosmic Final Warp Sprint
+  {
+    x: -108,
+    y: 0.0,
+    z: -68,
+    width: 11.4,
+    zoneName: 'Glowing Nebula Lagoon (Wade Through!)',
+    surfaceType: 'shallow_water',
+    borderType: 'bush_hedge',
+    isShallowWater: true,
+  },
+  {
+    x: -92,
+    y: 2.4,
+    z: 18,
+    width: 10.2,
+    zoneName: 'Starlight Beacon Crest',
+    surfaceType: 'cobble',
+    borderType: 'wood_fence',
+  },
+  {
+    x: -44,
+    y: 1.0,
+    z: 54,
+    width: 11.0,
+    zoneName: 'Cosmic Nebula Final Warp',
+    surfaceType: 'ice',
+    borderType: 'wood_fence',
+    isDownhillSlope: true,
+  },
+];
+
 function catmullRom(p0: number, p1: number, p2: number, p3: number, t: number): number {
   const t2 = t * t;
   const t3 = t2 * t;
@@ -1219,17 +1539,88 @@ function buildTurntables(): TurntableSpec[] {
 
 function buildRollingBoulders(trackId: TrackId): RollingBoulderSpec[] {
   const isSnow = trackId === 'snow_glacier';
+  const isSpace = trackId === 'space_odyssey';
   return [
-    { frac: 0.14, speed: 2.2, phase: 0.0, r: 1.15, hex: isSnow ? '#F8FAFC' : '#8C7A6B', ball: false },
-    { frac: 0.19, speed: 2.5, phase: 1.5, r: 1.15, hex: isSnow ? '#38BDF8' : '#F43F5E', ball: true },
-    { frac: 0.36, speed: 2.4, phase: 2.8, r: 1.15, hex: isSnow ? '#818CF8' : '#3B82F6', ball: true },
-    { frac: 0.41, speed: 2.6, phase: 4.1, r: 1.2, hex: isSnow ? '#E2E8F0' : '#78685A', ball: false },
-    { frac: 0.68, speed: 2.3, phase: 0.9, r: 1.15, hex: isSnow ? '#22D3EE' : '#F59E0B', ball: true },
-    { frac: 0.74, speed: 2.6, phase: 2.4, r: 1.2, hex: isSnow ? '#F8FAFC' : '#8C7A6B', ball: false },
-    { frac: 0.83, speed: 2.5, phase: 3.7, r: 1.15, hex: isSnow ? '#C084FC' : '#EC4899', ball: true },
-    { frac: 0.86, speed: 2.7, phase: 5.1, r: 1.25, hex: isSnow ? '#E2E8F0' : '#78685A', ball: false },
-    { frac: 0.89, speed: 2.4, phase: 1.2, r: 1.15, hex: isSnow ? '#34D399' : '#10B981', ball: true },
-    { frac: 0.95, speed: 2.6, phase: 2.9, r: 1.2, hex: isSnow ? '#F8FAFC' : '#8C7A6B', ball: false },
+    {
+      frac: 0.14,
+      speed: 2.2,
+      phase: 0.0,
+      r: 1.15,
+      hex: isSpace ? '#A855F7' : isSnow ? '#F8FAFC' : '#8C7A6B',
+      ball: isSpace ? true : false,
+    },
+    {
+      frac: 0.19,
+      speed: 2.5,
+      phase: 1.5,
+      r: 1.15,
+      hex: isSpace ? '#F43F5E' : isSnow ? '#38BDF8' : '#F43F5E',
+      ball: true,
+    },
+    {
+      frac: 0.36,
+      speed: 2.4,
+      phase: 2.8,
+      r: 1.15,
+      hex: isSpace ? '#38BDF8' : isSnow ? '#818CF8' : '#3B82F6',
+      ball: true,
+    },
+    {
+      frac: 0.41,
+      speed: 2.6,
+      phase: 4.1,
+      r: 1.2,
+      hex: isSpace ? '#FACC15' : isSnow ? '#E2E8F0' : '#78685A',
+      ball: isSpace ? true : false,
+    },
+    {
+      frac: 0.68,
+      speed: 2.3,
+      phase: 0.9,
+      r: 1.15,
+      hex: isSpace ? '#22D3EE' : isSnow ? '#22D3EE' : '#F59E0B',
+      ball: true,
+    },
+    {
+      frac: 0.74,
+      speed: 2.6,
+      phase: 2.4,
+      r: 1.2,
+      hex: isSpace ? '#EC4899' : isSnow ? '#F8FAFC' : '#8C7A6B',
+      ball: isSpace ? true : false,
+    },
+    {
+      frac: 0.83,
+      speed: 2.5,
+      phase: 3.7,
+      r: 1.15,
+      hex: isSpace ? '#C084FC' : isSnow ? '#C084FC' : '#EC4899',
+      ball: true,
+    },
+    {
+      frac: 0.86,
+      speed: 2.7,
+      phase: 5.1,
+      r: 1.25,
+      hex: isSpace ? '#34D399' : isSnow ? '#E2E8F0' : '#78685A',
+      ball: isSpace ? true : false,
+    },
+    {
+      frac: 0.89,
+      speed: 2.4,
+      phase: 1.2,
+      r: 1.15,
+      hex: isSpace ? '#F97316' : isSnow ? '#34D399' : '#10B981',
+      ball: true,
+    },
+    {
+      frac: 0.95,
+      speed: 2.6,
+      phase: 2.9,
+      r: 1.2,
+      hex: isSpace ? '#38BDF8' : isSnow ? '#F8FAFC' : '#8C7A6B',
+      ball: isSpace ? true : false,
+    },
   ].map((cfg, idx) => {
     const dist = cfg.frac * TOTAL_TRACK_LENGTH;
     const s = sampleTrackAtDistance(dist);
@@ -1286,13 +1677,17 @@ export const ROLLING_BOULDERS: RollingBoulderSpec[] = buildRollingBoulders(activ
 export const BOOST_PADS: BoostPadSpec[] = buildBoostPads();
 
 /**
- * Switches the active circuit ('woodland' or 'snow_glacier') and rebuilds all
- * spline segments, stepping stones / icebergs, hazards, and boost pads in-place.
+ * Switches the active circuit ('woodland', 'snow_glacier', or 'space_odyssey') and rebuilds all
+ * spline segments, stepping stones / icebergs / asteroids, hazards, and boost pads in-place.
  */
 export function setActiveTrack(trackId: TrackId): void {
   activeTrackId = trackId;
   const controlPts =
-    trackId === 'snow_glacier' ? SNOW_TRACK_CONTROL_POINTS : TRACK_CONTROL_POINTS;
+    trackId === 'space_odyssey'
+      ? SPACE_TRACK_CONTROL_POINTS
+      : trackId === 'snow_glacier'
+        ? SNOW_TRACK_CONTROL_POINTS
+        : TRACK_CONTROL_POINTS;
   const newWaypoints = buildWaypointsFromControlPoints(controlPts);
   TRACK_WAYPOINTS.splice(0, TRACK_WAYPOINTS.length, ...newWaypoints);
 

@@ -446,14 +446,76 @@ function createSnowIceRoadTexture(): THREE.CanvasTexture {
   return tex;
 }
 
+function createSpaceCyberRoadTexture(): THREE.CanvasTexture {
+  const canvas = document.createElement('canvas');
+  canvas.width = 256;
+  canvas.height = 256;
+  const ctx = canvas.getContext('2d')!;
+
+  ctx.fillStyle = '#1E1B4B';
+  ctx.fillRect(0, 0, 256, 256);
+
+  // Glowing neon cyan & magenta synth-grid lines
+  ctx.strokeStyle = 'rgba(56, 189, 248, 0.48)';
+  ctx.lineWidth = 3;
+  const rows = 8;
+  const rowH = 256 / rows;
+  for (let r = 0; r < rows; r++) {
+    const y = r * rowH;
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(256, y);
+    ctx.stroke();
+
+    const cols = 4;
+    const colW = 256 / cols;
+    const offset = (r % 2) * (colW * 0.5);
+    for (let c = 0; c <= cols; c++) {
+      const x = (c * colW + offset) % 256;
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x, y + rowH);
+      ctx.stroke();
+    }
+  }
+
+  // Side neon magenta & gold racing stripes
+  ctx.fillStyle = 'rgba(244, 114, 182, 0.55)';
+  ctx.fillRect(6, 0, 10, 256);
+  ctx.fillRect(240, 0, 10, 256);
+
+  // Twinkling cosmic starlight flecks
+  for (let i = 0; i < 150; i++) {
+    const sx = (Math.sin(i * 78.233) * 0.5 + 0.5) * 250;
+    const sy = (Math.cos(i * 45.164) * 0.5 + 0.5) * 250;
+    const rad = 1.8 + (i % 4);
+    ctx.fillStyle =
+      i % 4 === 0
+        ? 'rgba(250, 204, 21, 0.75)'
+        : i % 3 === 0
+          ? 'rgba(244, 114, 182, 0.65)'
+          : 'rgba(56, 189, 248, 0.7)';
+    ctx.beginPath();
+    ctx.arc(sx, sy, rad, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.wrapT = THREE.RepeatWrapping;
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
 /**
- * Builds the Track Ribbon for either Woodland Forest ('woodland')
- * or Glacier Peak Snow & Ice ('snow_glacier').
+ * Builds the Track Ribbon for Woodland Forest ('woodland'),
+ * Glacier Peak Snow & Ice ('snow_glacier'), or Cosmic Nebula ('space_odyssey').
  */
 function buildContinuousTrackRibbon(trackId: TrackId): THREE.Group {
   const ribbonGroup = new THREE.Group();
   const n = TRACK_SEGMENTS.length;
   const isSnow = trackId === 'snow_glacier';
+  const isSpace = trackId === 'space_odyssey';
 
   // 1. Main Road Bed Ribbon
   const positions: number[] = [];
@@ -461,13 +523,25 @@ function buildContinuousTrackRibbon(trackId: TrackId): THREE.Group {
   const uvs: number[] = [];
   const indices: number[] = [];
 
-  const colorDirt = new THREE.Color(isSnow ? '#F1F5F9' : '#B88B5E'); // Packed Snow vs Woodland Dirt
-  const colorCobble = new THREE.Color(isSnow ? '#CBD5E1' : '#9E9A90'); // Frosted Granite vs Forest Cobble
-  const colorBrick = new THREE.Color(isSnow ? '#BAE6FD' : '#B57C5E'); // Carved Ice Brick vs Stone Brick
-  const colorIce = new THREE.Color('#7DD3FC'); // Glossy Glacier Skating Ice
-  const colorPlankSub = new THREE.Color(isSnow ? '#0284C7' : '#6E472B'); // Ice beam vs Timber beam
-  const colorShallowBed = new THREE.Color(isSnow ? '#67E8F9' : '#7AB8C8'); // Slush bed vs Creek bed
-  const colorDeepBed = new THREE.Color(isSnow ? '#082F49' : '#075985'); // Sub-zero Fjord vs Deep River
+  const colorDirt = new THREE.Color(
+    isSpace ? '#312E81' : isSnow ? '#F1F5F9' : '#B88B5E'
+  );
+  const colorCobble = new THREE.Color(
+    isSpace ? '#4C1D95' : isSnow ? '#CBD5E1' : '#9E9A90'
+  );
+  const colorBrick = new THREE.Color(
+    isSpace ? '#831843' : isSnow ? '#BAE6FD' : '#B57C5E'
+  );
+  const colorIce = new THREE.Color(isSpace ? '#06B6D4' : '#7DD3FC');
+  const colorPlankSub = new THREE.Color(
+    isSpace ? '#7E22CE' : isSnow ? '#0284C7' : '#6E472B'
+  );
+  const colorShallowBed = new THREE.Color(
+    isSpace ? '#EC4899' : isSnow ? '#67E8F9' : '#7AB8C8'
+  );
+  const colorDeepBed = new THREE.Color(
+    isSpace ? '#090514' : isSnow ? '#082F49' : '#075985'
+  );
 
   const thickness = 0.48;
 
@@ -544,12 +618,18 @@ function buildContinuousTrackRibbon(trackId: TrackId): THREE.Group {
   roadGeo.setIndex(indices);
   roadGeo.computeVertexNormals();
 
-  const roadTex = isSnow ? createSnowIceRoadTexture() : createForestRoadTexture();
+  const roadTex = isSpace
+    ? createSpaceCyberRoadTexture()
+    : isSnow
+      ? createSnowIceRoadTexture()
+      : createForestRoadTexture();
   const roadMat = new THREE.MeshStandardMaterial({
     map: roadTex,
     vertexColors: true,
-    roughness: isSnow ? 0.42 : 0.88,
-    metalness: isSnow ? 0.12 : 0.03,
+    emissive: isSpace ? '#1E1B4B' : '#000000',
+    emissiveIntensity: isSpace ? 0.32 : 0,
+    roughness: isSpace ? 0.28 : isSnow ? 0.42 : 0.88,
+    metalness: isSpace ? 0.25 : isSnow ? 0.12 : 0.03,
   });
   const roadMesh = new THREE.Mesh(roadGeo, roadMat);
   roadMesh.receiveShadow = true;
@@ -557,96 +637,153 @@ function buildContinuousTrackRibbon(trackId: TrackId): THREE.Group {
   ribbonGroup.add(roadMesh);
 
   // 2. Materials & Shared Geometries for Planks, Cobbles/Bricks, Fences, Hedges & Shallow Water
-  const plankMats = isSnow
+  const plankMats = isSpace
     ? [
+        new THREE.MeshStandardMaterial({
+          color: '#F43F5E',
+          emissive: '#E11D48',
+          emissiveIntensity: 0.45,
+          roughness: 0.18,
+          metalness: 0.2,
+        }),
+        new THREE.MeshStandardMaterial({
+          color: '#FACC15',
+          emissive: '#D97706',
+          emissiveIntensity: 0.42,
+          roughness: 0.18,
+          metalness: 0.2,
+        }),
+        new THREE.MeshStandardMaterial({
+          color: '#34D399',
+          emissive: '#059669',
+          emissiveIntensity: 0.45,
+          roughness: 0.18,
+          metalness: 0.2,
+        }),
         new THREE.MeshStandardMaterial({
           color: '#38BDF8',
           emissive: '#0284C7',
-          emissiveIntensity: 0.18,
-          roughness: 0.2,
-          metalness: 0.15,
+          emissiveIntensity: 0.48,
+          roughness: 0.18,
+          metalness: 0.2,
         }),
         new THREE.MeshStandardMaterial({
-          color: '#7DD3FC',
-          emissive: '#0369A1',
-          emissiveIntensity: 0.15,
-          roughness: 0.22,
-          metalness: 0.12,
-        }),
-        new THREE.MeshStandardMaterial({
-          color: '#818CF8',
-          emissive: '#4F46E5',
-          emissiveIntensity: 0.18,
-          roughness: 0.24,
-          metalness: 0.15,
+          color: '#C084FC',
+          emissive: '#9333EA',
+          emissiveIntensity: 0.48,
+          roughness: 0.18,
+          metalness: 0.2,
         }),
       ]
-    : [
-        new THREE.MeshStandardMaterial({ color: '#B87B4B', roughness: 0.82 }),
-        new THREE.MeshStandardMaterial({ color: '#A36638', roughness: 0.85 }),
-        new THREE.MeshStandardMaterial({ color: '#C88B57', roughness: 0.8 }),
-      ];
+    : isSnow
+      ? [
+          new THREE.MeshStandardMaterial({
+            color: '#38BDF8',
+            emissive: '#0284C7',
+            emissiveIntensity: 0.18,
+            roughness: 0.2,
+            metalness: 0.15,
+          }),
+          new THREE.MeshStandardMaterial({
+            color: '#7DD3FC',
+            emissive: '#0369A1',
+            emissiveIntensity: 0.15,
+            roughness: 0.22,
+            metalness: 0.12,
+          }),
+          new THREE.MeshStandardMaterial({
+            color: '#818CF8',
+            emissive: '#4F46E5',
+            emissiveIntensity: 0.18,
+            roughness: 0.24,
+            metalness: 0.15,
+          }),
+        ]
+      : [
+          new THREE.MeshStandardMaterial({ color: '#B87B4B', roughness: 0.82 }),
+          new THREE.MeshStandardMaterial({ color: '#A36638', roughness: 0.85 }),
+          new THREE.MeshStandardMaterial({ color: '#C88B57', roughness: 0.8 }),
+        ];
   const fenceWoodMat = new THREE.MeshStandardMaterial({
-    color: isSnow ? '#BAE6FD' : '#8C5834',
-    roughness: isSnow ? 0.35 : 0.86,
+    color: isSpace ? '#38BDF8' : isSnow ? '#BAE6FD' : '#8C5834',
+    emissive: isSpace ? '#0284C7' : '#000000',
+    emissiveIntensity: isSpace ? 0.55 : 0,
+    roughness: isSpace ? 0.2 : isSnow ? 0.35 : 0.86,
   });
   const fencePostMat = new THREE.MeshStandardMaterial({
-    color: isSnow ? '#EF4444' : '#6E4224', // Festive red/ice posts on Snow track!
-    roughness: isSnow ? 0.45 : 0.88,
+    color: isSpace ? '#F472B6' : isSnow ? '#EF4444' : '#6E4224',
+    emissive: isSpace ? '#DB2777' : '#000000',
+    emissiveIntensity: isSpace ? 0.5 : 0,
+    roughness: isSpace ? 0.25 : isSnow ? 0.45 : 0.88,
   });
   const hedgeDarkMat = new THREE.MeshStandardMaterial({
-    color: isSnow ? '#E2E8F0' : '#4B773E', // Crisp snowbank vs dark bush
-    roughness: isSnow ? 0.75 : 0.82,
+    color: isSpace ? '#6D28D9' : isSnow ? '#E2E8F0' : '#4B773E',
+    emissive: isSpace ? '#4C1D95' : '#000000',
+    emissiveIntensity: isSpace ? 0.35 : 0,
+    roughness: isSpace ? 0.35 : isSnow ? 0.75 : 0.82,
   });
   const hedgeLightMat = new THREE.MeshStandardMaterial({
-    color: isSnow ? '#FFFFFF' : '#679850', // Pure white snowdrift vs light bush
-    roughness: isSnow ? 0.7 : 0.8,
+    color: isSpace ? '#EC4899' : isSnow ? '#FFFFFF' : '#679850',
+    emissive: isSpace ? '#BE185D' : '#000000',
+    emissiveIntensity: isSpace ? 0.4 : 0,
+    roughness: isSpace ? 0.3 : isSnow ? 0.7 : 0.8,
   });
   const flowerYellowMat = new THREE.MeshStandardMaterial({
-    color: isSnow ? '#22D3EE' : '#FDE047', // Glowing ice crystal spike vs yellow flower
-    emissive: isSnow ? '#0891B2' : '#000000',
-    emissiveIntensity: isSnow ? 0.4 : 0,
-    roughness: isSnow ? 0.2 : 0.65,
+    color: isSpace ? '#FDE047' : isSnow ? '#22D3EE' : '#FDE047',
+    emissive: isSpace ? '#F59E0B' : isSnow ? '#0891B2' : '#000000',
+    emissiveIntensity: isSpace ? 0.75 : isSnow ? 0.4 : 0,
+    roughness: isSpace || isSnow ? 0.2 : 0.65,
   });
   const cobbleTileMat = new THREE.MeshStandardMaterial({
-    color: isSnow ? '#94A3B8' : '#8D8980',
-    roughness: isSnow ? 0.55 : 0.88,
+    color: isSpace ? '#818CF8' : isSnow ? '#94A3B8' : '#8D8980',
+    emissive: isSpace ? '#4338CA' : '#000000',
+    emissiveIntensity: isSpace ? 0.3 : 0,
+    roughness: isSpace ? 0.3 : isSnow ? 0.55 : 0.88,
   });
   const brickTileMat = new THREE.MeshStandardMaterial({
-    color: isSnow ? '#7DD3FC' : '#9E6247',
-    roughness: isSnow ? 0.28 : 0.84,
+    color: isSpace ? '#F472B6' : isSnow ? '#7DD3FC' : '#9E6247',
+    emissive: isSpace ? '#BE185D' : '#000000',
+    emissiveIntensity: isSpace ? 0.32 : 0,
+    roughness: isSpace ? 0.24 : isSnow ? 0.28 : 0.84,
   });
   const dirtPebbleMat = new THREE.MeshStandardMaterial({
-    color: isSnow ? '#F8FAFC' : '#9C7248',
-    roughness: isSnow ? 0.65 : 0.9,
+    color: isSpace ? '#38BDF8' : isSnow ? '#F8FAFC' : '#9C7248',
+    emissive: isSpace ? '#0284C7' : '#000000',
+    emissiveIntensity: isSpace ? 0.3 : 0,
+    roughness: isSpace ? 0.3 : isSnow ? 0.65 : 0.9,
   });
   const shallowWaterMat = new THREE.MeshStandardMaterial({
-    color: isSnow ? '#22D3EE' : '#38BDF8',
+    color: isSpace ? '#F472B6' : isSnow ? '#22D3EE' : '#38BDF8',
+    emissive: isSpace ? '#DB2777' : '#000000',
+    emissiveIntensity: isSpace ? 0.45 : 0,
     transparent: true,
-    opacity: 0.74,
+    opacity: 0.76,
     roughness: 0.1,
-    metalness: 0.12,
+    metalness: 0.15,
   });
   const waterFoamMat = new THREE.MeshStandardMaterial({
-    color: '#F0F9FF',
+    color: isSpace ? '#FDE047' : '#F0F9FF',
+    emissive: isSpace ? '#F59E0B' : '#000000',
+    emissiveIntensity: isSpace ? 0.5 : 0,
     transparent: true,
     opacity: 0.86,
     roughness: 0.25,
   });
   const slopeChevronMat = new THREE.MeshStandardMaterial({
-    color: isSnow ? '#38BDF8' : '#F59E0B',
-    emissive: isSnow ? '#0284C7' : '#D97706',
-    emissiveIntensity: 0.35,
-    roughness: 0.35,
+    color: isSpace ? '#34D399' : isSnow ? '#38BDF8' : '#F59E0B',
+    emissive: isSpace ? '#10B981' : isSnow ? '#0284C7' : '#D97706',
+    emissiveIntensity: isSpace ? 0.65 : 0.35,
+    roughness: 0.3,
   });
 
   const sharedFencePostGeo = new RoundedBoxGeometry(0.32, 1.15, 0.32, 2, 0.06);
   const sharedFenceRailGeo = new RoundedBoxGeometry(0.14, 0.16, 6.8, 1, 0.03);
   const sharedHedgeBlockGeo = new RoundedBoxGeometry(1.25, 0.95, 4.2, 2, 0.32);
   const sharedHedgePuffGeo = new RoundedBoxGeometry(0.95, 0.75, 0.95, 2, 0.28);
-  const sharedFlowerGeo = isSnow
-    ? new THREE.OctahedronGeometry(0.28, 0)
-    : new THREE.BoxGeometry(0.26, 0.22, 0.26);
+  const sharedFlowerGeo =
+    isSnow || isSpace
+      ? new THREE.OctahedronGeometry(0.28, 0)
+      : new THREE.BoxGeometry(0.26, 0.22, 0.26);
   const sharedPaverGeo = new RoundedBoxGeometry(1.35, 0.09, 0.95, 2, 0.03);
   const sharedTowerGeo = new RoundedBoxGeometry(0.65, 5.2, 0.65, 2, 0.14);
   const sharedBarGeo = new RoundedBoxGeometry(1.5, 0.06, 0.32, 1, 0.03);
@@ -897,6 +1034,396 @@ function buildEnvironmentalScenery(trackId: TrackId): {
   const windmillBlades: THREE.Object3D[] = [];
   const floatingProps: { obj: THREE.Object3D; baseY: number; phase: number }[] =
     [];
+
+  if (trackId === 'space_odyssey') {
+    // ========================================================================
+    // DAZZLING COSMIC SPACE & NEON NEBULA ("COSMIC NEBULA CIRCUIT") 3D SCENERY
+    // ========================================================================
+    const neonCyanMat = new THREE.MeshStandardMaterial({
+      color: '#38BDF8',
+      emissive: '#0284C7',
+      emissiveIntensity: 0.65,
+      roughness: 0.15,
+      metalness: 0.3,
+    });
+    const neonMagentaMat = new THREE.MeshStandardMaterial({
+      color: '#F472B6',
+      emissive: '#DB2777',
+      emissiveIntensity: 0.65,
+      roughness: 0.15,
+      metalness: 0.3,
+    });
+    const neonVioletMat = new THREE.MeshStandardMaterial({
+      color: '#C084FC',
+      emissive: '#7E22CE',
+      emissiveIntensity: 0.65,
+      roughness: 0.18,
+      metalness: 0.28,
+    });
+    const neonGoldMat = new THREE.MeshStandardMaterial({
+      color: '#FDE047',
+      emissive: '#F59E0B',
+      emissiveIntensity: 0.75,
+      roughness: 0.18,
+      metalness: 0.25,
+    });
+    const neonLimeMat = new THREE.MeshStandardMaterial({
+      color: '#34D399',
+      emissive: '#059669',
+      emissiveIntensity: 0.6,
+      roughness: 0.2,
+      metalness: 0.25,
+    });
+    const hullWhiteMat = new THREE.MeshStandardMaterial({
+      color: '#F8FAFC',
+      roughness: 0.3,
+      metalness: 0.35,
+    });
+    const darkSpaceMetalMat = new THREE.MeshStandardMaterial({
+      color: '#1E1B4B',
+      roughness: 0.45,
+      metalness: 0.45,
+    });
+    const craterRockMat = new THREE.MeshStandardMaterial({
+      color: '#312E81',
+      roughness: 0.75,
+    });
+
+    const crystalSpireGeo = new THREE.ConeGeometry(0.75, 3.4, 6);
+    const crystalSideGeo = new THREE.ConeGeometry(0.48, 2.2, 6);
+    const alienOrbGeo = new THREE.OctahedronGeometry(0.85, 1);
+    const alienStemGeo = new RoundedBoxGeometry(0.55, 2.4, 0.55, 2, 0.18);
+    const craterBoulderGeo = new RoundedBoxGeometry(2.2, 1.6, 1.9, 2, 0.4);
+
+    // 1. Glowing Neon Alien Crystal Cluster
+    const createNeonCrystalCluster = (scale = 1.0, variant = 0): THREE.Group => {
+      const g = new THREE.Group();
+      const mats = [neonCyanMat, neonMagentaMat, neonVioletMat, neonGoldMat, neonLimeMat];
+      const m1 = mats[variant % mats.length];
+      const m2 = mats[(variant + 1) % mats.length];
+
+      const c1 = new THREE.Mesh(crystalSpireGeo, m1);
+      c1.position.y = 1.6;
+      c1.rotation.z = 0.08;
+
+      const c2 = new THREE.Mesh(crystalSideGeo, m2);
+      c2.position.set(0.62, 1.05, 0.28);
+      c2.rotation.z = -0.4;
+
+      const c3 = new THREE.Mesh(crystalSideGeo, m1);
+      c3.position.set(-0.58, 0.98, -0.25);
+      c3.rotation.z = 0.42;
+
+      g.add(c1, c2, c3);
+      g.scale.setScalar(scale);
+      return g;
+    };
+
+    // 2. Bioluminescent Space Tree with Floating Neon Rings
+    const createCosmicBioTree = (scale = 1.0, variant = 0): THREE.Group => {
+      const g = new THREE.Group();
+      const mats = [neonMagentaMat, neonCyanMat, neonVioletMat, neonLimeMat];
+      const crownMat = mats[variant % mats.length];
+      const ringMat = mats[(variant + 2) % mats.length];
+
+      const stem = new THREE.Mesh(alienStemGeo, darkSpaceMetalMat);
+      stem.position.y = 1.2;
+
+      const crown = new THREE.Mesh(alienOrbGeo, crownMat);
+      crown.position.y = 2.85;
+      crown.scale.set(1.4, 1.15, 1.4);
+
+      const topOrb = new THREE.Mesh(alienOrbGeo, neonGoldMat);
+      topOrb.position.y = 3.95;
+      topOrb.scale.setScalar(0.65);
+
+      const haloRing = new THREE.Mesh(
+        new THREE.TorusGeometry(1.55, 0.1, 8, 24),
+        ringMat
+      );
+      haloRing.position.y = 2.85;
+      haloRing.rotation.x = Math.PI * 0.42;
+      haloRing.rotation.y = 0.3;
+
+      g.add(stem, crown, topOrb, haloRing);
+      g.scale.setScalar(scale);
+      return g;
+    };
+
+    // 3. Cute Chibi Flying Saucer UFO
+    const createChibiUfo = (scale = 1.0, variant = 0): THREE.Group => {
+      const g = new THREE.Group();
+      const saucer = new THREE.Mesh(
+        new THREE.CylinderGeometry(1.6, 2.1, 0.55, 18),
+        hullWhiteMat
+      );
+      const rim = new THREE.Mesh(
+        new THREE.TorusGeometry(1.85, 0.18, 10, 24),
+        variant % 2 === 0 ? neonCyanMat : neonMagentaMat
+      );
+      rim.rotation.x = Math.PI / 2;
+      const dome = new THREE.Mesh(
+        new THREE.SphereGeometry(1.05, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.55),
+        neonGoldMat
+      );
+      dome.position.y = 0.22;
+      g.add(saucer, rim, dome);
+      g.scale.setScalar(scale);
+      return g;
+    };
+
+    // 4. Cute Chibi Space Rocket
+    const createSpaceRocket = (scale = 1.0): THREE.Group => {
+      const g = new THREE.Group();
+      const body = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.95, 1.15, 3.6, 14),
+        hullWhiteMat
+      );
+      body.position.y = 2.1;
+      const nose = new THREE.Mesh(
+        new THREE.ConeGeometry(0.98, 1.6, 14),
+        neonMagentaMat
+      );
+      nose.position.y = 4.7;
+      const porthole = new THREE.Mesh(
+        new THREE.SphereGeometry(0.42, 12, 12),
+        neonCyanMat
+      );
+      porthole.position.set(0, 2.5, 0.82);
+      for (let f = 0; f < 4; f++) {
+        const fin = new THREE.Mesh(
+          new RoundedBoxGeometry(0.28, 1.3, 0.95, 2, 0.08),
+          neonGoldMat
+        );
+        const ang = (f * Math.PI) / 2;
+        fin.position.set(Math.sin(ang) * 1.1, 0.85, Math.cos(ang) * 1.1);
+        fin.rotation.y = ang;
+        g.add(fin);
+      }
+      g.add(body, nose, porthole);
+      g.scale.setScalar(scale);
+      return g;
+    };
+
+    // 5. Overhead Neon Cyber Warp Portal Rings spanning across the track!
+    const portalSegments = [14, 48, 86, 118, 146, 196, 232, 266];
+    const portalMats = [neonCyanMat, neonMagentaMat, neonGoldMat, neonLimeMat, neonVioletMat];
+    portalSegments.forEach((segIdx, pIdx) => {
+      const seg = TRACK_SEGMENTS[segIdx % TRACK_SEGMENTS.length];
+      const yaw = Math.atan2(-seg.dirX, -seg.dirZ);
+      const archGroup = new THREE.Group();
+      archGroup.position.set(seg.x0, seg.y0, seg.z0);
+      archGroup.rotation.y = yaw;
+
+      const ringR = seg.width * 0.64;
+      const torus = new THREE.Mesh(
+        new THREE.TorusGeometry(ringR, 0.34, 12, 32, Math.PI),
+        portalMats[pIdx % portalMats.length]
+      );
+      torus.position.y = 0.2;
+      archGroup.add(torus);
+
+      // Glowing star crest at top of portal
+      const starCrest = new THREE.Mesh(
+        new THREE.OctahedronGeometry(0.75, 0),
+        neonGoldMat
+      );
+      starCrest.position.set(0, ringR + 0.55, 0);
+      archGroup.add(starCrest);
+
+      sceneryGroup.add(archGroup);
+    });
+
+    // 6. Galactic Radar & Rotating Solar Array Towers along the circuit
+    const stationSegments = [24, 62, 134, 208, 254];
+    stationSegments.forEach((segIdx, sIdx) => {
+      const seg = TRACK_SEGMENTS[segIdx % TRACK_SEGMENTS.length];
+      const side = sIdx % 2 === 0 ? 1 : -1;
+      const lat = (seg.width * 0.5 + 8.5) * side;
+      const sx = seg.x0 + seg.rightX * lat;
+      const sz = seg.z0 + seg.rightZ * lat;
+      const sy = seg.isHighBridge ? 0 : Math.max(0, seg.y0);
+
+      const towerGroup = new THREE.Group();
+      const basePillar = new THREE.Mesh(
+        new THREE.CylinderGeometry(1.4, 2.1, 7.5, 10),
+        darkSpaceMetalMat
+      );
+      basePillar.position.y = 3.75;
+      const glowBand = new THREE.Mesh(
+        new THREE.CylinderGeometry(1.65, 1.65, 0.7, 12),
+        sIdx % 2 === 0 ? neonCyanMat : neonMagentaMat
+      );
+      glowBand.position.y = 5.5;
+
+      const rotorPivot = new THREE.Group();
+      rotorPivot.position.set(0, 6.8, 0);
+      for (let b = 0; b < 4; b++) {
+        const wing = new THREE.Mesh(
+          new RoundedBoxGeometry(5.6, 0.9, 0.18, 2, 0.05),
+          b % 2 === 0 ? neonCyanMat : neonGoldMat
+        );
+        wing.rotation.z = (b * Math.PI) / 2;
+        rotorPivot.add(wing);
+      }
+      windmillBlades.push(rotorPivot);
+
+      towerGroup.add(basePillar, glowBand, rotorPivot);
+      towerGroup.position.set(sx, sy, sz);
+      towerGroup.lookAt(seg.x0, sy + 2, seg.z0);
+      sceneryGroup.add(towerGroup);
+    });
+
+    // 7. Dense Trackside Cosmic Crystals, Bio-Trees, Rockets & Hovering UFOs
+    for (let i = 0; i < TRACK_SEGMENTS.length; i++) {
+      const seg = TRACK_SEGMENTS[i];
+      const seed = Math.sin(i * 12.9898 + 9.3) * 43758.5453;
+      const randA = seed - Math.floor(seed);
+      const randB = seed * 1.73 - Math.floor(seed * 1.73);
+      const randC = seed * 2.41 - Math.floor(seed * 2.41);
+
+      for (const side of [-1, 1]) {
+        const baseGroundY =
+          seg.isHighBridge || seg.isDeepWaterHazard
+            ? 0
+            : Math.max(0, seg.y0 - 0.2);
+
+        if (!seg.isHighBridge && !seg.isDeepWaterHazard && i % 2 === 0) {
+          const crystLat = (seg.width * 0.5 + 2.2 + randA * 2.6) * side;
+          const cluster = createNeonCrystalCluster(
+            0.85 + randB * 0.55,
+            i + (side > 0 ? 1 : 0)
+          );
+          cluster.position.set(
+            seg.x0 + seg.rightX * crystLat,
+            baseGroundY,
+            seg.z0 + seg.rightZ * crystLat
+          );
+          cluster.rotation.y = randC * Math.PI * 2;
+          sceneryGroup.add(cluster);
+        }
+
+        if (i % 14 === 0 && side === (i % 28 === 0 ? 1 : -1)) {
+          const rocketLat = (seg.width * 0.5 + 5.2) * side;
+          const rocket = createSpaceRocket(1.05);
+          rocket.position.set(
+            seg.x0 + seg.rightX * rocketLat,
+            baseGroundY,
+            seg.z0 + seg.rightZ * rocketLat
+          );
+          sceneryGroup.add(rocket);
+        }
+
+        const innerDist = seg.isHighBridge
+          ? 6.2 + randA * 5.5
+          : 3.8 + randA * 5.2;
+        const treeLat = (seg.width * 0.5 + innerDist) * side;
+        const tx = seg.x0 + seg.rightX * treeLat;
+        const tz = seg.z0 + seg.rightZ * treeLat;
+        const bioTree =
+          i % 3 === 0
+            ? createNeonCrystalCluster(1.25 + randB * 0.6, i)
+            : createCosmicBioTree(1.0 + randB * 0.55, i);
+        bioTree.position.set(tx, baseGroundY, tz);
+        bioTree.rotation.y = randA * Math.PI * 2;
+        sceneryGroup.add(bioTree);
+
+        if (i % 18 === 0 && side === 1) {
+          const ufo = createChibiUfo(1.15, i);
+          const ufoY = Math.max(9, seg.y0 + 7.5 + (i % 3) * 2.2);
+          const ufoLat = (seg.width * 0.5 + 6.5) * (i % 36 === 0 ? 1 : -1);
+          ufo.position.set(
+            seg.x0 + seg.rightX * ufoLat,
+            ufoY,
+            seg.z0 + seg.rightZ * ufoLat
+          );
+          sceneryGroup.add(ufo);
+          floatingProps.push({ obj: ufo, baseY: ufoY, phase: i * 0.4 });
+        }
+
+        if (i % 4 === 0) {
+          const rockLat = (seg.width * 0.5 + 8.5 + randC * 8.0) * side;
+          const rock = new THREE.Mesh(craterBoulderGeo, craterRockMat);
+          rock.scale.setScalar(0.9 + randA * 0.9);
+          rock.position.set(
+            seg.x0 + seg.rightX * rockLat,
+            0.4,
+            seg.z0 + seg.rightZ * rockLat
+          );
+          rock.rotation.y = randB * Math.PI;
+          sceneryGroup.add(rock);
+        }
+      }
+    }
+
+    // 8. GIANT RINGED SATURN PLANETS & GLOWING MOONS IN THE COSMIC SKY!
+    const planetMats = [neonMagentaMat, neonCyanMat, neonVioletMat, neonGoldMat, neonLimeMat];
+    for (let p = 0; p < 12; p++) {
+      const sample = sampleTrackAtDistance((p / 12) * TOTAL_TRACK_LENGTH);
+      const side = p % 2 === 0 ? 1 : -1;
+      const lat = (46 + (p % 3) * 16) * side;
+      const px = sample.x + sample.rightX * lat;
+      const pz = sample.z + sample.rightZ * lat;
+      const py = 26 + (p % 4) * 9;
+      const pRad = 7.5 + (p % 3) * 3.2;
+
+      const planetGroup = new THREE.Group();
+      const sphere = new THREE.Mesh(
+        new THREE.SphereGeometry(pRad, 20, 16),
+        planetMats[p % planetMats.length]
+      );
+      planetGroup.add(sphere);
+
+      if (p % 2 === 0) {
+        const ring = new THREE.Mesh(
+          new THREE.RingGeometry(pRad * 1.32, pRad * 2.05, 32),
+          new THREE.MeshBasicMaterial({
+            color: p % 4 === 0 ? '#FDE047' : '#38BDF8',
+            side: THREE.DoubleSide,
+            transparent: true,
+            opacity: 0.72,
+          })
+        );
+        ring.rotation.x = Math.PI * 0.38;
+        ring.rotation.y = 0.28;
+        planetGroup.add(ring);
+      }
+
+      planetGroup.position.set(px, py, pz);
+      sceneryGroup.add(planetGroup);
+      floatingProps.push({ obj: planetGroup, baseY: py, phase: p * 0.9 });
+    }
+
+    // 9. VIVID NEBULA ENERGY RIBBONS IN THE SKY
+    const nebulaColors = ['#F472B6', '#38BDF8', '#C084FC', '#FACC15'];
+    for (let k = 0; k < 14; k++) {
+      const sample = sampleTrackAtDistance((k / 14) * TOTAL_TRACK_LENGTH);
+      const side = k % 2 === 0 ? 1 : -1;
+      const lat = (18 + (k % 4) * 7) * side;
+      const cx = sample.x + sample.rightX * lat;
+      const cz = sample.z + sample.rightZ * lat;
+      const cy = Math.max(22, sample.y + 15 + (k % 3) * 4);
+
+      const nebulaRibbon = new THREE.Group();
+      const nMat = new THREE.MeshBasicMaterial({
+        color: nebulaColors[k % nebulaColors.length],
+        transparent: true,
+        opacity: 0.42,
+        side: THREE.DoubleSide,
+      });
+      const curtain = new THREE.Mesh(
+        new RoundedBoxGeometry(18, 4.4, 0.7, 2, 0.3),
+        nMat
+      );
+      nebulaRibbon.add(curtain);
+      nebulaRibbon.position.set(cx, cy, cz);
+      nebulaRibbon.rotation.y = Math.atan2(-sample.dirX, -sample.dirZ) + 0.35;
+      sceneryGroup.add(nebulaRibbon);
+      floatingProps.push({ obj: nebulaRibbon, baseY: cy, phase: k * 0.7 });
+    }
+
+    return { sceneryGroup, windmillBlades, floatingProps };
+  }
 
   if (trackId === 'snow_glacier') {
     // ========================================================================
@@ -2039,14 +2566,22 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
 
     setActiveTrack(trackId);
     const isSnow = trackId === 'snow_glacier';
+    const isSpace = trackId === 'space_odyssey';
 
     const width = container.clientWidth || window.innerWidth;
     const height = container.clientHeight || window.innerHeight;
 
-    const skyColorHex = isSnow ? '#CBE4F9' : '#D5E6CE';
+    const skyColorHex = isSpace
+      ? '#0F0728'
+      : isSnow
+        ? '#CBE4F9'
+        : '#D5E6CE';
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(skyColorHex);
-    scene.fog = new THREE.FogExp2(skyColorHex, isSnow ? 0.0022 : 0.0026);
+    scene.fog = new THREE.FogExp2(
+      skyColorHex,
+      isSpace ? 0.0018 : isSnow ? 0.0022 : 0.0026
+    );
 
     const camera = new THREE.PerspectiveCamera(50, width / height, 0.2, 460);
 
@@ -2069,7 +2604,7 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
     renderer.shadowMap.enabled = !isSoftwareGl;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = isSnow ? 1.08 : 1.06;
+    renderer.toneMappingExposure = isSpace ? 1.18 : isSnow ? 1.08 : 1.06;
     renderer.domElement.style.touchAction = 'none';
     container.innerHTML = '';
     container.appendChild(renderer.domElement);
@@ -2080,20 +2615,20 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
       0.04
     ).texture;
     scene.environment = envTexture;
-    scene.environmentIntensity = isSnow ? 0.65 : 0.55;
+    scene.environmentIntensity = isSpace ? 0.72 : isSnow ? 0.65 : 0.55;
 
     // Sunlight & Fill Lighting
     const hemiLight = new THREE.HemisphereLight(
-      isSnow ? '#F0F9FF' : '#FFFDF9',
-      isSnow ? '#7DD3FC' : '#6B8E4E',
-      isSnow ? 0.96 : 0.92
+      isSpace ? '#F0ABFC' : isSnow ? '#F0F9FF' : '#FFFDF9',
+      isSpace ? '#38BDF8' : isSnow ? '#7DD3FC' : '#6B8E4E',
+      isSpace ? 1.05 : isSnow ? 0.96 : 0.92
     );
     hemiLight.position.set(0, 50, 0);
     scene.add(hemiLight);
 
     const dirLight = new THREE.DirectionalLight(
-      isSnow ? '#FFFFFF' : '#FFF6E6',
-      isSnow ? 1.5 : 1.55
+      isSpace ? '#FDF4FF' : isSnow ? '#FFFFFF' : '#FFF6E6',
+      isSpace ? 1.55 : isSnow ? 1.5 : 1.55
     );
     dirLight.position.set(45, 75, 45);
     dirLight.castShadow = !isSoftwareGl;
@@ -2109,12 +2644,12 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
     dirLight.shadow.bias = -0.0005;
     scene.add(dirLight);
 
-    // Ground Floor (Snowfield vs Woodland Moss)
+    // Ground Floor (Cosmic Nebula Floor vs Snowfield vs Woodland Moss)
     const meadowPlane = new THREE.Mesh(
       new THREE.PlaneGeometry(1400, 1400),
       new THREE.MeshStandardMaterial({
-        color: isSnow ? '#E2F1FC' : '#6A8E4E',
-        roughness: isSnow ? 0.78 : 0.95,
+        color: isSpace ? '#150A36' : isSnow ? '#E2F1FC' : '#6A8E4E',
+        roughness: isSpace ? 0.65 : isSnow ? 0.78 : 0.95,
       })
     );
     meadowPlane.rotation.x = -Math.PI / 2;
@@ -2129,14 +2664,14 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
     scene.add(trackGroup);
 
     // ========================================================================
-    // 2. DENSE SCENERY (WOODLAND FOREST OR GLACIER PEAK SNOW & ICE)
+    // 2. DENSE SCENERY (WOODLAND, GLACIER PEAK, OR COSMIC NEBULA)
     // ========================================================================
     const { sceneryGroup, windmillBlades, floatingProps } =
       buildEnvironmentalScenery(trackId);
     scene.add(sceneryGroup);
 
     // ========================================================================
-    // 3. DEEP WATER RIVER / ARCTIC FJORD HAZARD + 3D STEPPING STONES / ICEBERGS
+    // 3. DEEP WATER RIVER / ARCTIC FJORD / ZERO-G ASTEROID VOID HAZARD
     // ========================================================================
     const hazardGroup = new THREE.Group();
     scene.add(hazardGroup);
@@ -2153,7 +2688,9 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
       wz /= waterSegs.length;
 
       const deepRiverMat = new THREE.MeshStandardMaterial({
-        color: isSnow ? '#082F49' : '#0369A1',
+        color: isSpace ? '#1E1B4B' : isSnow ? '#082F49' : '#0369A1',
+        emissive: isSpace ? '#311042' : '#000000',
+        emissiveIntensity: isSpace ? 0.45 : 0,
         roughness: 0.12,
         metalness: 0.15,
       });
@@ -2165,24 +2702,30 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
       pond.receiveShadow = true;
       hazardGroup.add(pond);
 
-      // Stepping Stones (Mossy Rocks in Woodland, 3D Floating Icebergs in Snow & Ice!)
+      // Stepping Stones (Mossy Rocks, Floating Icebergs, or Glowing 3D Space Asteroids!)
       const stoneBaseMat = new THREE.MeshStandardMaterial({
-        color: isSnow ? '#0284C7' : '#57534E',
-        roughness: isSnow ? 0.3 : 0.9,
+        color: isSpace ? '#4C1D95' : isSnow ? '#0284C7' : '#57534E',
+        emissive: isSpace ? '#3B0764' : '#000000',
+        emissiveIntensity: isSpace ? 0.35 : 0,
+        roughness: isSpace || isSnow ? 0.3 : 0.9,
       });
       const stoneMossMat = new THREE.MeshStandardMaterial({
-        color: isSnow ? '#7DD3FC' : '#65A30D',
-        roughness: isSnow ? 0.25 : 0.82,
+        color: isSpace ? '#F472B6' : isSnow ? '#7DD3FC' : '#65A30D',
+        emissive: isSpace ? '#DB2777' : '#000000',
+        emissiveIntensity: isSpace ? 0.55 : 0,
+        roughness: isSpace || isSnow ? 0.25 : 0.82,
       });
       const stoneTopMat = new THREE.MeshStandardMaterial({
-        color: isSnow ? '#F8FAFC' : '#D6D3D1',
-        roughness: isSnow ? 0.5 : 0.75,
+        color: isSpace ? '#38BDF8' : isSnow ? '#F8FAFC' : '#D6D3D1',
+        emissive: isSpace ? '#0284C7' : '#000000',
+        emissiveIntensity: isSpace ? 0.4 : 0,
+        roughness: isSpace ? 0.25 : isSnow ? 0.5 : 0.75,
       });
       const stoneRingMat = new THREE.MeshBasicMaterial({
-        color: '#BAE6FD',
+        color: isSpace ? '#FDE047' : '#BAE6FD',
         side: THREE.DoubleSide,
         transparent: true,
-        opacity: 0.58,
+        opacity: isSpace ? 0.75 : 0.58,
       });
 
       for (const st of RIVER_STEPPING_STONES) {
@@ -2190,26 +2733,26 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
         stGroup.position.set(st.x, st.y, st.z);
         stGroup.rotation.y = st.yaw;
 
-        // Submerged dark rock or deep blue iceberg shelf
+        // Submerged dark rock, deep blue iceberg shelf, or glowing asteroid core
         const baseMesh = new THREE.Mesh(
           new THREE.CylinderGeometry(
             st.radius * 0.98,
             st.radius * 1.14,
             0.65,
-            isSnow ? 7 : 10
+            isSnow || isSpace ? 7 : 10
           ),
           stoneBaseMat
         );
         baseMesh.position.y = -0.32;
         stGroup.add(baseMesh);
 
-        // Collar (Mossy green or crystalline cyan ice rim)
+        // Collar (Mossy green, crystalline cyan ice rim, or neon magenta plasma ring)
         const mossMesh = new THREE.Mesh(
           new THREE.CylinderGeometry(
             st.radius * 0.96,
             st.radius * 1.02,
             0.15,
-            isSnow ? 7 : 10
+            isSnow || isSpace ? 7 : 10
           ),
           stoneMossMat
         );
@@ -2222,7 +2765,7 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
             st.radius * 0.88,
             st.radius * 0.95,
             0.16,
-            isSnow ? 7 : 10
+            isSnow || isSpace ? 7 : 10
           ),
           stoneTopMat
         );
@@ -2231,7 +2774,7 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
         topMesh.castShadow = true;
         stGroup.add(topMesh);
 
-        // Water ripple ring
+        // Water / Plasma ripple ring
         const ripple = new THREE.Mesh(
           new THREE.RingGeometry(st.radius * 1.02, st.radius * 1.18, 16),
           stoneRingMat
@@ -2243,15 +2786,17 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
         hazardGroup.add(stGroup);
       }
 
-      // Decorative Fjord Icebergs (in Snow) or Lily Pads (in Woodland)
+      // Decorative Fjord Icebergs (in Snow), Glowing Crystal Asteroids (in Space), or Lily Pads (in Woodland)
       const decorMat = new THREE.MeshStandardMaterial({
-        color: isSnow ? '#E0F2FE' : '#4D7C0F',
-        roughness: isSnow ? 0.35 : 0.7,
+        color: isSpace ? '#C084FC' : isSnow ? '#E0F2FE' : '#4D7C0F',
+        emissive: isSpace ? '#7E22CE' : '#000000',
+        emissiveIntensity: isSpace ? 0.5 : 0,
+        roughness: isSpace || isSnow ? 0.35 : 0.7,
       });
       for (let l = 0; l < 18; l++) {
         const angle = (l / 18) * Math.PI * 2;
         const rad = 20 + (l % 4) * 9;
-        if (isSnow) {
+        if (isSnow || isSpace) {
           const bergGroup = new THREE.Group();
           const floe = new THREE.Mesh(
             new THREE.CylinderGeometry(2.2, 2.6, 0.35, 6),
@@ -2293,8 +2838,10 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
     archGroup.rotation.y = startYaw;
 
     const pillarMat = new THREE.MeshStandardMaterial({
-      color: isSnow ? '#0284C7' : '#C86D3B',
-      roughness: isSnow ? 0.25 : 0.6,
+      color: isSpace ? '#EC4899' : isSnow ? '#0284C7' : '#C86D3B',
+      emissive: isSpace ? '#BE185D' : '#000000',
+      emissiveIntensity: isSpace ? 0.45 : 0,
+      roughness: isSpace || isSnow ? 0.25 : 0.6,
     });
     const leftPillar = new THREE.Mesh(
       new RoundedBoxGeometry(0.9, 5.2, 0.9, 3, 0.16),
@@ -2327,9 +2874,11 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
     archGroup.add(leftPillar, rightPillar, topBanner, startLineStrip);
     hazardGroup.add(archGroup);
 
-    // Sticky Slime / Frozen Slush Puddles (3D)
+    // Sticky Slime / Frozen Slush / Neon Plasma Puddles (3D)
     const slimeMat = new THREE.MeshStandardMaterial({
-      color: isSnow ? '#06B6D4' : '#84CC16',
+      color: isSpace ? '#C084FC' : isSnow ? '#06B6D4' : '#84CC16',
+      emissive: isSpace ? '#9333EA' : '#000000',
+      emissiveIntensity: isSpace ? 0.5 : 0,
       roughness: 0.2,
       metalness: 0.1,
     });
@@ -2350,9 +2899,9 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
 
     // Speed Boost Pads
     const boostMat = new THREE.MeshStandardMaterial({
-      color: isSnow ? '#38BDF8' : '#F59E0B',
-      emissive: isSnow ? '#0284C7' : '#F59E0B',
-      emissiveIntensity: 0.4,
+      color: isSpace ? '#34D399' : isSnow ? '#38BDF8' : '#F59E0B',
+      emissive: isSpace ? '#10B981' : isSnow ? '#0284C7' : '#F59E0B',
+      emissiveIntensity: isSpace ? 0.7 : 0.4,
       roughness: 0.35,
     });
     for (const pad of BOOST_PADS) {
@@ -2375,7 +2924,9 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
       const disc = new THREE.Mesh(
         new THREE.CylinderGeometry(tt.radius, tt.radius, 0.16, 32),
         new THREE.MeshStandardMaterial({
-          color: isSnow ? '#7DD3FC' : '#FDE047',
+          color: isSpace ? '#38BDF8' : isSnow ? '#7DD3FC' : '#FDE047',
+          emissive: isSpace ? '#0284C7' : '#000000',
+          emissiveIntensity: isSpace ? 0.35 : 0,
           roughness: 0.35,
         })
       );
@@ -2385,7 +2936,9 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
       const hub = new THREE.Mesh(
         new RoundedBoxGeometry(0.95, 0.9, 0.95, 3, 0.18),
         new THREE.MeshStandardMaterial({
-          color: isSnow ? '#6366F1' : '#EF4444',
+          color: isSpace ? '#FDE047' : isSnow ? '#6366F1' : '#EF4444',
+          emissive: isSpace ? '#F59E0B' : '#000000',
+          emissiveIntensity: isSpace ? 0.5 : 0,
           roughness: 0.35,
         })
       );
@@ -2395,7 +2948,9 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
       const beam = new THREE.Mesh(
         new RoundedBoxGeometry(tt.barHalfLength * 2, 0.44, 0.44, 3, 0.12),
         new THREE.MeshStandardMaterial({
-          color: isSnow ? '#38BDF8' : '#EF4444',
+          color: isSpace ? '#F472B6' : isSnow ? '#38BDF8' : '#EF4444',
+          emissive: isSpace ? '#DB2777' : '#000000',
+          emissiveIntensity: isSpace ? 0.55 : 0,
           roughness: 0.35,
         })
       );
@@ -2407,7 +2962,7 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
       turntableMeshes.push({ group: g, spec: tt });
     }
 
-    // Rolling Boulders / Giant Snowballs & Crystal Balls
+    // Rolling Boulders / Giant Snowballs / Glowing Neon Meteors
     const boulderMeshes: { mesh: THREE.Mesh; spec: typeof ROLLING_BOULDERS[0] }[] =
       [];
     for (const b of ROLLING_BOULDERS) {
@@ -2428,6 +2983,8 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
           );
       const mat = new THREE.MeshStandardMaterial({
         color: b.colorHex,
+        emissive: isSpace ? b.colorHex : '#000000',
+        emissiveIntensity: isSpace ? 0.42 : 0,
         roughness: b.isBeachBall ? 0.28 : isSnow ? 0.55 : 0.85,
       });
       const mesh = new THREE.Mesh(geo, mat);
@@ -2437,9 +2994,9 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
       boulderMeshes.push({ mesh, spec: b });
     }
 
-    // 3D Falling Snowflakes Particle System (Active on Snow & Ice Circuit!)
+    // 3D Falling Snowflakes / Twinkling Cosmic Stardust Particles (Active on Snow & Space Circuits!)
     const snowflakesGroup = new THREE.Group();
-    if (isSnow) {
+    if (isSnow || isSpace) {
       scene.add(snowflakesGroup);
     }
     const snowflakeMeshes: {
@@ -2450,15 +3007,27 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
       swayPhase: number;
       heightOffset: number;
     }[] = [];
-    if (isSnow) {
-      const flakeGeo = new THREE.OctahedronGeometry(0.14, 0);
-      const flakeMat = new THREE.MeshBasicMaterial({
-        color: '#FFFFFF',
-        transparent: true,
-        opacity: 0.88,
-      });
+    if (isSnow || isSpace) {
+      const flakeGeo = new THREE.OctahedronGeometry(isSpace ? 0.18 : 0.14, 0);
+      const starPalette = ['#FDE047', '#38BDF8', '#F472B6', '#C084FC', '#34D399'];
+      const flakeMats = isSpace
+        ? starPalette.map(
+            (hex) =>
+              new THREE.MeshBasicMaterial({
+                color: hex,
+                transparent: true,
+                opacity: 0.92,
+              })
+          )
+        : [
+            new THREE.MeshBasicMaterial({
+              color: '#FFFFFF',
+              transparent: true,
+              opacity: 0.88,
+            }),
+          ];
       for (let sf = 0; sf < 95; sf++) {
-        const m = new THREE.Mesh(flakeGeo, flakeMat);
+        const m = new THREE.Mesh(flakeGeo, flakeMats[sf % flakeMats.length]);
         const ox = ((Math.sin(sf * 17.3) * 0.5 + 0.5) - 0.5) * 44;
         const oz = ((Math.cos(sf * 31.7) * 0.5 + 0.5) - 0.5) * 44;
         const hOff = (sf / 95) * 18;
@@ -2467,7 +3036,7 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
           mesh: m,
           offsetX: ox,
           offsetZ: oz,
-          fallSpeed: 2.8 + (sf % 5) * 0.6,
+          fallSpeed: isSpace ? 1.8 + (sf % 5) * 0.45 : 2.8 + (sf % 5) * 0.6,
           swayPhase: sf * 0.9,
           heightOffset: hOff,
         });
@@ -2784,29 +3353,35 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
     const onPointerMove = (e: PointerEvent) => {
       if (isLobbyOpenRef.current) return;
 
-      // Mode 1: Pointer Lock is active -> Unlimited 360° hardware mouse deltas (snappy & smooth)
+      // Mode 1: Pointer Lock is active -> Unlimited 360° hardware mouse deltas (gentle & smooth)
       if (document.pointerLockElement === domElem) {
-        const dx = e.movementX || 0;
-        const dy = e.movementY || 0;
-        targetCameraYawRef.current -= dx * 0.0044;
+        const rawDx = e.movementX || 0;
+        const rawDy = e.movementY || 0;
+        // Clamp sudden hardware spikes and apply softer mouse sensitivity
+        const dx = Math.max(-85, Math.min(85, rawDx));
+        const dy = Math.max(-85, Math.min(85, rawDy));
+        targetCameraYawRef.current -= dx * 0.0025;
         targetCameraPitchRef.current = Math.max(
           0.16,
-          Math.min(0.85, targetCameraPitchRef.current + dy * 0.0032)
+          Math.min(0.85, targetCameraPitchRef.current + dy * 0.0018)
         );
         return;
       }
 
-      // Mode 2: Active Mouse Drag or Mobile Touch-Swipe on Canvas (fast, responsive camera turn)
+      // Mode 2: Active Mouse Drag or Mobile Touch-Swipe on Canvas
       const tracked = activeDragPointers.get(e.pointerId);
       if (!tracked) return;
 
-      const dx = e.clientX - tracked.lastX;
-      const dy = e.clientY - tracked.lastY;
+      const rawDx = e.clientX - tracked.lastX;
+      const rawDy = e.clientY - tracked.lastY;
       tracked.lastX = e.clientX;
       tracked.lastY = e.clientY;
 
-      const sensitivity = e.pointerType === 'touch' ? 0.0115 : 0.0068;
-      const pitchSens = e.pointerType === 'touch' ? 0.0062 : 0.0045;
+      const dx = Math.max(-85, Math.min(85, rawDx));
+      const dy = Math.max(-85, Math.min(85, rawDy));
+
+      const sensitivity = e.pointerType === 'touch' ? 0.0076 : 0.0038;
+      const pitchSens = e.pointerType === 'touch' ? 0.0044 : 0.0025;
       targetCameraYawRef.current -= dx * sensitivity;
       targetCameraPitchRef.current = Math.max(
         0.16,
@@ -2919,26 +3494,26 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
       const moveForward = Math.max(-1, Math.min(1, kbForward + effectiveJoyForward));
       const moveRight = Math.max(-1, Math.min(1, kbRight + effectiveJoyRight));
 
-      // Snappily turn camera into turns when steering left/right
+      // Gently turn camera into turns when steering left/right
       const isActivelyAiming =
         document.pointerLockElement === domElem || activeDragPointers.size > 0;
       if (Math.abs(moveRight) > 0.04 && moveForward >= -0.15 && !isActivelyAiming) {
-        targetCameraYawRef.current -= moveRight * dt * 2.35;
+        targetCameraYawRef.current -= moveRight * dt * 1.65;
       }
 
-      // Apply snappy ease-in-out damping to camera yaw & pitch
+      // Apply plush, cushioned ease-in-out damping (0.14s smoothTime) to camera yaw & pitch
       cameraYawRef.current = smoothDampScalar(
         cameraYawRef.current,
         targetCameraYawRef.current,
         cameraYawVelRef,
-        0.048,
+        0.14,
         dt
       );
       cameraPitchRef.current = smoothDampScalar(
         cameraPitchRef.current,
         targetCameraPitchRef.current,
         cameraPitchVelRef,
-        0.048,
+        0.14,
         dt
       );
 
@@ -3530,7 +4105,7 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
           camTarget.z + Math.cos(cameraYawRef.current) * camDist;
         const desiredCamY = camTarget.y + camHeight;
 
-        const posAlpha = 1 - Math.exp(-18.0 * dt);
+        const posAlpha = 1 - Math.exp(-11.5 * dt);
         desiredCamPosVec.set(desiredCamX, desiredCamY, desiredCamZ);
         camPos.lerp(desiredCamPosVec, posAlpha);
 
@@ -3540,7 +4115,7 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
           camTarget.x - Math.sin(cameraYawRef.current) * lookAheadDist;
         const lookAheadZ =
           camTarget.z - Math.cos(cameraYawRef.current) * lookAheadDist;
-        const lookAlpha = 1 - Math.exp(-22.0 * dt);
+        const lookAlpha = 1 - Math.exp(-14.0 * dt);
         desiredCamLookVec.set(
           lookAheadX,
           camTarget.y + lookHeightOffset,
@@ -3560,8 +4135,8 @@ export const RaceGameCanvas: React.FC<RaceGameCanvasProps> = ({
         dirLight.target.position.set(camTarget.x, camTarget.y, camTarget.z);
         dirLight.target.updateMatrixWorld();
 
-        // Animate 3D Falling Snowflakes around the active camera target on the Snow & Ice circuit!
-        if (isSnow && snowflakeMeshes.length > 0) {
+        // Animate 3D Falling Snowflakes / Twinkling Cosmic Stardust around the active camera target!
+        if ((isSnow || isSpace) && snowflakeMeshes.length > 0) {
           for (const sf of snowflakeMeshes) {
             const fallY =
               16 - ((elapsed * sf.fallSpeed + sf.heightOffset) % 17.5);

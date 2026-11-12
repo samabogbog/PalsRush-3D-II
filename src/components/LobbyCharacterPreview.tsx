@@ -123,9 +123,9 @@ export const LobbyCharacterPreview: React.FC<LobbyCharacterPreviewProps> = ({
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0xffffff);
 
-    // Camera framed on the character standing on open white ground with slight zoom in/out support
+    // Camera framed further back with a higher look-at target so the 3D model appears smaller and sits lower in the window
     const camera = new THREE.PerspectiveCamera(30, width / height, 0.1, 50);
-    camera.position.set(0, 1.85, 5.65);
+    camera.position.set(0, 2.15, 7.35);
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
@@ -133,11 +133,11 @@ export const LobbyCharacterPreview: React.FC<LobbyCharacterPreviewProps> = ({
     controls.enablePan = false;
     controls.enableZoom = true;
     controls.zoomSpeed = 0.7;
-    controls.minDistance = 3.9;
-    controls.maxDistance = 7.8;
+    controls.minDistance = 5.2;
+    controls.maxDistance = 9.6;
     controls.minPolarAngle = Math.PI * 0.26;
     controls.maxPolarAngle = Math.PI * 0.48;
-    controls.target.set(0, 1.02, 0);
+    controls.target.set(0, 1.32, 0);
     controls.update();
 
     // Soft Diffused White Studio Lighting for Gentle, Subtle Shadows
@@ -176,11 +176,13 @@ export const LobbyCharacterPreview: React.FC<LobbyCharacterPreviewProps> = ({
       color: 0x1e293b,
     });
     const shadowFloorMesh = new THREE.Mesh(shadowFloorGeo, shadowFloorMat);
-    shadowFloorMesh.position.y = 0.001;
+    shadowFloorMesh.position.y = -0.14;
     shadowFloorMesh.receiveShadow = true;
     scene.add(shadowFloorMesh);
 
     const turntableGroup = new THREE.Group();
+    turntableGroup.scale.setScalar(0.82);
+    turntableGroup.position.y = -0.14;
     scene.add(turntableGroup);
 
     // Cache built character rigs by CharacterId so switching is 0ms instant

@@ -45,7 +45,13 @@ import {
   PASSIVE_SKILLS,
   PassiveSkillId,
 } from '../models/characterTypes';
-import { TRACK_CATALOG, TRACK_SEGMENTS, TrackId, setActiveTrack } from '../game/raceEngine';
+import {
+  TRACK_CATALOG,
+  TRACK_ID_LIST,
+  TRACK_SEGMENTS,
+  TrackId,
+  setActiveTrack,
+} from '../game/raceEngine';
 import { RaceHudSnapshot, ReplayControlAction } from './RaceGameCanvas';
 import {
   ActionButtonEmblem,
@@ -166,6 +172,7 @@ const TrackMinimap: React.FC<{
 }> = ({ trackId, standings, zoneName }) => {
   const geo = useMemo(() => computeMinimapGeometry(trackId), [trackId]);
   const isSnow = trackId === 'snow_glacier';
+  const isSpace = trackId === 'space_odyssey';
   const playerEntry = standings.find((r) => r.isPlayer) || standings[0];
   const playerMapPos = playerEntry
     ? geo.project(playerEntry.x, playerEntry.z)
@@ -182,10 +189,18 @@ const TrackMinimap: React.FC<{
     <div className="pointer-events-auto relative group">
       <div
         aria-label={
-          isSnow ? 'Glacier Peak Circuit Minimap' : 'Woodland Circuit Minimap'
+          isSpace
+            ? 'Cosmic Nebula Circuit Minimap'
+            : isSnow
+              ? 'Glacier Peak Circuit Minimap'
+              : 'Woodland Circuit Minimap'
         }
         className={`relative w-20 h-20 sm:w-26 sm:h-26 rounded-2xl border-3 border-[#1A130D] border-b-5 shadow-xl overflow-hidden flex items-center justify-center ${
-          isSnow ? 'bg-[#0C2238]/95' : 'bg-[#1D2B19]/95'
+          isSpace
+            ? 'bg-[#190B33]/95'
+            : isSnow
+              ? 'bg-[#0C2238]/95'
+              : 'bg-[#1D2B19]/95'
         }`}
       >
         <svg
@@ -198,9 +213,11 @@ const TrackMinimap: React.FC<{
             r="44"
             fill="none"
             stroke={
-              isSnow
-                ? 'rgba(56, 189, 248, 0.18)'
-                : 'rgba(163, 230, 53, 0.12)'
+              isSpace
+                ? 'rgba(244, 114, 182, 0.25)'
+                : isSnow
+                  ? 'rgba(56, 189, 248, 0.18)'
+                  : 'rgba(163, 230, 53, 0.12)'
             }
             strokeWidth="1"
             strokeDasharray="3 3"
@@ -220,7 +237,7 @@ const TrackMinimap: React.FC<{
           <path
             d={geo.fullPathD}
             fill="none"
-            stroke={isSnow ? '#E0F2FE' : '#C89D6C'}
+            stroke={isSpace ? '#F472B6' : isSnow ? '#E0F2FE' : '#C89D6C'}
             strokeWidth="4.8"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -1336,65 +1353,152 @@ export const RaceHudOverlay: React.FC<RaceHudOverlayProps> = ({
               </div>
             </div>
 
-            {/* MAIN LOCKER STAGE: Left Column (2 Map Cards + 3D Character Stage) | Right Column (16-Pal Grid + Skills) */}
+            {/* MAIN LOCKER STAGE: Left Column (Single Full-Width Swipeable Map Card + 3D Character Stage) | Right Column (16-Pal Grid + Skills) */}
             <div className="flex-1 min-h-0 grid grid-cols-1 sm:grid-cols-12 gap-2 sm:gap-2.5 items-stretch overflow-hidden">
-              {/* Left Column (4 Cols): 2 Circuit Map Image Cards + Live 3D Character Preview */}
-              <div className="sm:col-span-4 min-h-0 flex flex-col justify-between gap-1.5 overflow-hidden">
-                <div className="grid grid-cols-2 gap-1.5 shrink-0">
-                  {(['woodland', 'snow_glacier'] as const).map((tId) => {
-                    const meta = TRACK_CATALOG[tId];
-                    const active = selectedTrackId === tId;
-                    const isSnowMap = tId === 'snow_glacier';
-                    return (
-                      <button
-                        key={tId}
-                        type="button"
-                        onClick={() => onSelectTrack(tId)}
-                        data-testid={`select-track-${tId}`}
-                        className={`relative h-14 sm:h-16 rounded-xl sm:rounded-2xl overflow-hidden border-2 text-left p-1.5 flex flex-col justify-between transition-colors ${
-                          active
-                            ? 'border-[#F59E0B] ring-2 ring-[#F59E0B]/40 shadow-md'
-                            : 'border-[#2B2118] opacity-80 hover:opacity-100'
-                        }`}
-                      >
-                        <VisualImageCard
-                          variant={isSnowMap ? 'map_glacier' : 'map_woodland'}
-                          className="absolute inset-0 w-full h-full"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-[#1A130D]/95 via-[#1A130D]/35 to-transparent" />
+              {/* Left Column (4 Cols): Single Full-Width Swipeable Map Card + Full-Height 3D Character Preview */}
+              <div className="sm:col-span-4 h-full min-h-0 flex flex-col justify-between gap-1.5 overflow-hidden">
+                {(() => {
+                  const currentMapIdx = Math.max(
+                    0,
+                    TRACK_ID_LIST.indexOf(selectedTrackId)
+                  );
+                  const meta = TRACK_CATALOG[selectedTrackId];
+                  const isSnowMap = selectedTrackId === 'snow_glacier';
+                  const isSpaceMap = selectedTrackId === 'space_odyssey';
+                  const cardVariant = isSpaceMap
+                    ? 'map_space'
+                    : isSnowMap
+                      ? 'map_glacier'
+                      : 'map_woodland';
 
-                        <div className="relative z-10 flex items-center justify-between gap-1">
-                          <span
-                            className={`inline-flex items-center gap-0.5 px-1 py-0.2 rounded text-[7px] sm:text-[8px] font-black uppercase ${
-                              isSnowMap
+                  const cycleMap = (delta: number) => {
+                    const nextIdx =
+                      (currentMapIdx + delta + TRACK_ID_LIST.length) %
+                      TRACK_ID_LIST.length;
+                    cuteAudio.playUiTap();
+                    onSelectTrack(TRACK_ID_LIST[nextIdx]);
+                  };
+
+                  return (
+                    <div
+                      data-testid={`select-track-${selectedTrackId}`}
+                      onPointerDown={(e) => {
+                        (
+                          e.currentTarget as HTMLElement
+                        ).dataset.swipeStartX = String(e.clientX);
+                      }}
+                      onPointerUp={(e) => {
+                        const startX = Number(
+                          (e.currentTarget as HTMLElement).dataset
+                            .swipeStartX || e.clientX
+                        );
+                        const dx = e.clientX - startX;
+                        if (Math.abs(dx) > 24) {
+                          cycleMap(dx < 0 ? 1 : -1);
+                        }
+                      }}
+                      className="relative w-full h-22 sm:h-26 shrink-0 rounded-2xl overflow-hidden border-2 border-[#F59E0B] ring-2 ring-[#F59E0B]/35 shadow-lg select-none touch-pan-y flex flex-col justify-between p-2"
+                    >
+                      <VisualImageCard
+                        variant={cardVariant}
+                        className="absolute inset-0 w-full h-full"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#1A130D]/95 via-[#1A130D]/35 to-black/25" />
+
+                      {/* Top Row: Map Theme Badge + Length + Slide Counter */}
+                      <div className="relative z-10 flex items-center justify-between gap-1">
+                        <span
+                          className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[8px] sm:text-[9px] font-black uppercase border border-[#1A130D] ${
+                            isSpaceMap
+                              ? 'bg-[#F472B6] text-[#1A130D]'
+                              : isSnowMap
                                 ? 'bg-[#38BDF8] text-[#082F49]'
                                 : 'bg-[#A3E635] text-[#1A130D]'
-                            }`}
-                          >
-                            {isSnowMap ? (
-                              <Snowflake className="w-2 h-2" />
-                            ) : (
-                              <Trees className="w-2 h-2" />
-                            )}
-                            {isSnowMap ? 'SNOW' : 'WOOD'}
-                          </span>
-
-                          {active && (
-                            <span className="px-1 py-0.2 rounded bg-[#FDE047] text-[#2B2118] text-[7px] font-black uppercase">
-                              ON
-                            </span>
+                          }`}
+                        >
+                          {isSpaceMap ? (
+                            <Sparkles className="w-2.5 h-2.5" />
+                          ) : isSnowMap ? (
+                            <Snowflake className="w-2.5 h-2.5" />
+                          ) : (
+                            <Trees className="w-2.5 h-2.5" />
                           )}
-                        </div>
+                          <span>{meta.badgeText}</span>
+                        </span>
 
-                        <div className="relative z-10 text-[9px] sm:text-[10px] font-black text-white leading-tight truncate">
-                          {meta.name}
+                        <div className="flex items-center gap-1">
+                          <span className="px-1.5 py-0.5 rounded-md bg-black/60 text-[#FDE047] text-[8px] sm:text-[9px] font-black border border-white/15">
+                            {meta.lengthLabel}
+                          </span>
+                          <span className="px-1.5 py-0.5 rounded-md bg-[#FDE047] text-[#2B2118] text-[8px] font-black uppercase">
+                            {currentMapIdx + 1}/{TRACK_ID_LIST.length}
+                          </span>
                         </div>
+                      </div>
+
+                      {/* Left / Right Slide Arrow Buttons */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          cycleMap(-1);
+                        }}
+                        aria-label="Previous Map"
+                        data-testid="map-carousel-prev-btn"
+                        className="absolute left-1.5 top-1/2 -translate-y-1/2 z-20 w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-white/90 hover:bg-[#FDE047] text-[#2B2118] border border-[#1A130D] flex items-center justify-center shadow active:scale-95 transition-transform cursor-pointer"
+                      >
+                        <ChevronLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.8]" />
                       </button>
-                    );
-                  })}
-                </div>
 
-                {/* Live 3D Character Preview Stage */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          cycleMap(1);
+                        }}
+                        aria-label="Next Map"
+                        data-testid="map-carousel-next-btn"
+                        className="absolute right-1.5 top-1/2 -translate-y-1/2 z-20 w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-white/90 hover:bg-[#FDE047] text-[#2B2118] border border-[#1A130D] flex items-center justify-center shadow active:scale-95 transition-transform cursor-pointer"
+                      >
+                        <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.8]" />
+                      </button>
+
+                      {/* Bottom Row: Map Title + Subtitle + Pagination Dots */}
+                      <div className="relative z-10 flex items-end justify-between gap-2 px-6">
+                        <div className="min-w-0">
+                          <div className="text-xs sm:text-sm font-black text-white leading-tight truncate game-text-shadow">
+                            {meta.name}
+                          </div>
+                          <div className="text-[8px] sm:text-[9px] font-bold text-[#E5D9C5] truncate">
+                            Swipe or tap arrows to switch circuit
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-1 shrink-0 pb-0.5">
+                          {TRACK_ID_LIST.map((tId) => (
+                            <button
+                              key={tId}
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                cuteAudio.playUiTap();
+                                onSelectTrack(tId);
+                              }}
+                              aria-label={`Select ${TRACK_CATALOG[tId].name}`}
+                              className={`h-2 rounded-full transition-all cursor-pointer ${
+                                tId === selectedTrackId
+                                  ? 'w-4 bg-[#FDE047] border border-[#1A130D]'
+                                  : 'w-2 bg-white/60 hover:bg-white'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Live 3D Character Preview Stage (Full Remaining Column Height) */}
                 <div className="flex-1 min-h-0 flex flex-col">
                   <LobbyCharacterPreview
                     character={selectedCharacter}

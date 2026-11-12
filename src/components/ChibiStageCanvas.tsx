@@ -139,9 +139,9 @@ export const ChibiStageCanvas: React.FC<ChibiStageCanvasProps> = ({
     scene.environmentIntensity = 0.34;
     pmremGenerator.dispose();
 
-    // 3. Camera & OrbitControls (Slight Zoom In/Out enabled)
+    // 3. Camera & OrbitControls (Slight Zoom In/Out enabled, framed lower & smaller)
     const camera = new THREE.PerspectiveCamera(32, width / height, 0.1, 120);
-    camera.position.set(0, 2.05, 6.15);
+    camera.position.set(0, 2.25, 7.35);
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = !isSoftwareGl;
@@ -149,11 +149,11 @@ export const ChibiStageCanvas: React.FC<ChibiStageCanvasProps> = ({
     controls.enablePan = false;
     controls.enableZoom = true;
     controls.zoomSpeed = 0.75;
-    controls.minDistance = 4.2;
-    controls.maxDistance = 8.8;
+    controls.minDistance = 4.8;
+    controls.maxDistance = 9.8;
     controls.minPolarAngle = Math.PI * 0.22;
     controls.maxPolarAngle = Math.PI * 0.48;
-    controls.target.set(0, 1.05, 0);
+    controls.target.set(0, 1.28, 0);
     controls.update();
 
     // 4. Soft Diffused White Studio Lighting Rig (Gentle, Subtle Shadows)

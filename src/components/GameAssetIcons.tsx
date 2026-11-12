@@ -703,6 +703,7 @@ export type VisualCardVariant =
   | 'mode_brawler_pvp'
   | 'map_woodland'
   | 'map_glacier'
+  | 'map_space'
   | 'stage_1'
   | 'stage_2'
   | 'stage_3';
@@ -713,6 +714,7 @@ const VISUAL_CARD_TARGET_SRC: Record<VisualCardVariant, string> = {
   mode_brawler_pvp: MODE_CARD_PATHS.brawler_pvp,
   map_woodland: MAP_CARD_PATHS.woodland,
   map_glacier: MAP_CARD_PATHS.snow_glacier,
+  map_space: '/assets/game/maps/map_space_odyssey.png',
   stage_1: DUNGEON_STAGE_CARD_PATHS[1],
   stage_2: DUNGEON_STAGE_CARD_PATHS[2],
   stage_3: DUNGEON_STAGE_CARD_PATHS[3],
@@ -902,6 +904,97 @@ export const VisualImageCard: React.FC<{
         <img
           src={CHARACTER_AVATAR_PATHS.penguin}
           alt="Penguin"
+          className="absolute right-3 bottom-2 w-14 h-14 object-contain drop-shadow-lg pointer-events-none"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#1A130D]/85 via-transparent to-transparent" />
+      </div>
+    );
+  }
+
+  if (variant === 'map_space') {
+    return (
+      <div
+        className={`relative w-full h-full overflow-hidden bg-gradient-to-br from-[#0F0728] via-[#4C1D95] to-[#831843] ${className}`}
+      >
+        <svg
+          viewBox="0 0 400 200"
+          className="absolute inset-0 w-full h-full object-cover"
+          preserveAspectRatio="xMidYMid slice"
+        >
+          {/* Glowing Nebula Swirls */}
+          <path
+            d="M-20 42 Q110 8 220 55 T420 30"
+            fill="none"
+            stroke="#F472B6"
+            strokeWidth="22"
+            strokeLinecap="round"
+            opacity="0.45"
+          />
+          <path
+            d="M-20 75 Q140 30 250 75 T420 65"
+            fill="none"
+            stroke="#38BDF8"
+            strokeWidth="14"
+            strokeLinecap="round"
+            opacity="0.5"
+          />
+          {/* Twinkling Stars */}
+          <circle cx="48" cy="34" r="3" fill="#FDE047" />
+          <circle cx="128" cy="24" r="2.5" fill="#FFFDF9" />
+          <circle cx="212" cy="36" r="3.5" fill="#38BDF8" />
+          <circle cx="348" cy="28" r="3" fill="#FDE047" />
+          <circle cx="88" cy="68" r="2" fill="#F472B6" />
+          {/* Ringed Neon Saturn Planet */}
+          <circle
+            cx="286"
+            cy="68"
+            r="34"
+            fill="#C084FC"
+            stroke="#1A130D"
+            strokeWidth="4"
+          />
+          <ellipse
+            cx="286"
+            cy="68"
+            rx="58"
+            ry="15"
+            fill="none"
+            stroke="#FDE047"
+            strokeWidth="6"
+            transform="rotate(-16 286 68)"
+          />
+          {/* Rainbow Hyper-Light Track Curve */}
+          <path
+            d="M35 205 Q150 115 245 148 T395 110"
+            fill="none"
+            stroke="#38BDF8"
+            strokeWidth="26"
+            strokeLinecap="round"
+          />
+          <path
+            d="M35 205 Q150 115 245 148 T395 110"
+            fill="none"
+            stroke="#F472B6"
+            strokeWidth="12"
+            strokeLinecap="round"
+          />
+          {/* Glowing Alien Crystal Spires */}
+          <polygon
+            points="35,200 54,122 73,200"
+            fill="#38BDF8"
+            stroke="#1A130D"
+            strokeWidth="3.5"
+          />
+          <polygon
+            points="66,200 82,138 98,200"
+            fill="#F472B6"
+            stroke="#1A130D"
+            strokeWidth="3.5"
+          />
+        </svg>
+        <img
+          src={CHARACTER_AVATAR_PATHS.raccoon}
+          alt="Cosmic Raccoon"
           className="absolute right-3 bottom-2 w-14 h-14 object-contain drop-shadow-lg pointer-events-none"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[#1A130D]/85 via-transparent to-transparent" />

@@ -255,9 +255,9 @@ export const HomeHubScreen: React.FC<HomeHubScreenProps> = ({
       </header>
 
       {/* ==================== 2. WIDESCREEN LANDSCAPE CONSOLE STAGE: 5-COL 3D HERO + 7-COL GAME MODE DECK ==================== */}
-      <div className="w-full max-w-7xl mx-auto flex-1 min-h-0 grid grid-cols-1 grid-rows-[minmax(0,1fr)_minmax(0,1.15fr)] sm:grid-rows-1 sm:grid-cols-12 gap-2 sm:gap-3 items-stretch overflow-hidden">
-        {/* LEFT (5 Cols on Landscape Mobile & Desktop): 3D Main Character Stage */}
-        <div className="sm:col-span-5 min-h-0 bg-[#FFFDF9] text-[#2B2118] border-2 sm:border-3 border-[#1A130D] rounded-2xl sm:rounded-3xl p-2 sm:p-2.5 flex flex-col justify-between gap-2 shadow-2xl overflow-hidden">
+      <div className="w-full max-w-7xl mx-auto flex-1 min-h-0 grid grid-cols-1 grid-rows-[minmax(0,0.95fr)_minmax(0,1.15fr)] sm:grid-rows-1 sm:grid-cols-12 gap-2 sm:gap-3 items-stretch overflow-hidden">
+        {/* LEFT (5 Cols on Landscape Mobile & Desktop, Full Height matching Right Column): 3D Main Character Stage */}
+        <div className="sm:col-span-5 h-full min-h-0 bg-[#FFFDF9] text-[#2B2118] border-2 sm:border-3 border-[#1A130D] rounded-2xl sm:rounded-3xl p-2 sm:p-2.5 flex flex-col justify-between gap-2 shadow-2xl overflow-hidden">
           <div className="relative flex-1 min-h-0 flex flex-col">
             <LobbyCharacterPreview
               character={selectedCharacter}
@@ -271,7 +271,7 @@ export const HomeHubScreen: React.FC<HomeHubScreenProps> = ({
                 onSelectCharacterByIndex(selectedCharacter.index - 1)
               }
               aria-label="Previous Character"
-              className="absolute left-1.5 top-[42%] -translate-y-1/2 z-20 w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-white/90 hover:bg-[#FDE047] text-[#2B2118] border border-[#1A130D] flex items-center justify-center shadow-sm active:scale-95 transition-transform"
+              className="absolute left-1.5 top-[48%] -translate-y-1/2 z-20 w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-white/90 hover:bg-[#FDE047] text-[#2B2118] border border-[#1A130D] flex items-center justify-center shadow-sm active:scale-95 transition-transform"
             >
               <ChevronLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.8]" />
             </button>
@@ -325,7 +325,7 @@ export const HomeHubScreen: React.FC<HomeHubScreenProps> = ({
         </div>
 
         {/* RIGHT (7 Cols on Landscape Mobile & Desktop): 3 Visual Image Game Mode Cards */}
-        <div className="sm:col-span-7 min-h-0 flex flex-col justify-between gap-2 sm:gap-2.5 overflow-hidden">
+        <div className="sm:col-span-7 h-full min-h-0 flex flex-col justify-between gap-2 sm:gap-2.5 overflow-hidden">
           {/* CARD 1: PARTY RACE (HERO IMAGE CARD) */}
           <div
             onClick={onOpenHeroSkillLocker}

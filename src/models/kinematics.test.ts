@@ -184,8 +184,8 @@ test('Party Race engine spawns 8 racers with custom 1-of-5 Active & 1-of-5 Passi
   assert.ok(state.elapsedRaceSec > 0, 'elapsedRaceSec advances during racing phase');
 });
 
-test('setActiveTrack switches cleanly between woodland and snow_glacier with ice chutes and iceberg stones', () => {
-  assert.ok(TRACK_CATALOG.woodland && TRACK_CATALOG.snow_glacier);
+test('setActiveTrack switches cleanly between woodland, snow_glacier, and space_odyssey tracks', () => {
+  assert.ok(TRACK_CATALOG.woodland && TRACK_CATALOG.snow_glacier && TRACK_CATALOG.space_odyssey);
   setActiveTrack('snow_glacier');
   assert.equal(getActiveTrackId(), 'snow_glacier');
   assert.equal(TRACK_SEGMENTS.length, 280);
@@ -198,6 +198,20 @@ test('setActiveTrack switches cleanly between woodland and snow_glacier with ice
   assert.ok(hasIceSurface, 'snow_glacier track should include glossy ice chute segments');
   assert.ok(hasPackedSnow, 'snow_glacier track should include packed snow segments');
   assert.ok(RIVER_STEPPING_STONES.length >= 15, 'snow_glacier should generate floating iceberg stepping stones');
+
+  // Switch to space_odyssey (Cosmic Nebula Circuit)
+  setActiveTrack('space_odyssey');
+  assert.equal(getActiveTrackId(), 'space_odyssey');
+  assert.equal(TRACK_SEGMENTS.length, 280);
+  assert.ok(
+    TOTAL_TRACK_LENGTH > 1750 && TOTAL_TRACK_LENGTH < 2250,
+    `expected ~1880u cosmic space circuit, got ${TOTAL_TRACK_LENGTH}`
+  );
+  const hasHighBridge = TRACK_SEGMENTS.some((s) => s.isHighBridge);
+  const hasRiverVoid = TRACK_SEGMENTS.some((s) => s.isDeepWaterHazard);
+  assert.ok(hasHighBridge, 'space_odyssey track should include Rainbow Hyper-Light Skybridge');
+  assert.ok(hasRiverVoid, 'space_odyssey track should include Zero-G Asteroid Void');
+  assert.ok(RIVER_STEPPING_STONES.length >= 15, 'space_odyssey should generate floating 3D asteroid stepping stones');
 
   // Switch back to woodland cleanly
   setActiveTrack('woodland');
